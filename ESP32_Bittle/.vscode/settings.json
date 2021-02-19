@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "biboardpindef.h": "c",
+        "petoiesp32servo.h": "c",
+        "ostream": "cpp"
+    }
+}
