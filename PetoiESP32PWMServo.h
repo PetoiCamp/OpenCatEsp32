@@ -146,9 +146,11 @@ class ESP32PWMServo {
      *
      * @return true if successful, false when pin doesn't support PWM.
      */
-    bool attach(int pin, int channel = CHANNEL_NOT_ATTACHED, 
-                int minAngle = MIN_ANGLE, int maxAngle = MAX_ANGLE, 
-                int minPulseWidth = MIN_PULSE_WIDTH, int maxPulseWidth = MAX_PULSE_WIDTH);
+     bool attach(int pin, int channel = CHANNEL_NOT_ATTACHED);
+
+//    bool attach(int pin, int channel = CHANNEL_NOT_ATTACHED, 
+//                int minAngle = MIN_ANGLE, int maxAngle = MAX_ANGLE, 
+//                int minPulseWidth = MIN_PULSE_WIDTH, int maxPulseWidth = MAX_PULSE_WIDTH);
 
     /**
      * @brief Stop driving the servo pulse train.

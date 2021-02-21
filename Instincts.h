@@ -3,7 +3,7 @@
 
 
 // walking data array
-const char wkF[] PROGMEM = {
+const int wkF[] = {
   57, 0, 0, 1,
   19,  58,  65,  50,  11,  19, -13,  13,
   19,  59,  55,  52,  15,  20, -15,  13,

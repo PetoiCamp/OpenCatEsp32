@@ -1,7 +1,9 @@
+#define BUFFER_LENGTH 1024
 #include "PetoiMPU6050DMP.h"
 
 #include "I2Cdev.h"
 #include "Wire.h"
+
 #include "MPU6050_6Axis_MotionApps20.h"
 
 /*
@@ -66,6 +68,10 @@ void mpu_setup()
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {
+    // Calibration Time: generate offsets and calibrate our MPU6050
+    mpu.CalibrateAccel(6);
+    mpu.CalibrateGyro(6);
+    mpu.PrintActiveOffsets();
     // turn on the DMP, now that it's ready
     Serial.println(F("Enabling DMP..."));
     mpu.setDMPEnabled(true);

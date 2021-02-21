@@ -46,10 +46,7 @@ ESP32PWMServo::ESP32PWMServo(int tau_uSec){
 ESP32PWMServo::~ESP32PWMServo() {
     detach();
 }
-
-bool ESP32PWMServo::attach(int pin, int channel, 
-                   int minAngle, int maxAngle, 
-                   int minPulseWidth, int maxPulseWidth) 
+bool ESP32PWMServo::attach(int pin, int channel) 
 {
     if(channel == CHANNEL_NOT_ATTACHED) {
         if(channel_next_free == CHANNEL_MAX_NUM) {
@@ -62,17 +59,40 @@ bool ESP32PWMServo::attach(int pin, int channel,
     }
 
     _pin = pin;
-    _minAngle = minAngle;
-    _maxAngle = maxAngle;
-    _minPulseWidth = minPulseWidth;
-    _maxPulseWidth = maxPulseWidth;
-
+   
     long pwm_freq = 1000 * 1000 / TAU_USEC;
 
     ledcSetup(_channel, pwm_freq, 16); // channel X, 50-400 Hz, 16-bit depth
     ledcAttachPin(_pin, _channel);
     return true;
 }
+
+//bool ESP32PWMServo::attach(int pin, int channel, 
+//                   int minAngle, int maxAngle, 
+//                   int minPulseWidth, int maxPulseWidth) 
+//{
+//    if(channel == CHANNEL_NOT_ATTACHED) {
+//        if(channel_next_free == CHANNEL_MAX_NUM) {
+//            return false;
+//        }
+//        _channel = channel_next_free;
+//        channel_next_free++;
+//    } else {
+//        _channel = channel;
+//    }
+//
+//    _pin = pin;
+//    _minAngle = minAngle;
+//    _maxAngle = maxAngle;
+//    _minPulseWidth = minPulseWidth;
+//    _maxPulseWidth = maxPulseWidth;
+//
+//    long pwm_freq = 1000 * 1000 / TAU_USEC;
+//
+//    ledcSetup(_channel, pwm_freq, 16); // channel X, 50-400 Hz, 16-bit depth
+//    ledcAttachPin(_pin, _channel);
+//    return true;
+//}
 
 bool ESP32PWMServo::detach() {
     if (!this->attached()) {
