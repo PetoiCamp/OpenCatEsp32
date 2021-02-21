@@ -6,5 +6,8 @@ void mpu_setup();
 void getDMPRawResult();
 void getDMPReadableYawPitchRaw(float *ypr);
 
+void getIMUDataOfYawPitchRaw();
+
+
 
 #endif

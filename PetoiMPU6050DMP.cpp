@@ -16,9 +16,10 @@
   Biboard MPU6050 default I2C address is 0x68
 */
 
-#define RESULT_PRINT    1       // Print DMP data
+//#define RESULT_PRINT    1       // Print DMP data
 #define INTERRUPT_PIN   26      // use pin 26 on Biboard
 const char DEVICE_NAME[] = "mpu6050";
+float ypr[3];                   // Yaw Pitch Raw data in degrees from MPU6050 DMP
 MPU6050 mpu(0x68);              // object declaration, default is 0x68
 
 // MPU control/status vars
@@ -34,7 +35,7 @@ volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin h
 // functions
 
 void dmpDataReady() {
-    mpuInterrupt = true;
+  mpuInterrupt = true;
 }
 
 void mpu_setup()
@@ -98,8 +99,8 @@ void mpu_setup()
   }
 }
 
-void getDMPRawResult(){
-// if programming failed, don't try to do anything
+void getDMPRawResult() {
+  // if programming failed, don't try to do anything
   if (!dmpReady) return;
 
   // wait for MPU interrupt or extra packet(s) available
@@ -132,21 +133,27 @@ void getDMPRawResult(){
   }
 }
 
-void getDMPReadableYawPitchRaw(float *ypr){
+void getDMPReadableYawPitchRaw(float *ypr) {
 
-    // display Euler angles in degrees
-    Quaternion q;           // [w, x, y, z]         quaternion container
-    VectorFloat gravity;    // [x, y, z]            gravity vector
+  // display Euler angles in degrees
+  Quaternion q;           // [w, x, y, z]         quaternion container
+  VectorFloat gravity;    // [x, y, z]            gravity vector
 
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    
-    #ifdef RESULT_PRINT
-        Serial.print(ypr[0] * 180/M_PI);
-        Serial.print("\t");
-        Serial.print(ypr[1] * 180/M_PI);
-        Serial.print("\t");
-        Serial.println(ypr[2] * 180/M_PI);
-    #endif
+  mpu.dmpGetQuaternion(&q, fifoBuffer);
+  mpu.dmpGetGravity(&gravity, &q);
+  mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+
+#ifdef RESULT_PRINT
+  Serial.print(ypr[0] * 180 / M_PI);
+  Serial.print("\t");
+  Serial.print(ypr[1] * 180 / M_PI);
+  Serial.print("\t");
+  Serial.println(ypr[2] * 180 / M_PI);
+#endif
+}
+
+
+void getIMUDataOfYawPitchRaw() { // Get Yaw Pitch Raw data from MPU6050
+  getDMPRawResult();
+  getDMPReadableYawPitchRaw(ypr);
 }

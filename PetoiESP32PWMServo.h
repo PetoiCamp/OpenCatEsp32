@@ -32,8 +32,8 @@
  * 
  * We changed Servo Lib into our ESP32PWMServo
  * 1. Our servo is modified to 290 degree
- * 2. High precision timer need, not support analog servo any more
- * 3. Make lib easier for users to control 12 servos in a robot
+ * 2. High precision timer, won't support analog servo any more
+ * 3. Made the libruary easier for users to control 12 servos of a robot
  */
 
 #ifndef _PETOIESP32PWMSERVO_H

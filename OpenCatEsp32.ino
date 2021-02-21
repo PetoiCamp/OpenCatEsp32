@@ -2,6 +2,7 @@
 #include "PetoiESP32MP3.h"      // MP3 Player library
 //#include "PetoiESP32OTA.h"      // OTA Service
 #include "PetoiESP32SPIFFS.h"   // SPIFFS library for storage on QSPI Flash
+
 #include "PetoiMPU6050DMP.h"    // Simplified MPU6050 DMP library, outputs Euler angles in degrees
 
 #include "PetoiBittleMotion.h"
@@ -11,7 +12,7 @@
 //char *WiFi_SSID = "Kpower-Engineers_2G";    // Your WiFi SSID, only support 2.4GHz, ESP32 cannot recieve 5GHz signal
 //char *WiFi_PASSWORD = "kpower2012";         // Your WiFi password
 
-float ypr[3];                   // Yaw Pitch Raw data in degrees from MPU6050 DMP
+
 //
 //IRrecv irrecv(IR_Remote_pin);   // IR in, ref: BiboardPinDef.h
 //decode_results results;
@@ -19,10 +20,6 @@ float ypr[3];                   // Yaw Pitch Raw data in degrees from MPU6050 DM
 PetoiESP32MP3Player MP3Player;
 //PetoiESP32OTA OTAService;
 
-void getIMUDataOfYawPitchRaw() { // Get Yaw Pitch Raw data from MPU6050
-  getDMPRawResult();
-  getDMPReadableYawPitchRaw(ypr);
-}
 
 byte melody[] = {8, 13, 10, 13, 8,  0,  5,  8,  3,  5, 8,//tone
                  8, 8,  32, 32, 8, 32, 32, 32, 32, 32, 8 //relative duration, 8 means 1/8 note length
@@ -54,16 +51,18 @@ void playMelody(byte m[], int len) {
 
 void setup() {
   Serial.begin(115200);         // Serial start, ESP32 MAX 230400
-  pinMode(25, OUTPUT);
+    pinMode(25, OUTPUT);
   MP3Player.init();             // Setup MP3 decoder, SPIFFS and DAC output
   playMelody(melody, sizeof(melody) / 2);
   MP3Player.mp3PlayBack("/dogbark2.mp3");
   pinMode(25, OUTPUT);
-  playMelody(melody, sizeof(melody) / 2);
-  MP3Player.mp3PlayBack("/dogbark2.mp3");
-  delay(10);
-  //OTAService.setupWiFi(WiFi_SSID, WiFi_PASSWORD);   // Setup WiFi connection
-  //OTAService.OTAEnable();       // Enable OTA Service
+  digitalWrite(25,0);
+  //  pinMode(25, OUTPUT);
+  //  playMelody(melody, sizeof(melody) / 2);
+  //  MP3Player.mp3PlayBack("/dogbark2.mp3");
+  //  delay(10);
+  //  //OTAService.setupWiFi(WiFi_SSID, WiFi_PASSWORD);   // Setup WiFi connection
+  //  //OTAService.OTAEnable();       // Enable OTA Service
   delay(10);
   mpu_setup();                  // Setup MPU6050 & DMP
   delay(10);
@@ -74,7 +73,7 @@ void setup() {
 }
 
 void loop() {
-  getIMUDataOfYawPitchRaw();
+  //getIMUDataOfYawPitchRaw();
   /*   OTAService.handleOTA();
     getIMUDataOfYawPitchRaw();
     if (irrecv.decode(&results)) {
