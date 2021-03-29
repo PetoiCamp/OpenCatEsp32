@@ -54,8 +54,8 @@ void setup() {
     pinMode(25, OUTPUT);
   MP3Player.init();             // Setup MP3 decoder, SPIFFS and DAC output
   playMelody(melody, sizeof(melody) / 2);
-  MP3Player.mp3PlayBack("/dogbark2.mp3");
-  pinMode(25, OUTPUT);
+//  MP3Player.mp3PlayBack("/dogbark2.mp3");
+//  pinMode(25, OUTPUT);
   digitalWrite(25,0);
   //  pinMode(25, OUTPUT);
   //  playMelody(melody, sizeof(melody) / 2);
