@@ -29,9 +29,8 @@ ESP32 Dev Module
 
 * PSRAM: Disabled
 
-Uploading **OpenCatEsp32.ino** to the BiBoard should launch a simple demo that makes Bittle walk. 
+Uploading **OpenCatEsp32.ino** to the BiBoard should launch a simple demo that makes Bittle walk (click the picture to play). 
 
-
-
+[![BittleESP32](https://img.youtube.com/vi/GTgps_H990w/0.jpg)](https://www.youtube.com/watch?v=GTgps_H990w)
 
  
