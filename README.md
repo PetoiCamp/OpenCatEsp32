@@ -15,7 +15,7 @@ ESP32 Dev Module
 
 * Upload Speed: 921600
 
-* CPU Frequency: 24MHz(WiFi/BT)
+* CPU Frequency: 240MHz(WiFi/BT)
 
 * Flash Frequency: 80MHz
 
