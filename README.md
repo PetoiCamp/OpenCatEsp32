@@ -31,6 +31,8 @@ ESP32 Dev Module
 
 Uploading **OpenCatEsp32.ino** to the BiBoard should launch a simple demo that makes Bittle walk (click the picture to play). 
 
-[![BittleESP32](https://img.youtube.com/vi/GTgps_H990w/0.jpg)](https://www.youtube.com/watch?v=GTgps_H990w)
+[![BittleESP32](https://github.com/PetoiCamp/NonCodeFiles/blob/master/gif/BiBoard.gif)](https://www.youtube.com/watch?v=GTgps_H990w)
+
+Click the GIF to open the YouTube demo.
 
  
