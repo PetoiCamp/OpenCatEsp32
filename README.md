@@ -1,6 +1,6 @@
 # OpenCatESP32
 
-This is a demo for BiBoard at a super early stage.
+This is a demo for [Petoi BiBoard](https://docs.petoi.com/biboard/biboard-v0) at a super early stage.
 
 Install the ESP32 board:
 
