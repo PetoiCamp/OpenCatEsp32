@@ -1,0 +1,17 @@
+1. Add URL in Arduino->Preference->Board manager url
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+
+2. In Board Manager, search ESP32 and install the 2.0* version. 
+
+3. In file:
+C:\Users\{username}\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\tools\sdk\esp32\include\config\sdkconfig.h
+append 
+    #define CONFIG_DISABLE_HAL_LOCKS 1
+to the end.
+or replace it with the file in this folder.
+
+4. Replace
+C:\Users\{username}\AppData\Local\Arduino15\packages\esp32\hardware\esp32\2.0.2\cores\esp32\esp32-hal-i2c-slave.c
+with the file in this folder.
+
+5. Restart Arduino IDE, and select ESP32 Dev as the board.
