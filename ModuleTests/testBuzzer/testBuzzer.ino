@@ -32,9 +32,9 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 */
-#include "ESP32Servo.h"
-//#define BUZZER 25 //BiBoard
-#define BUZZER 14 // BiBoard2
+
+#define BUZZER 25 //BiBoard
+// #define BUZZER 14 // BiBoard2
 #define BASE_PITCH 1046.50
 
 // tone 1 corresponds to A3, tone 2 corresponds to B3, tone 13 corresponds to A4, etc.
