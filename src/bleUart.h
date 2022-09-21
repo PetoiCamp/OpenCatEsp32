@@ -27,47 +27,47 @@
 #define HOLD_TIME 1500
 #define CONNECTION_ATTEMPT 2
 BLEServer *pServer = NULL;
-BLECharacteristic * pTxCharacteristic;
+BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
-#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E" // receive
-#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E" // transmit
+#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
+#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
+#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
 
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    };
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
+class MyServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *pServer) {
+    deviceConnected = true;
+  };
+  void onDisconnect(BLEServer *pServer) {
+    deviceConnected = false;
+  }
 };
 
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
-      if (rxValue.length() > 0) {
-        cmdLen = rxValue.length();
-        token = rxValue[0];
-        char *destination = (token == T_SKILL) ? newCmd : (char*)dataBuffer;
-        for (int i = 1; i < cmdLen; i++)
-          destination[i - 1] = rxValue[i];
-        destination[cmdLen - 1] = '\0';
-        newCmdIdx = 3;
-      }
+class MyCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *pCharacteristic) {
+    std::string rxValue = pCharacteristic->getValue();
+    if (rxValue.length() > 0) {
+      cmdLen = rxValue.length();
+      token = rxValue[0];
+      char *destination = (token == T_SKILL) ? newCmd : (char *)dataBuffer;
+      for (int i = 1; i < cmdLen; i++)
+        destination[i - 1] = rxValue[i];
+      destination[cmdLen - 1] = '\0';
+      newCmdIdx = 3;
     }
+  }
 };
 
 void bleSetup() {
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID);
   // Create the BLE Device
-  BLEDevice::init(readBleID());//read BLE device name from EEPROM so it's static
+  BLEDevice::init(readBleID());  //read BLE device name from EEPROM so it's static
 
   // Create the BLE Server
   pServer = BLEDevice::createServer();
@@ -80,16 +80,14 @@ void bleSetup() {
   pTxCharacteristic =
     pService->createCharacteristic(
       CHARACTERISTIC_UUID_TX,
-      BLECharacteristic::PROPERTY_NOTIFY
-    );
+      BLECharacteristic::PROPERTY_NOTIFY);
 
   pTxCharacteristic->addDescriptor(new BLE2902());
 
-  BLECharacteristic * pRxCharacteristic =
+  BLECharacteristic *pRxCharacteristic =
     pService->createCharacteristic(
       CHARACTERISTIC_UUID_RX,
-      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR
-    );
+      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
   pRxCharacteristic->setCallbacks(new MyCallbacks());
 
@@ -112,8 +110,8 @@ void bleWrite(String buff) {
 void bleLoop() {
   // disconnecting
   if (!deviceConnected && oldDeviceConnected) {
-    delay(50); // give the bluetooth stack the chance to get things ready
-    pServer->startAdvertising(); // restart advertising
+    delay(50);                    // give the bluetooth stack the chance to get things ready
+    pServer->startAdvertising();  // restart advertising
     Serial.println("Bluetooth disconnected!");
     oldDeviceConnected = deviceConnected;
   }
@@ -123,11 +121,11 @@ void bleLoop() {
     Serial.println("Bluetooth connected!");
     oldDeviceConnected = deviceConnected;
     delay(HOLD_TIME);
-    for (byte i = 0; i < CONNECTION_ATTEMPT; i++) {// send the keywords a few times on connection so that the app knows it's a Petoi device
-      pTxCharacteristic->setValue("Petoi Bittle");
-      pTxCharacteristic->notify();
-      delay(100);
-    }
+    // for (byte i = 0; i < CONNECTION_ATTEMPT; i++) {// send the keywords a few times on connection so that the app knows it's a Petoi device
+    pTxCharacteristic->setValue("Petoi Bittle");
+    pTxCharacteristic->notify();
+    // delay(100);
+    // }
     token = 'd';
     bleWrite(String(T_PAUSE));
   }
