@@ -32,8 +32,13 @@
 #include "IRremote.h"
 //you need to change the timer to //#define IR_USE_TIMER1   // tx = pin 9 in IRremoteBoardDefs.h
 
-#define IR_RECEIVE 4 // Signal Pin of IR receiver to Arduino Pin 4
-#define BUZZER 3 // the PWM pin the ACTIVE buzzer is attached to
+//on BiBoard
+#define IR_RECEIVE 23 // Signal Pin of IR receiver to Arduino Pin 4
+#define BUZZER 25 // the PWM pin the ACTIVE buzzer is attached to
+
+//on Arduino Pro mini test tool
+// #define IR_RECEIVE 4 // Signal Pin of IR receiver to Arduino Pin 4
+// #define BUZZER 3 // the PWM pin the ACTIVE buzzer is attached to
 #define BASE_PITCH 1046.50
 
 #define PT(s) Serial.print(s)  //makes life easier
