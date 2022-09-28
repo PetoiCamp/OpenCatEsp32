@@ -10,14 +10,11 @@ float sDev(float *a, float m, int n) {
   for (int i = 0; i < n; i++)
     sum += (a[i] - m) * (a[i] - m);
   return sqrt(sum / n);
-
 }
-byte mpuGood[] = {12, 16, 19, \
-                  4,   4, 4
-                 };
-byte mpuBad[] = {19, 17, 16, 14, 12, \
-                 16, 16, 16, 16, 16
-                };
+byte mpuGood[] = { 12, 16, 19,
+                   4, 4, 4 };
+byte mpuBad[] = { 19, 17, 16, 14, 12,
+                  16, 16, 16, 16, 16 };
 
 #define MEAN_THRESHOLD 0.2
 #define STD_THRESHOLD 0.02
@@ -26,7 +23,7 @@ void testMPU() {
   PTL("\nIMU test: both mean and standard deviation should be small on Pitch and Roll axis\n");
   delay(1000);
   int count = 100;
-  float **history = new float * [2];
+  float **history = new float *[2];
   for (int a = 0; a < 2; a++)
     history[a] = new float[count];
   for (int t = 0; t < count; t++) {
@@ -36,7 +33,7 @@ void testMPU() {
     for (int a = 0; a < 2; a++)
       history[a][t] = ypr[a + 1];
   }
-  String axis[] = {"Pitch ", "Roll  "};
+  String axis[] = { "Pitch ", "Roll  " };
   for (int a = 0; a < 2; a++) {
     float m = mean(history[a], count);
     float dev = sDev(history[a], m, count);
@@ -51,16 +48,15 @@ void testMPU() {
         playMelody(mpuBad, sizeof(mpuBad) / 2);
         delay(500);
       }
-    }
-    else {
+    } else {
       PTL("\tPass!");
       playMelody(mpuGood, sizeof(mpuGood) / 2);
     }
   }
   delay(100);
   for (int a = 0; a < 2; a++)
-    delete [] history[a];
-  delete [] history;
+    delete[] history[a];
+  delete[] history;
 };
 #ifdef IR_PIN
 bool testIR() {
@@ -72,7 +68,7 @@ bool testIR() {
   bool pass = false;
   PTL("\nInfrared test: catch at least 6 consecutive signals\n");
   while (1) {
-    if (count == 10 || millis() - start > 1200 || right > 5) { //test for 1 second
+    if (count == 10 || millis() - start > 1200 || right > 5) {  //test for 1 second
       PT(right);
       PT("/");
       PT(count);
@@ -86,7 +82,7 @@ bool testIR() {
     if (millis() - timer > 11 && irrecv.decode(&results)) {
       timer = millis();
       current = IRkey();
-      irrecv.resume(); // receive the next value
+      irrecv.resume();  // receive the next value
       if (current == 0)
         continue;
 
@@ -94,7 +90,14 @@ bool testIR() {
         previous = 10;
       if (current - previous == 1)  //if the reading is continuous, add one to right
         right++;
-      PT("count"); PT(count); PT("\tprevious "); PT(previous); PT("\tcurrent "); PT(current); PT("\tright "); PTL(right);
+      PT("count");
+      PT(count);
+      PT("\tprevious ");
+      PT(previous);
+      PT("\tcurrent ");
+      PT(current);
+      PT("\tright ");
+      PTL(right);
       previous = (current == 20) ? 10 : current;
       count++;
       //      beep(current, 10);
@@ -106,7 +109,8 @@ void QA() {
   if (newBoard) {
 #ifndef AUTO_INIT
     PTL("Run factory quality assurance program? (Y/n)");
-    while (!Serial.available());
+    while (!Serial.available())
+      ;
     char choice = Serial.read();
     PTL(choice);
     if (choice != 'Y' && choice != 'y')
@@ -115,19 +119,17 @@ void QA() {
     testMPU();
     //tests...
     PTL("\nServo test: all servos should rotate and in sync\n");
-    loadBySkillName("testServo"); //test EEPROM
+    loadBySkillName("ts");  //test EEPROM
     while (1) {
       skill->perform();
 #ifdef IR_PIN
-      if (testIR())
-      {
+      if (testIR()) {
 #endif
         PTL("Pass");
         playMelody(melodyIRpass, sizeof(melodyIRpass) / 2);
         break;
 #ifdef IR_PIN
-      }
-      else {
+      } else {
         PTL("Fail");
         beep(8, 50);
       }
