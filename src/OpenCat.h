@@ -281,9 +281,14 @@ int angleLimit[][2] = {
   { -80, 200}, { -80, 200}, { -70, 200}, { -80, 200},
 };
 #endif
-int previousAng[DOF];
+
 #ifdef X_LEG
 int currentAng[DOF] = { -30, -80, -45, 0,
+                        0, 0, 0, 0,
+                        75,  75,  -75,  -75,
+                        -55, -55, 55, 55
+                      };
+int previousAng[DOF]= { -30, -80, -45, 0,
                         0, 0, 0, 0,
                         75,  75,  -75,  -75,
                         -55, -55, 55, 55
@@ -294,6 +299,11 @@ int currentAng[DOF] = { -30, -80, -45, 0,
                         75,  75,  75,  75,
                         -55, -55, -55, -55
                       };
+int previousAng[DOF]= {  -30, -80, -45, 0,
+                        0, 0, 0, 0,
+                        75,  75,  75,  75,
+                        -55, -55, -55, -55
+                      };                    
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};

@@ -174,16 +174,16 @@ class Skill {
     }
     void transformToSkill(int frame = 0) {
       //      info();
-      transform( dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint);
+      transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period);
     }
 
     void perform() {
       if (period < 0) {   //behaviors
         int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
         for (byte c = 0; c < abs(period); c++) { //the last two in the row are transition speed and delay
-          //          PT("step "); PTL(c);
-          //          printList(dutyAngles + c * frameSize);
-          transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 4.0);
+                  //  PT("step "); PTL(c);
+                  //  printList(dutyAngles + c * frameSize);
+          transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 
 #ifdef GYRO_PIN //if opt out the gyro, the calculation can be really fast
           if (dutyAngles[DOF + 2 + c * frameSize]) {
