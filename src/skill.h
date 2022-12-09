@@ -174,7 +174,7 @@ class Skill {
     }
     void transformToSkill(int frame = 0) {
       //      info();
-      transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period);
+      transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period,runDelay);
     }
 
     void perform() {
