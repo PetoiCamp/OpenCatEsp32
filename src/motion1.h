@@ -25,107 +25,129 @@ void allCalibratedPWM(char *dutyAng, byte offset = 0) {
   }
 }
 
-template<typename T> void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0, int runDelay = 8) {
+
+
+// template <typename T> void transform( T * target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0) {
+//   //  PTL("transform");
+//   int *diff = new int [DOF - offset], maxDiff = 0;
+//   for (byte i = offset; i < DOF; i++) {
+//     diff[i - offset] =   currentAng[i] - target[i - offset] * angleDataRatio;
+//     maxDiff = max(maxDiff, abs( diff[i - offset]));
+//   }
+//   int steps = speedRatio > 0 ? int(round(maxDiff / 1.0/*degreeStep*/ / speedRatio)) : 0 ; //default speed is 1 degree per step
+
+//   for (int s = 0; s <= steps; s++) {
+//     for (byte i = offset; i < DOF; i++) {
+// #ifdef BiBoard
+//       if (WALKING_DOF == 8 && i > 3 && i < 8)
+//         continue;
+//       if (WALKING_DOF == 12 && i < 4)
+//         continue;
+// #endif
+//       float dutyAng = (target[i - offset] * angleDataRatio + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * diff[i - offset]));
+//       calibratedPWM(i,  dutyAng);
+//     }
+//     delay((DOF - offset) / 2);
+//   }
+//   delete [] diff;
+//   //  printList(currentAng);
+//   //PTL();
+// }
+
+
+
+
+template<typename T> void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0) {
+
+
   if ((offset != 0)) {
+
     T *target_[DOF - offset];  // target_ ： nearest frame in target gait
     for (int j = 0; j < DOF - offset; j++) { target_[j] = target; }
     int min_pose_dis[8] = { 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000 };
     int min_pose_idx[8] = {};
-    int gait_len = abs(period);
-
+    // int8_t left5 = (*(target-4));
+    // int8_t right3 = (*(target-4));
+    // int8_t mask_r3=7;
+    // int8_t mask_r5=31;
+    int gait_len = abs(period);  //((left5>>3)&mask_r5)|((right3&mask_r3)<<5);
+    // Serial.print(" header:\n ");
+    // Serial.print(" gait_len: ");Serial.print( gait_len );
+    // Serial.print(" h1: ");Serial.print( (*(target-3)) );
+    // Serial.print(" h2: ");Serial.print( (*(target-2)) );
+    // Serial.print(" h3: ");Serial.print( (*(target-1)) );
+    // Serial.print(" \n ");
+    // Serial.print(" frame 0:\n ");
+    // Serial.print(" j0: ");Serial.print(*(target));
+    // Serial.print(" j1: ");Serial.print(*(target+1));
+    // Serial.print(" j2: ");Serial.print(*(target+2));
+    // Serial.print(" j3: ");Serial.print(*(target+3));
+    // Serial.print(" j4: ");Serial.print(*(target+4));
+    // Serial.print(" j5: ");Serial.print(*(target+5));
+    // Serial.print(" j6: ");Serial.print(*(target+6));
+    // Serial.print(" j7: ");Serial.print(*(target+7));
+    // Serial.print(" \n\n ");
     int cur_dis[8] = {};
     for (int i = 0; i < gait_len; i++) {
       for (int j = offset; j < DOF; j++) {
         int currrent_vel = currentAng[j] - previousAng[j];
         int pose_difference = currentAng[j] - target[i * (DOF - offset) + j - offset];
-        int vel_bonus = pose_difference * currrent_vel < 0 ? 20 : 0;  // if they have different sign, then add 20 degree penalty  need tune here
-        cur_dis[j - offset] = pow(currentAng[j] - target[i * (DOF - offset) + j - offset], 2) - vel_bonus;
+        int vel_bonus = pose_difference * currrent_vel < 0 ? 10000 : 0;  // if they have different sign, then add bonus
+        cur_dis[j - offset] = pow(currentAng[j] - target [i * (DOF - offset) + j - offset], 2) - vel_bonus;
         if (cur_dis[j - offset] < min_pose_dis[j - offset]) {
           min_pose_dis[j - offset] = cur_dis[j - offset];
           min_pose_idx[j - offset] = i;
         }
       }
     }
-
     for (int j = 0; j < DOF - offset; j++) {
       target_[j] = target + min_pose_idx[j] * (DOF - offset);
     }
-
     float *svel = new float[DOF - offset];
-    float curr_max_abs_svel = 0.0;
     float *evel = new float[DOF - offset];
     int *cAng_cp = new int[DOF];
     int maxDiff = 0;
     arrayNCPY(cAng_cp, currentAng, DOF);
     for (int i = offset; i < DOF; i++) {
       maxDiff = max(maxDiff, abs(currentAng[i] - target_[i - offset][i - offset] * angleDataRatio));
-      svel[i - offset] = (currentAng[i] - previousAng[i]);
-      if (curr_max_abs_svel < abs(currentAng[i] - previousAng[i])) { curr_max_abs_svel = abs(currentAng[i] - previousAng[i]); }
-      evel[i - offset] = (target + ((min_pose_idx[i - offset] + 1 >= gait_len) ? 0 : (min_pose_idx[i - offset] + 1)) * (DOF - offset))[i - offset] - (target + min_pose_idx[i - offset] * (DOF - offset))[i - offset];
+      svel[i - offset] = currentAng[i] - previousAng[i];
+      evel[i - offset] = 0;  //((offset!=0)?nextFrame[i - offset]*angleDataRatio-target_[i - offset]*angleDataRatio:0);
     }
-    if (curr_max_abs_svel < 1) { curr_max_abs_svel = 1; }
 
-    float target_max_abs_svel = 0;
-    for (int i = 0; i < DOF - offset; i++) {
-      if (target_max_abs_svel < abs(target[i] - target[DOF - offset + i])) { target_max_abs_svel = abs(target[i] - target[DOF - offset + i]); };
+    int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;//max(int(round(maxDiff / speedRatio)), 10);
+    // interpolation for each joint
+    for (int i = 0; i <= steps; i++) {
+      for (int j = 0; j < DOF - offset; j++) {
+
+
+
+        ///////////////interpolation///////////////
+        float A = (float)(svel[j] + evel[j]) / pow(steps, 2) - 2 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 3);
+        float B = (float)(-2 * svel[j] - evel[j]) / steps + 3 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 2);
+        calibratedPWM(j + offset, A * pow(i, 3) + B * pow(i, 2) + svel[j] * i + cAng_cp[j + offset]);
+        // delayMicroseconds(700);
+      }
     }
-    if (target_max_abs_svel < 1) { target_max_abs_svel = 1; }
-
-    Serial.print(" target_max_abs_svel: ");
-    Serial.print(target_max_abs_svel);
-    Serial.print("\n curr_max_abs_svel: ");
-    Serial.print(curr_max_abs_svel);
-
-    float max_abs_svel_diff = target_max_abs_svel - curr_max_abs_svel;
-
+    // sync joint
+    float sync_speed[DOF - offset];
     int max_remain_steps = 0;
     for (int j = 0; j < DOF - offset; j++) {
       max_remain_steps = max(max_remain_steps, gait_len - min_pose_idx[j]);
     }
-
-    int steps = max(int(maxDiff), 5);
-
-    int Transit_cycle = 1;
-    float svel_change_per_dt = max_abs_svel_diff / (max_remain_steps + gait_len * Transit_cycle + steps);
-    int rundelay = runDelay * 1000;  // this delay can be changed by remote controller.
-
-    for (int i = 0; i < steps; i++) {
-      for (int j = 0; j < DOF - offset; j++) {
-        //interpolation
-        float A = (float)(svel[j] + evel[j]) / pow(steps, 2) - 2 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 3);
-        float B = (float)(-2 * svel[j] - evel[j]) / steps + 3 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 2);
-        calibratedPWM(j + offset, A * pow(i, 3) + B * pow(i, 2) + svel[j] * i + cAng_cp[j + offset]);
-      }
-      curr_max_abs_svel += svel_change_per_dt;
-      delayMicroseconds(int(rundelay * target_max_abs_svel / curr_max_abs_svel));
-    }
-
-    // sync joint to the end of gait cycle
-
-    float sync_speed[DOF - offset];
+    max_remain_steps *= 5;
     for (int j = 0; j < DOF - offset; j++) {
       sync_speed[j] = (float)(gait_len - min_pose_idx[j]) / max_remain_steps;
     }
-
     float step_counter[DOF - offset] = { 0, 0, 0, 0, 0, 0, 0, 0 };
     float step_counter_pre[DOF - offset] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    for (int k = 0; k < max_remain_steps - 1; k++) {
+    for (int k = 0; k < max_remain_steps; k++) {
       for (int j = 0; j < DOF - offset; j++) {
         step_counter[j] += sync_speed[j];
-        step_counter_pre[j] = step_counter[j];
-        calibratedPWM(j + offset, (target + (min_pose_idx[j] + int(step_counter[j])) * (DOF - offset))[j] * angleDataRatio);
-      }
-      curr_max_abs_svel += svel_change_per_dt;
-      delayMicroseconds(int(rundelay * target_max_abs_svel / curr_max_abs_svel));
-    }
-
-    for (int Trs = 0; Trs < Transit_cycle; Trs++) {
-      for (int k = 0; k < gait_len; k++) {
-        for (int j = 0; j < DOF - offset; j++) {
-          calibratedPWM(j + offset, *(target + k * (DOF - offset) + j) * angleDataRatio);
+        if (step_counter[j] - step_counter_pre[j] >= 1) {
+          step_counter_pre[j] = step_counter[j];
+          calibratedPWM(j + offset, (target + (min_pose_idx[j] + int(step_counter[j])) * (DOF - offset))[j] * angleDataRatio);
         }
-        curr_max_abs_svel += svel_change_per_dt;
-        delayMicroseconds(int(rundelay * target_max_abs_svel / curr_max_abs_svel));
+        // delayMicroseconds(700);
       }
     }
 
@@ -135,29 +157,39 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
   }
 
   else {
-    int *diff = new int[DOF - offset], maxDiff = 0;
-    for (byte i = offset; i < DOF; i++) {
-      diff[i - offset] = currentAng[i] - target[i - offset] * angleDataRatio;
-      maxDiff = max(maxDiff, abs(diff[i - offset]));
+    float *svel = new float[DOF - offset];
+    int *cAng_cp = new int[DOF];
+    int maxDiff = 0;
+    arrayNCPY(cAng_cp, currentAng, DOF);
+    for (int i = offset; i < DOF; i++) {
+      maxDiff = max(maxDiff, abs(currentAng[i] - target[i - offset] * angleDataRatio));
+      svel[i - offset] = currentAng[i] - previousAng[i];
     }
-    int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;  //default speed is 1 degree per step
-
-    for (int s = 0; s <= steps; s++) {
-      for (byte i = offset; i < DOF; i++) {
+    int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;//max(int(round(maxDiff / speedRatio)), 5);
+    for (int i = offset; i < DOF; i++) {
+      svel[i - offset] /= max(steps * 0.06, 1.0);
+    }
+    for (int i = 0; i <= steps; i++) {
+      for (int j = 0; j < DOF - offset; j++) {
 #ifdef BiBoard
-        if (WALKING_DOF == 8 && i > 3 && i < 8)
+        if (WALKING_DOF == 8 && j - offset > 3 && j < 8 - offset)
           continue;
-        if (WALKING_DOF == 12 && i < 4)
+        if (WALKING_DOF == 12 && j - offset < 4)
           continue;
 #endif
-        float dutyAng = (target[i - offset] * angleDataRatio + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * diff[i - offset]));
-        calibratedPWM(i, dutyAng);
+        ///////////////interpolation///////////////
+        float A = (float)(svel[j]) / pow(steps, 2) - 2 * (target[j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 3);
+        float B = (float)(-2 * svel[j]) / steps + 3 * (target[j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 2);
+        calibratedPWM(j + offset, A * pow(i, 3) + B * pow(i, 2) + svel[j] * i + cAng_cp[j + offset]);
+        delayMicroseconds(500);
       }
-      delay((DOF - offset) / 2);
     }
-    delete[] diff;
+    delete[] svel;
+    delete[] cAng_cp;
   }
 }
+
+
 
 // #define WEIGHT 2
 // template <typename T> void transform( T * target, byte angleDataRatio = 1, float speedRatio = 2, byte offset = 0) {  // transformCubic

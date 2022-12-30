@@ -185,13 +185,14 @@ bool newBoard = false;
 #define T_RAMP        'r'
 #define T_RESET       'R'
 #define T_SAVE        's'
-#define T_SERVO_MICROSECOND 'S'
+#define T_SOUND       'S'
 #define T_TILT        't'
 #define T_TEMP        'T'           //call the last skill data received from the serial port
 #define T_MEOW        'u'
 #define T_PRINT_GYRO            'v' //print Gyro data
 #define T_VERBOSELY_PRINT_GYRO  'V' //verbosely print Gyro data
 #define T_WORD        'w'
+#define T_SERVO_MICROSECOND 'W'   //PWM width modulation
 #define T_XLEG        'x'
 #define T_ACCELERATE  '.'
 #define T_DECELERATE  ','
@@ -281,9 +282,14 @@ int angleLimit[][2] = {
   { -80, 200}, { -80, 200}, { -70, 200}, { -80, 200},
 };
 #endif
-int previousAng[DOF];
+
 #ifdef X_LEG
 int currentAng[DOF] = { -30, -80, -45, 0,
+                        0, 0, 0, 0,
+                        75,  75,  -75,  -75,
+                        -55, -55, 55, 55
+                      };
+int previousAng[DOF]= { -30, -80, -45, 0,
                         0, 0, 0, 0,
                         75,  75,  -75,  -75,
                         -55, -55, 55, 55
@@ -294,6 +300,11 @@ int currentAng[DOF] = { -30, -80, -45, 0,
                         75,  75,  75,  75,
                         -55, -55, -55, -55
                       };
+int previousAng[DOF]= {  -30, -80, -45, 0,
+                        0, 0, 0, 0,
+                        75,  75,  75,  75,
+                        -55, -55, -55, -55
+                      };                    
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};
