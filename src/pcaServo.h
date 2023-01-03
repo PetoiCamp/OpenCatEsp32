@@ -81,7 +81,7 @@ class Petoi_PWMServoDriver: public Adafruit_PWMServoDriver {
             model = &servoP1S;
             break;
           case P2K:
-            model = &servoP2K;
+            model = &servoP1L;
             break;
         }
         calcAngleToPulseFactor(s, model->getAngleRange(), model->getMinPulse(), model->getMaxPulse());

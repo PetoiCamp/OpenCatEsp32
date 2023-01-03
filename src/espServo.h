@@ -1,8 +1,8 @@
 #include "PetoiESP32Servo/ESP32Servo.h"
 
 ServoModel servoG41   (180,    SERVO_FREQ,      500,      2500);
-ServoModel servoP1S   (290,    SERVO_FREQ,      500,      2500);//1s/4 = 250ms 250ms/2500us=100Hz
-ServoModel servoP2K   (290,    SERVO_FREQ,      500,      2500);
+ServoModel servoP1S   (270,    SERVO_FREQ,      500,      2500);//1s/4 = 250ms 250ms/2500us=100Hz
+ServoModel servoP1L   (270,    SERVO_FREQ,      500,      2500);
 #ifdef BiBoard2
 #include "pcaServo.h"
 #endif
@@ -65,7 +65,7 @@ void servoSetup() {
         model = &servoP1S;
         break;
       case P2K:
-        model = &servoP2K;
+        model = &servoP1L;
         break;
     }
     servo[s].attach(PWM_pin[s], model);
@@ -160,7 +160,7 @@ void shutServos() {
     //        model = &servoP1S;
     //        break;
     //      case P2K:
-    //        model = &servoP2K;
+    //        model = &servoP1L;
     //        break;
     //    }
     //    servo[s].attach(PWM_pin[s], model);
