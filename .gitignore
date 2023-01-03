@@ -1,3 +1,6 @@
 *.docx
 *.rar
 *.DS_Store
+*.svd
+*.cfg
+debug_custom.json
