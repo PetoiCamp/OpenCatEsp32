@@ -89,7 +89,8 @@ void setup() {
   //  }
   //  loadBySkillName(newCmd);
   //
-
+  allCalibratedPWM(currentAng);  //soft boot for servos
+  delay(500);
   playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef GYRO_PIN
   read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading

@@ -19,7 +19,7 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
   }
 }
 
-void allCalibratedPWM(char *dutyAng, byte offset = 0) {
+void allCalibratedPWM(int *dutyAng, byte offset = 0) {
   for (int8_t i = DOF - 1; i >= offset; i--) {
     calibratedPWM(i, dutyAng[i]);
   }

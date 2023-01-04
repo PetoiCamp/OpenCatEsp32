@@ -230,7 +230,7 @@ float protectiveShift;//reduce the wearing of the potentiometer
 bool initialBoot = true;
 bool safeRest = true;
 
-int delayLong = 14;
+int delayLong = 20;
 int delayMid = 8;
 int delayShort = 2;
 int delayStep = 1;
