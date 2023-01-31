@@ -10,9 +10,14 @@ void read_GPS() {
 }
 #ifdef TOUCH0
 void read_touch() {
-  byte touchPin[] = {TOUCH0, TOUCH1, TOUCH2, TOUCH3,};
+  byte touchPin[] = {
+    TOUCH0,
+    TOUCH1,
+    TOUCH2,
+    TOUCH3,
+  };
   for (byte t = 0; t < 4; t++) {
-    int touchValue = touchRead(touchPin[t]);//do something with the touch?
+    int touchValue = touchRead(touchPin[t]);  //do something with the touch?
     //    PT(touchValue);
     //    PT('\t');
   }
@@ -30,7 +35,7 @@ void readEnvironment() {
   read_GPS();
 }
 
-template <typename T> void arrayNCPY(T * destination, const T * source, int len) { //deep copy regardless of '\0'
+template<typename T> void arrayNCPY(T *destination, const T *source, int len) {  //deep copy regardless of '\0'
   for (int i = 0; i < len; i++)
     destination[i] = source[i];
 }
@@ -52,21 +57,16 @@ template <typename T> void arrayNCPY(T * destination, const T * source, int len)
 BluetoothSerial SerialBT;
 boolean confirmRequestPending = true;
 
-void BTConfirmRequestCallback(uint32_t numVal)
-{
+void BTConfirmRequestCallback(uint32_t numVal) {
   confirmRequestPending = true;
   Serial.println(numVal);
 }
 
-void BTAuthCompleteCallback(boolean success)
-{
+void BTAuthCompleteCallback(boolean success) {
   confirmRequestPending = false;
-  if (success)
-  {
+  if (success) {
     Serial.println("Pairing success!!");
-  }
-  else
-  {
+  } else {
     Serial.println("Pairing failed, rejected by user!!");
   }
 }
@@ -75,7 +75,7 @@ void blueSspSetup() {
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);
-  SerialBT.begin(strcat(readBleID(), "_SSP")); //Bluetooth device name
+  SerialBT.begin(strcat(readBleID(), "_SSP"));  //Bluetooth device name
   Serial.println("The device is started, now you can pair it with bluetooth!");
 }
 
@@ -140,13 +140,12 @@ void read_serial() {
     else if (Serial.available() > 0) {
       String cmdBuffer;  //may overflow after many iterations. I use this method only to support "no line ending" in the serial monitor
       if (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_LISTED_BIN || token == T_MOVE_BIN || token == T_BEEP_BIN || token == T_COLOR) {
-        delay(5); // allow long melody to pass over
+        delay(5);                                 // allow long melody to pass over
         cmdBuffer = Serial.readStringUntil('~');  //'~' ASCII code = 126; may introduce bug when the angle is 126
-      }
-      else
+      } else
         cmdBuffer = Serial.readStringUntil('\n');
       cmdLen = cmdBuffer.length();
-      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char*)dataBuffer;
+      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char *)dataBuffer;
       //      for (int i = 0; i < cmdLen; i++)
       //        destination[i] = cmdBuffer[i];
       arrayNCPY(destination, cmdBuffer.c_str(), cmdLen);
@@ -157,8 +156,7 @@ void read_serial() {
       PTL(freeMemory());
 #endif
     }
-  }
-  else if (SerialBT.available() > 0) {
+  } else if (SerialBT.available() > 0) {
     newCmdIdx = 2;
     token = SerialBT.read();
     if (token == T_SKILL_DATA)
@@ -166,13 +164,12 @@ void read_serial() {
     else if (SerialBT.available() > 0) {
       String cmdBuffer;  //may overflow after many iterations. I use this method only to support "no line ending" in the serial monitor
       if (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_LISTED_BIN || token == T_MOVE_BIN || token == T_BEEP_BIN || token == T_COLOR) {
-        delay(5); // allow long melody to pass over
+        delay(5);                                   // allow long melody to pass over
         cmdBuffer = SerialBT.readStringUntil('~');  //'~' ASCII code = 126; may introduce bug when the angle is 126
-      }
-      else
+      } else
         cmdBuffer = SerialBT.readStringUntil('\n');
       cmdLen = cmdBuffer.length();
-      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char*)dataBuffer;
+      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char *)dataBuffer;
       //      for (int i = 0; i < cmdLen; i++)
       //        destination[i] = cmdBuffer[i];
       arrayNCPY(destination, cmdBuffer.c_str(), cmdLen);
@@ -188,20 +185,24 @@ void read_serial() {
 
 void readSignal() {
 #ifdef IR_PIN
-  if (!deviceConnected) //bluetooth controller will disable the IR receiver
-    read_infrared();  //  newCmdIdx = 1
+  if (!deviceConnected)  //bluetooth controller will disable the IR receiver
+    read_infrared();     //  newCmdIdx = 1
 #endif
   read_serial();  //  newCmdIdx = 2
-  bleLoop();      //  newCmdIdx = 3;
+  detectBle();      //  newCmdIdx = 3;
+  readBle();
+
+
+#ifdef VOICE
+  read_voice();
+#endif
 
   long current = millis();
   if (newCmdIdx)
     idleTimer = millis() + IDLE_LONG * 1000;
   else if (token != T_CALIBRATE && current - idleTimer > 0) {
 
-#ifdef VOICE
-    read_voice();
-#endif
+
 #ifdef CAMERA
     read_camera();
 #endif
@@ -213,7 +214,7 @@ void readSignal() {
     // randomMind -> 100
 
     if (autoSwitch && newCmdIdx == 0)
-      randomMind();//make the robot do random demos
+      randomMind();  //make the robot do random demos
   }
 }
 

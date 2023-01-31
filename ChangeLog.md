@@ -1,5 +1,16 @@
 # Change Log
 
+## Feb 1, 2023
+* Support Petoi voice commander module.
+* Support importing skill data to the Petoi phone app (V1.0.5) to create a customized button.
+* Move the detailed initialization steps to src/OpenCat.h -> initRobot().
+
+## Jan 1, 2023
+* Soft joint startup if the servo has the feature 
+
+## Sep 21, 2022
+* Improve the BLE connection logics
+
 ## Apr 11, 2022
 * Optimized the power saver logics: random mind after idle, then go to rest.
 * Avoid servo jumps caused by shutServo()

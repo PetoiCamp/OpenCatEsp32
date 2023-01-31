@@ -47,21 +47,38 @@ class MyServerCallbacks : public BLEServerCallbacks {
     deviceConnected = false;
   }
 };
-
+int copyShift = 1;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
     if (rxValue.length() > 0) {
-      cmdLen = rxValue.length();
-      token = rxValue[0];
-      char *destination = (token == T_SKILL) ? newCmd : (char *)dataBuffer;
-      for (int i = 1; i < cmdLen; i++)
-        destination[i - 1] = rxValue[i];
-      destination[cmdLen - 1] = '\0';
+      int buffLen = rxValue.length();
+      if (copyShift == 1) {
+        cmdLen = 0;
+        token = rxValue[0];
+      }
+      if (token == T_SKILL_DATA) {
+        for (int i = copyShift; i < buffLen; i++) {
+          dataBuffer[cmdLen++] = rxValue[i];
+        }
+        copyShift = (rxValue[buffLen - 1] == '~') ? 1 : 0;
+      } else {
+        cmdLen = buffLen;
+        char *destination = (token == T_SKILL) ? newCmd : (char *)dataBuffer;
+        for (int i = 1; i < cmdLen; i++)
+          destination[i - 1] = rxValue[i];
+        destination[cmdLen - 1] = '\0';
+      }
       newCmdIdx = 3;
     }
   }
 };
+
+void readBle() {
+  while (token == T_SKILL_DATA && copyShift == 0) {  //wait until the long message is completed
+    delay(1);
+  }
+}
 
 void bleSetup() {
   //  Serial.print("UUID: ");
@@ -107,7 +124,7 @@ void bleWrite(String buff) {
   }
 }
 
-void bleLoop() {
+void detectBle() {
   // disconnecting
   if (!deviceConnected && oldDeviceConnected) {
     delay(50);                    // give the bluetooth stack the chance to get things ready

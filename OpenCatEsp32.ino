@@ -1,10 +1,10 @@
 //modify the model and board definitions
 //***********************
-#define BITTLE    //Petoi 9 DOF robot dog: 1 on head + 8 on leg
+#define BITTLE  //Petoi 9 DOF robot dog: 1 on head + 8 on leg
 //#define NYBBLE  //Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 //#define CUB
 
-#define BiBoard     //ESP32 Board with 12 channels of built-in PWM for joints
+#define BiBoard  //ESP32 Board with 12 channels of built-in PWM for joints
 //#define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
@@ -14,95 +14,30 @@
 //you can also activate the following modes (they will diable the gyro to save programming space)
 //allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
 //#define ULTRASONIC      //for Nybble's ultrasonic sensor
-//#define VOICE           //for LD3320 module
+// #define VOICE  //Petoi Grove voice module
+#define VOICE_LD3320    //for LD3320 module
 //#define CAMERA          //for Mu Vision camera
+//You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
+//Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
+//The battery should be turned on to drive the servos.
+//
+//You can use these 3D printed structures to attach the camera module.
+//https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/MuIntelligentCamera_mount.stl
+//https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/bone.stl
+//After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
+//The tracking demo works the best with a yellow tennis ball or some other round objects. Demo: https://www.youtube.com/watch?v=CxGI-MzCGWM
 
 #include "src/OpenCat.h"
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);//USB serial
+  Serial.begin(115200);  //USB serial
   Serial.setTimeout(5);
   //  Serial1.begin(115200); //second serial port
   while (Serial.available() && Serial.read()) {
     delay(1);
-  }; // empty buffer
-  PTLF("Flush the serial buffer...");
-  PTLF("\n* Start *");
-#ifdef BITTLE
-  PTLF("Bittle");
-#elif defined NYBBLE
-  PTLF("Nybble");
-#elif defined CUB
-  PTLF("Cub");
-#endif
-  while (Serial.available() && Serial.read()); // empty buffer
-  i2cDetect();
-  i2cEepromSetup();
-#ifdef GYRO_PIN
-  imuSetup();
-#endif
-  bleSetup();
-  blueSspSetup();
-  servoSetup();
-  skillList = new SkillList();
-  for (byte i = 0; i < randomMindListLength; i++) {
-    randomBase += choiceWeight[i];
-  }
-
-#ifdef NEOPIXEL_PIN
-  ledSetup();
-#endif
-#ifdef PWM_LED_PIN
-  pinMode(PWM_LED_PIN, OUTPUT);
-#endif
-#ifdef VOLTAGE
-  while (lowBattery());
-#endif
-
-#ifdef IR_PIN
-  irrecv.enableIRIn();
-#endif
-
-  QA();
-  i2c_eeprom_write_byte( EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);//finish the test and mark the board as initialized
-
-#ifdef VOICE
-  voiceSetup();
-#endif
-
-#ifdef CAMERA
-  cameraSetup();
-#endif
-
-  lastCmd[0] = '\0';
-  newCmd[0] = '\0';
-
-  //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
-  //    strcpy(newCmd, "calib");
-  //    exceptions = 0;
-  //  }
-  //  else {// Otherwise start up normally
-  //    strcpy(newCmd, "rest");
-  //    token = 'd';
-  //    newCmdIdx = 6;
-  //  }
-  //  loadBySkillName(newCmd);
-  //
-  allCalibratedPWM(currentAng);  //soft boot for servos
-  delay(500);
-  playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
-#ifdef GYRO_PIN
-  read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  token = (exceptions) ? T_CALIBRATE : T_REST; //put the robot's side on the table to enter calibration posture for attaching legs
-  newCmdIdx = 2;
-#endif
-
-  PTLF("k");
-  PTL("Ready!");
-  idleTimer = millis();
-  beep(24, 50);
-
+  };  // empty buffer
+  initRobot();
 }
 
 void loop() {
@@ -121,7 +56,7 @@ void loop() {
   //  readHuman();
 
   //  //— special behaviors based on sensor events
-  dealWithExceptions(); //low battery, fall over, lifted, etc.
+  dealWithExceptions();  //low battery, fall over, lifted, etc.
 
   //  //— generate behavior by fusing all sensors and instruction
   //  decision();
