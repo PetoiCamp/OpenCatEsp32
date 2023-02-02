@@ -51,11 +51,16 @@ void loop() {
   //  }
   //  //— read environment sensors (low level)
   readEnvironment();
-  readSignal();
-  //  readHuman();
-
   //  //— special behaviors based on sensor events
   dealWithExceptions();  //low battery, fall over, lifted, etc.
+
+  if (tQueue->size() > 0) {
+    tQueue->popTask();
+  } else {
+    taskInterval = -1;
+    readSignal();
+    //  readHuman();
+  }
 
   //  //— generate behavior by fusing all sensors and instruction
   //  decision();

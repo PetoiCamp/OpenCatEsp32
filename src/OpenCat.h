@@ -184,6 +184,7 @@ bool newBoard = false;
 #define T_MOVE_BIN 'M'
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
+#define T_TASK_QUEUE 'q'
 #define T_RAMP 'r'
 #define T_RESET 'R'
 #define T_SAVE 's'
@@ -437,6 +438,7 @@ template<typename T> void printTable(T *list) {
 #include "io.h"
 #include "motion.h"
 #include "skill.h"
+#include "taskQueue.h"
 
 #ifdef ULTRASONIC
 #include "ultrasonic.h"
@@ -518,7 +520,7 @@ void initRobot() {
   token = (exceptions) ? T_CALIBRATE : T_REST;  //put the robot's side on the table to enter calibration posture for attaching legs
   newCmdIdx = 2;
 #endif
-
+  tQueue = new TaskQueue();
   PTLF("k");
   PTL("Ready!");
   idleTimer = millis();
