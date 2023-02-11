@@ -47,7 +47,6 @@ bool EEPROMOverflow = false;
 #define SERIAL_BUFF 100
 
 void i2cDetect() {
-  Wire.begin();
   byte error, address;
   int nDevices;
 
@@ -272,9 +271,6 @@ int dataLen(int8_t p) {
 }
 void i2cEepromSetup()
 {
-  Wire.begin(); // initialise the connection
-  delay(1);
-
   newBoard = newBoardQ(EEPROM_BIRTHMARK_ADDRESS);
 
   if (newBoard) {

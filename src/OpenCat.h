@@ -62,7 +62,7 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-
+#define SOFTWARE_VERSION "B230211" //BiBoard + YYMMDD
 #define BIRTHMARK 'x'  //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
 #define GYRO_PIN
@@ -448,6 +448,7 @@ template<typename T> void printTable(T *list) {
 #include "qualityAssurance.h"
 
 void initRobot() {
+  Wire.begin();
   PTL('k');
   PTLF("Flush the serial buffer...");
   PTLF("\n* Start *");
