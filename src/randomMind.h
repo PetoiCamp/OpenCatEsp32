@@ -32,7 +32,7 @@ void allRandom() {
   byte rangeSet[] = {90, 45, 180, 5, 5, 10, 10, 5, 5};
   //  byte rangeSet[] = {90, 90, 180, 50, 50, 100, 100, 50, 50};
 
-  token = tokenSet[random() % 2];
+  token = tokenSet[rand() % 2];
   cmdLen = rand() % 4 + 4;
   for (byte r = 0; r < cmdLen; r++) {
     byte j = rand() % sizeof(jointSet);

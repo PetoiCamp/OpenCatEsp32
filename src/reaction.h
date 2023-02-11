@@ -359,7 +359,9 @@ void reaction() {
         }
       case T_SKILL:
         {
-          if (strcmp(lastCmd, newCmd) || skill->period <= 1) {  //won't transform for the same gait. skill->period can be NULL!
+          if (!strcmp("x", newCmd)        // x for random skill
+              || strcmp(lastCmd, newCmd)  //won't transform for the same gait.
+              || skill->period <= 1) {    // skill->period can be NULL!
             //it's better to compare skill->skillName and newCmd.
             //but need more logics for non skill cmd in between
             loadBySkillName(newCmd);

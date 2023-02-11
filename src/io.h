@@ -189,7 +189,7 @@ void readSignal() {
     read_infrared();     //  newCmdIdx = 1
 #endif
   read_serial();  //  newCmdIdx = 2
-  detectBle();      //  newCmdIdx = 3;
+  detectBle();    //  newCmdIdx = 3;
   readBle();
 
 
