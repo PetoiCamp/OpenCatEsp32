@@ -62,7 +62,9 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-#define SOFTWARE_VERSION "B230211"  //BiBoard + YYMMDD
+#define SERIAL_TIMEOUT_SHORT 5
+#define SERIAL_TIMEOUT_LONG 100
+#define SOFTWARE_VERSION "B230216"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
 #define GYRO_PIN
@@ -212,12 +214,14 @@ int frame;
 int tStep = 1;
 char token;
 char lastToken;
-#define CMD_LEN 10  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
-char *newCmd = new char[CMD_LEN];
-char *lastCmd = new char[CMD_LEN];
+#define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
+char *newCmd = new char[CMD_LEN + 1];
+char *lastCmd = new char[CMD_LEN + 1];
 int cmdLen;
 byte newCmdIdx = 0;
-int8_t *dataBuffer = new int8_t[1524];
+#define BUFF_LEN 1524
+int8_t *dataBuffer = new int8_t[BUFF_LEN + 1];
+int8_t *bufferPtr;
 int lastVoltage;
 
 bool checkGyro = false;
@@ -326,6 +330,8 @@ int previousAng[DOF] = { -30, -80, -45, 0,
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};
+#define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
+int currentHead[HEAD_GROUP_LEN];
 
 int8_t servoCalib[DOF] = { 0, 0, 0, 0,
                            0, 0, 0, 0,

@@ -33,12 +33,17 @@ public:
       ;
   }
   int lookUp(const char* key) {
-    for (int i = 0; i < sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE; i++) {
+    byte nSkills = sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE;
+    byte randSkillIdx = strcmp(key, "x") ? nSkills : random(nSkills);
+    for (int s = 0; s < nSkills; s++) {
       char thisName[10];
-      strcpy(thisName, this->get(i)->skillName);
+      strcpy(thisName, this->get(s)->skillName);
       byte nameLen = strlen(thisName);
-      if (!strcmp(thisName, key) || thisName[nameLen - 1] == 'L' && !strncmp(thisName, key, nameLen - 1))
-        return i;
+      if (s == randSkillIdx  //random skill
+          || !strcmp(thisName, key)
+          || thisName[nameLen - 1] == 'L' && !strncmp(thisName, key, nameLen - 1)) {
+        return s;
+      }
     }
     return -1;
   }
