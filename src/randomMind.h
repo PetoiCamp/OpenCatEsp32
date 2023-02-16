@@ -30,7 +30,7 @@ long idleTimer;
 long randTimer;
 
 void allRandom() {
-  char tokenSet[] = { T_INDEXED_SIMULTANEOUS_BIN, T_MOVE_BIN };
+  char tokenSet[] = { T_INDEXED_SIMULTANEOUS_BIN, T_INDEXED_SEQUENTIAL_BIN };
   int8_t jointSet[] = { 0, 1, 2, 8, 9, 12, 13, 14, 15 };
   byte rangeSet[] = { 90, 45, 180, 5, 5, 10, 10, 5, 5 };
   //  byte rangeSet[] = {90, 90, 180, 50, 50, 100, 100, 50, 50};

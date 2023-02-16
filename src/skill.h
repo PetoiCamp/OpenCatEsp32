@@ -251,9 +251,13 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (jointIndex < firstMotionJoint && abs(period) > 1)
-          duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
-                 + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && !autoHeadDuringWalkingQ) {
+          if (autoHeadDuringWalkingQ && jointIndex < 4) {
+            duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
+                   + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+          } else
+            duty = currentHead[jointIndex];
+        }
 
         else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;

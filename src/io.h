@@ -117,40 +117,21 @@ void resetCmd() {
     idleThreshold = IDLE_SHORT;
   else
     idleThreshold = IDLE_LONG;
-  if (strcmp(newCmd, "rc") && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_LISTED_BIN && token != T_MOVE_BIN && token != T_SKILL_DATA && token != T_COLOR) {
+  if (strcmp(newCmd, "rc")) {
     strcpy(lastCmd, newCmd);
   }
-  newCmd[0] = '\0';
   newCmdIdx = 0;
   lastToken = token;
   if (token != T_SKILL && token != T_CALIBRATE)
     token = '\0';
-  //  PTL("******");
+  newCmd[0] = '\0';
   cmdLen = 0;
 }
 
-int readSerialUntil(int8_t *destination, char terminator) {
-  int c = 0;
-  do {
-    if (Serial.available())
-      destination[c++] = Serial.read();
-  } while ((char)destination[c - 1] != terminator);
-  destination[c - 1] = '\0';
-  return c - 1;
-}
-
-int readSerialBTUntil(int8_t *destination, char terminator) {
-  int c = 0;
-  do {
-    if (SerialBT.available())
-      destination[c++] = SerialBT.read();
-  } while ((char)destination[c - 1] != terminator);
-  destination[c - 1] = '\0';
-  return c - 1;
-}
 
 void read_serial() {
   if (Serial.available() > 0) {
+    Stream *stream = Serial;
     token = Serial.read();
     delay(1);  //leave enough time for serial read
 
@@ -164,7 +145,7 @@ void read_serial() {
     do {
       if (Serial.available()) {
         if (cmdLen > CMD_LEN && bufferPtr == (int8_t *)newCmd || cmdLen > BUFF_LEN && bufferPtr == dataBuffer) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
-          PTLF("OVF");                                                                                              //when it overflows, the head value of dataBuffer will be changed. why???
+          PTLF("OVF");                                                                                            //when it overflows, the head value of dataBuffer will be changed. why???
           do { Serial.read(); } while (Serial.available());
           PTL(token);
           token = T_SKILL;
@@ -181,29 +162,36 @@ void read_serial() {
     newCmdIdx = 2;
     PTL(cmdLen);
   } else if (SerialBT.available() > 0) {
-    newCmdIdx = 2;
+    Stream *stream = SerialBT;
     token = SerialBT.read();
-    if (token == T_SKILL_DATA)
-      readSerialBTUntil(dataBuffer, '~');
-    else if (SerialBT.available() > 0) {
-      String cmdBuffer;  //may overflow after many iterations. I use this method only to support "no line ending" in the serial monitor
-      if (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_LISTED_BIN || token == T_MOVE_BIN || token == T_BEEP_BIN || token == T_COLOR) {
-        delay(5);                                   // allow long melody to pass over
-        cmdBuffer = SerialBT.readStringUntil('~');  //'~' ASCII code = 126; may introduce bug when the angle is 126
-      } else
-        cmdBuffer = SerialBT.readStringUntil('\n');
-      cmdLen = cmdBuffer.length();
-      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char *)dataBuffer;
-      //      for (int i = 0; i < cmdLen; i++)
-      //        destination[i] = cmdBuffer[i];
-      arrayNCPY(destination, cmdBuffer.c_str(), cmdLen);
-      destination[cmdLen] = '\0';
-      //      PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
-#ifdef DEVELOPER
-      PTF(" memory ");
-      PTL(freeMemory());
-#endif
-    }
+    delay(1);  //leave enough time for serial read
+
+    bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;                         // save in a independent memory to avoid breaking the current running skill
+    char terminator = (token < 'a') ? '~' : '\n';                                                                                  //capitalized tokens use binary encoding for long data commands
+                                                                                                                                   //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+    int timeout = (token == T_SKILL_DATA || token == T_BEEP_BIN || token == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                                                   //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                                                   //so it needs a timeout for the no line ending case
+    long lastTime = 0;
+    do {
+      if (SerialBT.available()) {
+        if (cmdLen > CMD_LEN && bufferPtr == (int8_t *)newCmd || cmdLen > BUFF_LEN && bufferPtr == dataBuffer) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
+          PTLF("OVF");                                                                                            //when it overflows, the head value of dataBuffer will be changed. why???
+          do { SerialBT.read(); } while (SerialBT.available());
+          PTL(token);
+          token = T_SKILL;
+          strcpy(newCmd, "vtF");
+          cmdLen = 7;
+          break;
+        }
+        bufferPtr[cmdLen++] = SerialBT.read();
+        lastTime = millis();
+      }
+    } while ((char)bufferPtr[cmdLen - 1] != terminator && long(millis() - lastTime) < timeout);
+    cmdLen = (bufferPtr[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+    bufferPtr[cmdLen] = '\0';
+    newCmdIdx = 2;
+    PTL(cmdLen);
   }
 }
 

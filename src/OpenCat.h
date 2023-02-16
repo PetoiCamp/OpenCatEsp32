@@ -175,15 +175,15 @@ bool newBoard = false;
 #define T_COLOR 'C'
 #define T_REST 'd'
 #define T_GYRO 'g'
-#define T_HELP 'h'
+#define T_AUTO_HEAD_DURING_WALKING 'h'
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'
 #define T_JOINTS 'j'
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
 #define T_LISTED_BIN 'L'
-#define T_MOVE_ASC 'm'
-#define T_MOVE_BIN 'M'
+#define T_INDEXED_SEQUENTIAL_ASC 'm'
+#define T_INDEXED_SEQUENTIAL_BIN 'M'
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
@@ -228,6 +228,7 @@ bool checkGyro = false;
 bool printGyro = false;
 bool autoSwitch = false;
 bool walkingQ = false;
+bool autoHeadDuringWalkingQ = true;
 bool imuUpdated;
 byte exceptions = 0;
 byte transformSpeed = 2;

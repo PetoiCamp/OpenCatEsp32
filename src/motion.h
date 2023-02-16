@@ -4,6 +4,8 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
   int duty0 = calibratedZeroPosition[i] + currentAng[i] * rotationDirection[i];
   previousAng[i] = currentAng[i];
   currentAng[i] = angle;
+  if (i < HEAD_GROUP_LEN)
+    currentHead[i] = angle;
   int duty = calibratedZeroPosition[i] + angle * rotationDirection[i];
   int steps = speedRatio > 0 ? int(round(abs(duty - duty0) / 1.0 /*degreeStep*/ / speedRatio)) : 0;
   //if default speed is 0, no interpolation will be used
@@ -26,7 +28,7 @@ void allCalibratedPWM(int *dutyAng, byte offset = 0) {
 }
 
 template<typename T> void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0, int runDelay = 8) {
-  if (0){//(offset != 0)) {
+  if (0) {                     //(offset != 0)) {
     T *target_[DOF - offset];  // target_ ： nearest frame in target gait
     for (int j = 0; j < DOF - offset; j++) { target_[j] = target; }
     int min_pose_dis[8] = { 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000 };

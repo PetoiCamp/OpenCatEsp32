@@ -116,6 +116,11 @@ void reaction() {
           }
           break;
         }
+      case T_AUTO_HEAD_DURING_WALKING:
+        {
+          autoHeadDuringWalkingQ = !autoHeadDuringWalkingQ;
+          break;
+        }
       case T_PAUSE:
         {
           tStep = !tStep;             //tStep can be -1
@@ -193,7 +198,7 @@ void reaction() {
           break;
         }
       case T_CALIBRATE:                 //calibration
-      case T_MOVE_ASC:                  //move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
+      case T_INDEXED_SEQUENTIAL_ASC:    //move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
       case T_INDEXED_SIMULTANEOUS_ASC:  //move multiple indexed joints to angles simultaneously (ASCII format entered in the serial monitor)
 #ifdef T_SERVO_MICROSECOND
       case T_SERVO_MICROSECOND:  //send pulse with unit of microsecond to a servo
@@ -217,7 +222,10 @@ void reaction() {
               inLen++;
             }
             targetFrame[target[0]] = target[1];
-
+            if (target[0] < 4 && lastToken == T_SKILL) {
+              currentHead[target[0]] = target[1];
+              autoHeadDuringWalkingQ = false;
+            }
             int angleStep = 0;
             if (token == T_CALIBRATE) {
               checkGyro = false;
@@ -253,7 +261,7 @@ void reaction() {
               }
               PT(token);
               printList(target, 2);
-            } else if (token == T_MOVE_ASC) {
+            } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
               transform(targetFrame, 1, 1);
               delay(10);
             }
@@ -277,14 +285,16 @@ void reaction() {
             delay(5);
           } while (pch != NULL);
           if (token == T_INDEXED_SIMULTANEOUS_ASC) {
-            transform(targetFrame, 1, 0.5);
+            PTL(token);  //make real-time motion instructions more timely
+            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
+              transform(targetFrame, 1, 0.5);
             //            delay(200);
           }
           delete[] pch;
           break;
         }
       // this block handles array like arguments
-      case T_MOVE_BIN:
+      case T_INDEXED_SEQUENTIAL_BIN:
       case T_INDEXED_SIMULTANEOUS_BIN:
         {  //indexed joint motions: joint0, angle0, joint1, angle1, ... (binary encoding)
           int targetFrame[DOF];
@@ -293,13 +303,20 @@ void reaction() {
           }
           for (int i = 0; i < cmdLen; i += 2) {
             targetFrame[bufferPtr[i]] = bufferPtr[i + 1];
-            if (token == T_MOVE_BIN) {
+            if (bufferPtr[i] < 4 && lastToken == T_SKILL) {
+              currentHead[bufferPtr[i]] = bufferPtr[i + 1];
+              autoHeadDuringWalkingQ = false;
+            }
+            if (token == T_INDEXED_SEQUENTIAL_BIN) {
               transform(targetFrame, 1, 2);
               delay(10);
             }
           }
-          if (token == T_INDEXED_SIMULTANEOUS_BIN)
-            transform(targetFrame, 1, transformSpeed);
+          if (token == T_INDEXED_SIMULTANEOUS_BIN) {
+            PTL(token);  //make real-time motion instructions more timely
+            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
+              transform(targetFrame, 1, transformSpeed);
+          }
           break;
         }
       case T_LISTED_BIN:
@@ -362,7 +379,7 @@ void reaction() {
       char lowerToken = tolower(token);
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
-              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || (token == T_INDEXED_SIMULTANEOUS_BIN && skill->period > 1) || token == T_PAUSE || token == T_TILT))
+              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || skill->period > 1 && (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SIMULTANEOUS_ASC) || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();
