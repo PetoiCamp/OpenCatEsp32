@@ -62,8 +62,8 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-#define SERIAL_TIMEOUT_SHORT 5
-#define SERIAL_TIMEOUT_LONG 100
+#define SERIAL_TIMEOUT_SHORT 2
+#define SERIAL_TIMEOUT_LONG 50
 #define SOFTWARE_VERSION "B230216"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
@@ -223,6 +223,9 @@ byte newCmdIdx = 0;
 int8_t *dataBuffer = new int8_t[BUFF_LEN + 1];
 int8_t *bufferPtr;
 int lastVoltage;
+char terminator;
+int serialTimeout;
+long lastSerialTime = 0;
 
 bool checkGyro = false;
 bool printGyro = false;

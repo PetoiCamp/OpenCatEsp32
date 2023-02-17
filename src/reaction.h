@@ -379,7 +379,7 @@ void reaction() {
       char lowerToken = tolower(token);
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
-              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || skill->period > 1 && (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SIMULTANEOUS_ASC) || token == T_PAUSE || token == T_TILT))
+              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || skill->period >= 1 && (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SIMULTANEOUS_ASC) || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();

@@ -47,36 +47,39 @@ class MyServerCallbacks : public BLEServerCallbacks {
     deviceConnected = false;
   }
 };
-int copyShift = 1;
+byte bleMessageShift = 1;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
     if (rxValue.length() > 0) {
       int buffLen = rxValue.length();
-      if (copyShift == 1) {
+      if (bleMessageShift) {
         cmdLen = 0;
         token = rxValue[0];
+        bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
+        terminator = (token < 'a') ? '~' : '\n';
+        serialTimeout = (token == T_SKILL_DATA || token == T_BEEP_BIN || token == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
       }
-      if (token == T_SKILL_DATA) {
-        for (int i = copyShift; i < buffLen; i++) {
-          dataBuffer[cmdLen++] = rxValue[i];
-        }
-        copyShift = (rxValue[buffLen - 1] == '~') ? 1 : 0;
-      } else {
-        cmdLen = buffLen;
-        char *destination = (token == T_SKILL) ? newCmd : (char *)dataBuffer;
-        for (int i = 1; i < cmdLen; i++)
-          destination[i - 1] = rxValue[i];
-        destination[cmdLen - 1] = '\0';
+      for (int i = bleMessageShift; i < buffLen; i++) {
+        bufferPtr[cmdLen++] = rxValue[i];
       }
-      newCmdIdx = 3;
+      PTL(cmdLen);
+      bleMessageShift = 0;
+      lastSerialTime = millis();
     }
   }
 };
 
 void readBle() {
-  while (token == T_SKILL_DATA && copyShift == 0) {  //wait until the long message is completed
-    delay(1);
+  if (!bleMessageShift) {
+    while ((char)bufferPtr[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)  //wait until the long message is completed
+      delay(1);
+    cmdLen = (bufferPtr[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+          PT("FIN");PTL(cmdLen);
+    bufferPtr[cmdLen] = '\0';
+    newCmdIdx = 2;
+    PT((char *)bufferPtr);
+    bleMessageShift = 1;
   }
 }
 

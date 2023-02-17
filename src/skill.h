@@ -257,9 +257,8 @@ public:
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
             duty = currentHead[jointIndex];
-        }
-
-        else {
+          //  duty = currentAng[jointIndex] + max(-10, min(10, (currentHead[jointIndex] - currentAng[jointIndex])));
+        } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
         //          PT(duty); PT('\t');

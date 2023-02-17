@@ -4,8 +4,6 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
   int duty0 = calibratedZeroPosition[i] + currentAng[i] * rotationDirection[i];
   previousAng[i] = currentAng[i];
   currentAng[i] = angle;
-  if (i < HEAD_GROUP_LEN)
-    currentHead[i] = angle;
   int duty = calibratedZeroPosition[i] + angle * rotationDirection[i];
   int steps = speedRatio > 0 ? int(round(abs(duty - duty0) / 1.0 /*degreeStep*/ / speedRatio)) : 0;
   //if default speed is 0, no interpolation will be used
@@ -147,6 +145,8 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef BiBoard
+        if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
+          continue;
         if (WALKING_DOF == 8 && i > 3 && i < 8)
           continue;
         if (WALKING_DOF == 12 && i < 4)
