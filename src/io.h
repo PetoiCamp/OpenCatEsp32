@@ -1,3 +1,4 @@
+#include "soc/gpio_sig_map.h"
 void read_sound() {
 }
 int read_light() {
@@ -111,75 +112,60 @@ void blueSspSetup() {
 
 //end of Richard Li's code
 
-int readSerialUntil(int8_t *destination, char terminator) {
-  int c = 0;
-  do {
-    if (Serial.available())
-      destination[c++] = Serial.read();
-  } while ((char)destination[c - 1] != terminator);
-  destination[c - 1] = '\0';
-  return c - 1;
+void resetCmd() {
+  //  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
+  if (lastToken == T_SKILL)
+    idleThreshold = IDLE_SHORT;
+  else
+    idleThreshold = IDLE_LONG;
+  if (strcmp(newCmd, "rc")) {
+    strcpy(lastCmd, newCmd);
+  }
+  newCmdIdx = 0;
+  lastToken = token;
+  if (token != T_SKILL && token != T_CALIBRATE)
+    token = '\0';
+  newCmd[0] = '\0';
+  cmdLen = 0;
 }
 
-int readSerialBTUntil(int8_t *destination, char terminator) {
-  int c = 0;
-  do {
-    if (SerialBT.available())
-      destination[c++] = SerialBT.read();
-  } while ((char)destination[c - 1] != terminator);
-  destination[c - 1] = '\0';
-  return c - 1;
-}
 
 void read_serial() {
-  if (Serial.available() > 0) {
+  Stream *serialPort = NULL;
+  if (Serial.available()) {
+    serialPort = &Serial;
+  } else if (SerialBT.available()) {
+    serialPort = &SerialBT;
+  }
+  if (serialPort) {
+    token = serialPort->read();
+    delay(1);                                                                                                                        //leave enough time for serial read
+    bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;                           // save in a independent memory to avoid breaking the current running skill
+    terminator = (token < 'a') ? '~' : '\n';                                                                                         //capitalized tokens use binary encoding for long data commands
+                                                                                                                                     //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+    serialTimeout = (token == T_SKILL_DATA || token == T_BEEP_BIN || token == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                                                     //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                                                     //so it needs a timeout for the no line ending case
+    lastSerialTime = 0;
+    do {
+      if (serialPort->available()) {
+        if (cmdLen > CMD_LEN && bufferPtr == (int8_t *)newCmd || cmdLen > BUFF_LEN && bufferPtr == dataBuffer) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
+          PTLF("OVF");                                                                                            //when it overflows, the head value of dataBuffer will be changed. why???
+          do { serialPort->read(); } while (serialPort->available());
+          PTL(token);
+          token = T_SKILL;
+          strcpy(newCmd, "vtF");
+          cmdLen = 7;
+          break;
+        }
+        bufferPtr[cmdLen++] = serialPort->read();
+        lastSerialTime = millis();
+      }
+    } while ((char)bufferPtr[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
+    cmdLen = (bufferPtr[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+    bufferPtr[cmdLen] = '\0';
     newCmdIdx = 2;
-    token = Serial.read();
-    if (token == T_SKILL_DATA)
-      readSerialUntil(dataBuffer, '~');
-    else if (Serial.available() > 0) {
-      String cmdBuffer;  //may overflow after many iterations. I use this method only to support "no line ending" in the serial monitor
-      if (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_LISTED_BIN || token == T_MOVE_BIN || token == T_BEEP_BIN || token == T_COLOR) {
-        delay(5);                                 // allow long melody to pass over
-        cmdBuffer = Serial.readStringUntil('~');  //'~' ASCII code = 126; may introduce bug when the angle is 126
-      } else
-        cmdBuffer = Serial.readStringUntil('\n');
-      cmdLen = cmdBuffer.length();
-      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char *)dataBuffer;
-      //      for (int i = 0; i < cmdLen; i++)
-      //        destination[i] = cmdBuffer[i];
-      arrayNCPY(destination, cmdBuffer.c_str(), cmdLen);
-      destination[cmdLen] = '\0';
-      //      PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
-#ifdef DEVELOPER
-      PTF(" memory ");
-      PTL(freeMemory());
-#endif
-    }
-  } else if (SerialBT.available() > 0) {
-    newCmdIdx = 2;
-    token = SerialBT.read();
-    if (token == T_SKILL_DATA)
-      readSerialBTUntil(dataBuffer, '~');
-    else if (SerialBT.available() > 0) {
-      String cmdBuffer;  //may overflow after many iterations. I use this method only to support "no line ending" in the serial monitor
-      if (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_LISTED_BIN || token == T_MOVE_BIN || token == T_BEEP_BIN || token == T_COLOR) {
-        delay(5);                                   // allow long melody to pass over
-        cmdBuffer = SerialBT.readStringUntil('~');  //'~' ASCII code = 126; may introduce bug when the angle is 126
-      } else
-        cmdBuffer = SerialBT.readStringUntil('\n');
-      cmdLen = cmdBuffer.length();
-      char *destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char *)dataBuffer;
-      //      for (int i = 0; i < cmdLen; i++)
-      //        destination[i] = cmdBuffer[i];
-      arrayNCPY(destination, cmdBuffer.c_str(), cmdLen);
-      destination[cmdLen] = '\0';
-      //      PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
-#ifdef DEVELOPER
-      PTF(" memory ");
-      PTL(freeMemory());
-#endif
-    }
+    PTL(cmdLen);
   }
 }
 

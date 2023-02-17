@@ -64,23 +64,6 @@ bool lowBattery() {
 }
 #endif
 
-void resetCmd() {
-  //  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
-  if (lastToken == T_SKILL)
-    idleThreshold = IDLE_SHORT;
-  else
-    idleThreshold = IDLE_LONG;
-  if (strcmp(newCmd, "rc") && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_LISTED_BIN && token != T_MOVE_BIN && token != T_SKILL_DATA && token != T_COLOR) {
-    strcpy(lastCmd, newCmd);
-  }
-  newCmd[0] = '\0';
-  newCmdIdx = 0;
-  lastToken = token;
-  if (token != T_SKILL && token != T_CALIBRATE)
-    token = '\0';
-  //  PTL("******");
-}
-
 void reaction() {
   if (newCmdIdx) {
     //    PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
@@ -104,6 +87,7 @@ void reaction() {
       tStep = 1;
       printToken('p');
     }
+
     switch (token) {
       case T_GYRO:
       case T_PRINT_GYRO:
@@ -130,6 +114,11 @@ void reaction() {
             ramp = -ramp;
             token = ramp > 0 ? 'R' : 'r';  //G for activated gyro
           }
+          break;
+        }
+      case T_AUTO_HEAD_DURING_WALKING:
+        {
+          autoHeadDuringWalkingQ = !autoHeadDuringWalkingQ;
           break;
         }
       case T_PAUSE:
@@ -180,11 +169,11 @@ void reaction() {
 #ifdef ULTRASONIC
       case T_COLOR:
         {
-          long color = ((long)(dataBuffer[0]) << 16) + ((long)(dataBuffer[1]) << 8) + (long)(dataBuffer[2]);
-          if (dataBuffer[4] == -1)  //no special effect
-            mRUS04.SetRgbColor(E_RGB_INDEX(dataBuffer[3]), color);
+          long color = ((long)(bufferPtr[0]) << 16) + ((long)(bufferPtr[1]) << 8) + (long)(bufferPtr[2]);
+          if (bufferPtr[4] == -1)  //no special effect
+            mRUS04.SetRgbColor(E_RGB_INDEX(bufferPtr[3]), color);
           else
-            mRUS04.SetRgbEffect(E_RGB_INDEX(dataBuffer[3]), color, dataBuffer[4]);
+            mRUS04.SetRgbEffect(E_RGB_INDEX(bufferPtr[3]), color, bufferPtr[4]);
           break;
         }
 #endif
@@ -209,7 +198,7 @@ void reaction() {
           break;
         }
       case T_CALIBRATE:                 //calibration
-      case T_MOVE_ASC:                  //move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
+      case T_INDEXED_SEQUENTIAL_ASC:    //move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
       case T_INDEXED_SIMULTANEOUS_ASC:  //move multiple indexed joints to angles simultaneously (ASCII format entered in the serial monitor)
 #ifdef T_SERVO_MICROSECOND
       case T_SERVO_MICROSECOND:  //send pulse with unit of microsecond to a servo
@@ -221,8 +210,7 @@ void reaction() {
           int targetFrame[DOF];
           arrayNCPY(targetFrame, currentAng, DOF);
           char *pch;
-          char *input = (token == T_TILT) ? newCmd : (char *)dataBuffer;
-          pch = strtok((char *)input, " ,");
+          pch = strtok((char *)bufferPtr, " ,");
           do {  //it supports combining multiple commands at one time
             //for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
             //the combined commands should be less than four. string len <=30 to be exact.
@@ -234,7 +222,10 @@ void reaction() {
               inLen++;
             }
             targetFrame[target[0]] = target[1];
-
+            if (target[0] < 4 && lastToken == T_SKILL) {
+              currentHead[target[0]] = target[1];
+              autoHeadDuringWalkingQ = false;
+            }
             int angleStep = 0;
             if (token == T_CALIBRATE) {
               checkGyro = false;
@@ -270,7 +261,7 @@ void reaction() {
               }
               PT(token);
               printList(target, 2);
-            } else if (token == T_MOVE_ASC) {
+            } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
               transform(targetFrame, 1, 1);
               delay(10);
             }
@@ -294,14 +285,16 @@ void reaction() {
             delay(5);
           } while (pch != NULL);
           if (token == T_INDEXED_SIMULTANEOUS_ASC) {
-            transform(targetFrame, 1, 0.5);
+            PTL(token);  //make real-time motion instructions more timely
+            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
+              transform(targetFrame, 1, 0.5);
             //            delay(200);
           }
           delete[] pch;
           break;
         }
       // this block handles array like arguments
-      case T_MOVE_BIN:
+      case T_INDEXED_SEQUENTIAL_BIN:
       case T_INDEXED_SIMULTANEOUS_BIN:
         {  //indexed joint motions: joint0, angle0, joint1, angle1, ... (binary encoding)
           int targetFrame[DOF];
@@ -309,25 +302,32 @@ void reaction() {
             targetFrame[i] = currentAng[i];
           }
           for (int i = 0; i < cmdLen; i += 2) {
-            targetFrame[dataBuffer[i]] = dataBuffer[i + 1];
-            if (token == T_MOVE_BIN) {
+            targetFrame[bufferPtr[i]] = bufferPtr[i + 1];
+            if (bufferPtr[i] < 4 && lastToken == T_SKILL) {
+              currentHead[bufferPtr[i]] = bufferPtr[i + 1];
+              autoHeadDuringWalkingQ = false;
+            }
+            if (token == T_INDEXED_SEQUENTIAL_BIN) {
               transform(targetFrame, 1, 2);
               delay(10);
             }
           }
-          if (token == T_INDEXED_SIMULTANEOUS_BIN)
-            transform(targetFrame, 1, transformSpeed);
+          if (token == T_INDEXED_SIMULTANEOUS_BIN) {
+            PTL(token);  //make real-time motion instructions more timely
+            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
+              transform(targetFrame, 1, transformSpeed);
+          }
           break;
         }
       case T_LISTED_BIN:
-        {                                            //list of all 16 joint: angle0, angle2,... angle15 (binary encoding)
-          transform(dataBuffer, 1, transformSpeed);  //need to add angleDataRatio if the angles are large
+        {                                           //list of all 16 joint: angle0, angle2,... angle15 (binary encoding)
+          transform(bufferPtr, 1, transformSpeed);  //need to add angleDataRatio if the angles are large
           break;
         }
       case T_BEEP_BIN:
         {
           for (byte b = 0; b < cmdLen / 2; b++)
-            beep(dataBuffer[2 * b], 1000 / dataBuffer[2 * b + 1]);
+            beep(bufferPtr[2 * b], 1000 / bufferPtr[2 * b + 1]);
           break;
         }
       case T_TEMP:
@@ -335,7 +335,7 @@ void reaction() {
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
           if (skill != NULL)
             delete[] skill;
-          skill = new Skill(dataBuffer);
+          skill = new Skill(bufferPtr);
           //          skill->info();
           skill->transformToSkill(skill->nearestFrame());
           printToken(token);
@@ -346,11 +346,11 @@ void reaction() {
         {  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
           if (skill != NULL)
             delete[] skill;
-          skill = new Skill(dataBuffer);
+          skill = new Skill(bufferPtr);
           skill->transformToSkill(skill->nearestFrame());
           unsigned int i2cEepromAddress = SERIAL_BUFF + 2 + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
           i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);
-          copydataFromBufferToI2cEeprom(i2cEepromAddress, dataBuffer);
+          copydataFromBufferToI2cEeprom(i2cEepromAddress, bufferPtr);
           newCmdIdx = 0;
           newCmd[0] = '\0';
           token = T_SKILL;
@@ -377,10 +377,9 @@ void reaction() {
     if (token != T_SKILL || skill->period > 0) {
       printToken();  //postures, gaits and other tokens can confirm completion by sending the token back
       char lowerToken = tolower(token);
-      if ((lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP
-           || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE)
-            && lastToken == T_SKILL
-          || token == T_PAUSE || token == T_TILT)
+      if (lastToken == T_SKILL
+          && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
+              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || skill->period >= 1 && (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SIMULTANEOUS_ASC) || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();

@@ -62,7 +62,9 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-#define SOFTWARE_VERSION "B230211"  //BiBoard + YYMMDD
+#define SERIAL_TIMEOUT_SHORT 2
+#define SERIAL_TIMEOUT_LONG 50
+#define SOFTWARE_VERSION "B230216"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
 #define GYRO_PIN
@@ -173,15 +175,15 @@ bool newBoard = false;
 #define T_COLOR 'C'
 #define T_REST 'd'
 #define T_GYRO 'g'
-#define T_HELP 'h'
+#define T_AUTO_HEAD_DURING_WALKING 'h'
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'
 #define T_JOINTS 'j'
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
 #define T_LISTED_BIN 'L'
-#define T_MOVE_ASC 'm'
-#define T_MOVE_BIN 'M'
+#define T_INDEXED_SEQUENTIAL_ASC 'm'
+#define T_INDEXED_SEQUENTIAL_BIN 'M'
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
@@ -212,18 +214,24 @@ int frame;
 int tStep = 1;
 char token;
 char lastToken;
-#define CMD_LEN 10  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
-char *newCmd = new char[CMD_LEN];
-char *lastCmd = new char[CMD_LEN];
+#define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
+char *newCmd = new char[CMD_LEN + 1];
+char *lastCmd = new char[CMD_LEN + 1];
 int cmdLen;
 byte newCmdIdx = 0;
-int8_t *dataBuffer = new int8_t[1524];
+#define BUFF_LEN 1524
+int8_t *dataBuffer = new int8_t[BUFF_LEN + 1];
+int8_t *bufferPtr;
 int lastVoltage;
+char terminator;
+int serialTimeout;
+long lastSerialTime = 0;
 
 bool checkGyro = false;
 bool printGyro = false;
 bool autoSwitch = false;
 bool walkingQ = false;
+bool autoHeadDuringWalkingQ = true;
 bool imuUpdated;
 byte exceptions = 0;
 byte transformSpeed = 2;
@@ -326,6 +334,8 @@ int previousAng[DOF] = { -30, -80, -45, 0,
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};
+#define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
+int currentHead[HEAD_GROUP_LEN];
 
 int8_t servoCalib[DOF] = { 0, 0, 0, 0,
                            0, 0, 0, 0,

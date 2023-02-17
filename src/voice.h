@@ -2,7 +2,7 @@
 #define MAX_CUSTOMIZED_CMD 10
 
 String customizedCmdList[] = {
-  "kbalance", "ksit", "d", "m0 80 0 -80 0 0", "khi", "krc", "kvtF", "kck", "kjy", "kstr"//define up to 10 customized commands.
+  "kbalance", "ksit", "d", "m0 80 0 -80 0 0", "khi", "krc", "kvtF", "kck", "kjy", "kstr"  //define up to 10 customized commands.
 };
 int listLength = 0;
 
@@ -11,7 +11,7 @@ void voiceSetup() {
   Serial2.begin(SERIAL2_BAUD_RATE);
   Serial2.setTimeout(5);
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
-  PTLF("Number of customized commands on the main board: ");
+  PTLF("Number of customized voice commands on the main board: ");
   PTL(listLength);
 }
 
@@ -29,10 +29,8 @@ void read_voice() {
         if (index < listLength) {
           temp = customizedCmdList[index];
           token = temp[0];
-          if (token == T_SKILL)
-            strcpy(newCmd, temp.c_str() + 1);
-          else
-            strcpy((char*)dataBuffer, temp.c_str() + 1);
+          bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
+          strcpy((char *)bufferPtr, temp.c_str() + 1);
         } else {
           PTLF("Undefined!");
         }

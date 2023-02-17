@@ -31,7 +31,7 @@
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);  //USB serial
-  Serial.setTimeout(5);
+  Serial.setTimeout(SERIAL_TIMEOUT_SHORT);
   //  Serial1.begin(115200); //second serial port
   while (Serial.available() && Serial.read()) {
     delay(1);

@@ -33,12 +33,17 @@ public:
       ;
   }
   int lookUp(const char* key) {
-    for (int i = 0; i < sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE; i++) {
+    byte nSkills = sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE;
+    byte randSkillIdx = strcmp(key, "x") ? nSkills : random(nSkills);
+    for (int s = 0; s < nSkills; s++) {
       char thisName[10];
-      strcpy(thisName, this->get(i)->skillName);
+      strcpy(thisName, this->get(s)->skillName);
       byte nameLen = strlen(thisName);
-      if (!strcmp(thisName, key) || thisName[nameLen - 1] == 'L' && !strncmp(thisName, key, nameLen - 1))
-        return i;
+      if (s == randSkillIdx  //random skill
+          || !strcmp(thisName, key)
+          || thisName[nameLen - 1] == 'L' && !strncmp(thisName, key, nameLen - 1)) {
+        return s;
+      }
     }
     return -1;
   }
@@ -246,11 +251,14 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (jointIndex < firstMotionJoint && abs(period) > 1)
-          duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
-                 + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
-
-        else {
+        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && !autoHeadDuringWalkingQ) {
+          if (autoHeadDuringWalkingQ && jointIndex < 4) {
+            duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
+                   + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+          } else
+            duty = currentHead[jointIndex];
+          //  duty = currentAng[jointIndex] + max(-10, min(10, (currentHead[jointIndex] - currentAng[jointIndex])));
+        } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
         //          PT(duty); PT('\t');

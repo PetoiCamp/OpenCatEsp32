@@ -26,7 +26,7 @@ void allCalibratedPWM(int *dutyAng, byte offset = 0) {
 }
 
 template<typename T> void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0, int runDelay = 8) {
-  if (0){//(offset != 0)) {
+  if (0) {                     //(offset != 0)) {
     T *target_[DOF - offset];  // target_ ： nearest frame in target gait
     for (int j = 0; j < DOF - offset; j++) { target_[j] = target; }
     int min_pose_dis[8] = { 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000 };
@@ -145,6 +145,8 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef BiBoard
+        if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
+          continue;
         if (WALKING_DOF == 8 && i > 3 && i < 8)
           continue;
         if (WALKING_DOF == 12 && i < 4)
