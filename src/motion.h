@@ -137,6 +137,8 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
   else {
     int *diff = new int[DOF - offset], maxDiff = 0;
     for (byte i = offset; i < DOF; i++) {
+      if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
+        continue;
       diff[i - offset] = currentAng[i] - target[i - offset] * angleDataRatio;
       maxDiff = max(maxDiff, abs(diff[i - offset]));
     }
@@ -145,8 +147,8 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef BiBoard
-        if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
-          continue;
+        // if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
+        //   continue;
         if (WALKING_DOF == 8 && i > 3 && i < 8)
           continue;
         if (WALKING_DOF == 12 && i < 4)

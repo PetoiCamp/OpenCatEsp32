@@ -222,7 +222,7 @@ void reaction() {
               inLen++;
             }
             targetFrame[target[0]] = target[1];
-            if (target[0] < 4 && lastToken == T_SKILL) {
+            if (token == T_INDEXED_SIMULTANEOUS_ASC && target[0] < 4 && lastToken == T_SKILL) {
               currentHead[target[0]] = target[1];
               autoHeadDuringWalkingQ = false;
             }
@@ -379,7 +379,7 @@ void reaction() {
       char lowerToken = tolower(token);
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
-              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || skill->period >= 1 && (token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SIMULTANEOUS_ASC) || token == T_PAUSE || token == T_TILT))
+              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_AUTO_HEAD_DURING_WALKING || skill->period >= 1 && lowerToken == T_INDEXED_SIMULTANEOUS_ASC || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();
