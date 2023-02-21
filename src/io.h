@@ -36,9 +36,10 @@ void readEnvironment() {
   read_GPS();
 }
 
-template<typename T> void arrayNCPY(T *destination, const T *source, int len) {  //deep copy regardless of '\0'
-  for (int i = 0; i < len; i++)
-    destination[i] = source[i];
+template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *source, int len) {  //deep copy regardless of '\0'
+  for (int i = 0; i < len; i++) {
+    destination[i] = min((T1)125, max((T1)-125, source[i]));
+  }
 }
 
 //— read master computer’s signals (middle level) —
@@ -113,7 +114,7 @@ void blueSspSetup() {
 //end of Richard Li's code
 
 void resetCmd() {
-  //  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
+  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
   if (lastToken == T_SKILL)
     idleThreshold = IDLE_SHORT;
   else
@@ -127,6 +128,7 @@ void resetCmd() {
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
+  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
 }
 
 
@@ -139,13 +141,14 @@ void read_serial() {
   }
   if (serialPort) {
     token = serialPort->read();
-    delay(1);                                                                                                                        //leave enough time for serial read
-    bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;                           // save in a independent memory to avoid breaking the current running skill
-    terminator = (token < 'a') ? '~' : '\n';                                                                                         //capitalized tokens use binary encoding for long data commands
-                                                                                                                                     //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
-    serialTimeout = (token == T_SKILL_DATA || token == T_BEEP_BIN || token == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
-                                                                                                                                     //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
-                                                                                                                                     //so it needs a timeout for the no line ending case
+    lowerToken = tolower(token);
+    delay(1);                                                                                                                                              //leave enough time for serial read
+    bufferPtr = (token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) ? (int8_t *)newCmd : dataBuffer;  // save in a independent memory to avoid breaking the current running skill
+    terminator = (token < 'a') ? '~' : '\n';                                                                                                               //capitalized tokens use binary encoding for long data commands
+                                                                                                                                                           //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+    serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;                                          //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                                                                           //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                                                                           //so it needs a timeout for the no line ending case
     lastSerialTime = 0;
     do {
       if (serialPort->available()) {
@@ -154,8 +157,7 @@ void read_serial() {
           do { serialPort->read(); } while (serialPort->available());
           PTL(token);
           token = T_SKILL;
-          strcpy(newCmd, "vtF");
-          cmdLen = 7;
+          strcpy(newCmd, "balance");
           break;
         }
         bufferPtr[cmdLen++] = serialPort->read();

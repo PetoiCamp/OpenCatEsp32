@@ -66,6 +66,7 @@ bool lowBattery() {
 
 void reaction() {
   if (newCmdIdx) {
+    lowerToken = tolower(token);
     //    PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
@@ -74,7 +75,7 @@ void reaction() {
     }
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
-    if (newCmdIdx < 5 && token != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT)
+    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT)
       beep(15 + newCmdIdx, 5);  //ToDo: check the muted sound when newCmdIdx = -1
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
@@ -114,11 +115,6 @@ void reaction() {
             ramp = -ramp;
             token = ramp > 0 ? 'R' : 'r';  //G for activated gyro
           }
-          break;
-        }
-      case T_AUTO_HEAD_DURING_WALKING:
-        {
-          autoHeadDuringWalkingQ = !autoHeadDuringWalkingQ;
           break;
         }
       case T_PAUSE:
@@ -177,6 +173,16 @@ void reaction() {
           break;
         }
 #endif
+      case ';':
+        {
+          setServoP(P_SOFT);
+          break;
+        }
+      case ':':
+        {
+          setServoP(P_HARD);
+          break;
+        }
       case T_SAVE:
         {
           PTLF("save offset");
@@ -207,115 +213,148 @@ void reaction() {
       case T_MEOW:  //meow
       case T_BEEP:  //beep(tone, duration): tone 0 is pause, duration range is 0~255
         {
-          int targetFrame[DOF];
-          arrayNCPY(targetFrame, currentAng, DOF);
-          char *pch;
-          pch = strtok((char *)bufferPtr, " ,");
-          do {  //it supports combining multiple commands at one time
-            //for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
-            //the combined commands should be less than four. string len <=30 to be exact.
-            int target[2] = {};
-            byte inLen = 0;
-            for (byte b = 0; b < 2 && pch != NULL; b++) {
-              target[b] = atoi(pch);
-              pch = strtok(NULL, " ,\t");
-              inLen++;
+          if (token == T_INDEXED_SIMULTANEOUS_ASC && cmdLen == 0)
+            manualHeadQ = false;
+          else {
+            int targetFrame[DOF];
+            // arrayNCPY(targetFrame, currentAng, DOF);
+            for (int i = 0; i < DOF; i++) {
+              targetFrame[i] = currentAng[i] - currentAdjust[i];
             }
-            targetFrame[target[0]] = target[1];
-            if (token == T_INDEXED_SIMULTANEOUS_ASC && target[0] < 4 && lastToken == T_SKILL) {
-              currentHead[target[0]] = target[1];
-              autoHeadDuringWalkingQ = false;
-            }
-            int angleStep = 0;
-            if (token == T_CALIBRATE) {
-              checkGyro = false;
-              if (lastToken != T_CALIBRATE) {
-#ifdef T_SERVO_MICROSECOND
-                setServoP(P_HARD);
-#endif
-                strcpy(newCmd, "calib");
-                loadBySkillName(newCmd);
+            char *pch;
+            pch = strtok((char *)bufferPtr, " ,");
+            nonHeadJointQ = false;
+            do {  //it supports combining multiple commands at one time
+              //for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
+              //the combined commands should be less than four. string len <=30 to be exact.
+              int target[2] = {};
+              byte inLen = 0;
+              for (byte b = 0; b < 2 && pch != NULL; b++) {
+                target[b] = atoi(pch);
+                pch = strtok(NULL, " ,\t");
+                inLen++;
               }
-              if (inLen == 2) {
-                if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is adding 2 and 1009 is adding 9 degrees
-                  target[1] = servoCalib[target[0]] + target[1] - 1000;
-                } else if (target[1] <= -1001) {  // Using -1001 for incremental calibration. -1001 is removing 1 degree, 1002 is removing 2 and 1009 is removing 9 degrees
-                  target[1] = servoCalib[target[0]] + target[1] + 1000;
+              targetFrame[target[0]] = target[1];
+              if (token == T_INDEXED_SIMULTANEOUS_ASC) {
+                if (target[0] < 4) {
+                  targetHead[target[0]] = target[1];
+                  manualHeadQ = true;
+                } else nonHeadJointQ = true;
+              }
+              if (token == T_CALIBRATE) {
+                checkGyro = false;
+                if (lastToken != T_CALIBRATE) {
+#ifdef T_SERVO_MICROSECOND
+                  setServoP(P_HARD);
+#endif
+                  strcpy(newCmd, "calib");
+                  loadBySkillName(newCmd);
                 }
-                servoCalib[target[0]] = target[1];
-              }
+                if (inLen == 2) {
+                  if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is adding 2 and 1009 is adding 9 degrees
+                    target[1] = servoCalib[target[0]] + target[1] - 1000;
+                  } else if (target[1] <= -1001) {  // Using -1001 for incremental calibration. -1001 is removing 1 degree, 1002 is removing 2 and 1009 is removing 9 degrees
+                    target[1] = servoCalib[target[0]] + target[1] + 1000;
+                  }
+                  servoCalib[target[0]] = target[1];
+                }
 
-              int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-              int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
+                int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef BiBoard
-              servo[actualServoIndex].write(duty);
+                servo[actualServoIndex].write(duty);
 #else
-              pwm.writeAngle(actualServoIndex, duty);
+                pwm.writeAngle(actualServoIndex, duty);
 #endif
-              //              printRange(DOF);
-              //              printList(servoCalib);
-              printTable(servoCalib);
-              if (deviceConnected) {
-                bleWrite(range2String(DOF));
-                bleWrite(list2String(servoCalib));
+                //              printRange(DOF);
+                //              printList(servoCalib);
+                printTable(servoCalib);
+                if (deviceConnected) {
+                  bleWrite(range2String(DOF));
+                  bleWrite(list2String(servoCalib));
+                }
+                PT(token);
+                printList(target, 2);
+              } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
+                transform(targetFrame, 1, 1);
+                delay(10);
               }
-              PT(token);
-              printList(target, 2);
-            } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
-              transform(targetFrame, 1, 1);
-              delay(10);
-            }
 #ifdef T_SERVO_MICROSECOND
-            else if (token == T_SERVO_MICROSECOND) {
+              else if (token == T_SERVO_MICROSECOND) {
 #ifdef BiBoard
-              servo[PWM_pin[target[0]]].writeMicroseconds(target[1]);
+                servo[PWM_pin[target[0]]].writeMicroseconds(target[1]);
 #else
-              pwm.writeMicroseconds(PWM_pin[target[0]], target[1]);
+                pwm.writeMicroseconds(PWM_pin[target[0]], target[1]);
 #endif
-            }
+              }
 #endif
-            else if (token == T_TILT) {
-              yprTilt[target[0]] = target[1];
-            } else if (token == T_MEOW) {
-              meow(random() % 2 + 1, (random() % 4 + 2) * 10);
-            } else if (token == T_BEEP) {
-              if (target[1])
-                beep(target[0], 1000 / target[1]);
+              else if (token == T_TILT) {
+                yprTilt[target[0]] = target[1];
+              } else if (token == T_MEOW) {
+                meow(random() % 2 + 1, (random() % 4 + 2) * 10);
+              } else if (token == T_BEEP) {
+                if (target[1])
+                  beep(target[0], 1000 / target[1]);
+              }
+              delay(5);
+            } while (pch != NULL);
+
+            PTL(token);
+            if ((token == T_INDEXED_SIMULTANEOUS_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
+              transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
+              skill->convertTargetToPosture(targetFrame);
             }
-            delay(5);
-          } while (pch != NULL);
-          if (token == T_INDEXED_SIMULTANEOUS_ASC) {
-            PTL(token);  //make real-time motion instructions more timely
-            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
-              transform(targetFrame, 1, 0.5);
-            //            delay(200);
+            // if (token == T_INDEXED_SEQUENTIAL_ASC)
+            //   skill->convertTargetToPosture();
+            // if (token == T_INDEXED_SIMULTANEOUS_ASC) {
+            //   PTL(token);  //make real-time motion instructions more timely
+            //   if (nonHeadJointQ || lastToken != T_SKILL) {
+            //     transform(targetFrame, 1, 4);
+            //     skill->convertTargetToPosture();
+            //   }
+            // }
+            delete[] pch;
           }
-          delete[] pch;
-          break;
         }
+        break;
       // this block handles array like arguments
       case T_INDEXED_SEQUENTIAL_BIN:
       case T_INDEXED_SIMULTANEOUS_BIN:
         {  //indexed joint motions: joint0, angle0, joint1, angle1, ... (binary encoding)
-          int targetFrame[DOF];
-          for (int i = 0; i < DOF; i++) {
-            targetFrame[i] = currentAng[i];
-          }
-          for (int i = 0; i < cmdLen; i += 2) {
-            targetFrame[bufferPtr[i]] = bufferPtr[i + 1];
-            if (bufferPtr[i] < 4 && lastToken == T_SKILL) {
-              currentHead[bufferPtr[i]] = bufferPtr[i + 1];
-              autoHeadDuringWalkingQ = false;
+          if (cmdLen == 0)
+            manualHeadQ = false;
+          else {
+            int targetFrame[DOF];
+            for (int i = 0; i < DOF; i++) {
+              targetFrame[i] = currentAng[i] - currentAdjust[i];
             }
-            if (token == T_INDEXED_SEQUENTIAL_BIN) {
-              transform(targetFrame, 1, 2);
-              delay(10);
+            for (int i = 0; i < cmdLen; i += 2) {
+              targetFrame[bufferPtr[i]] = bufferPtr[i + 1];
+              if (token == T_INDEXED_SIMULTANEOUS_BIN && bufferPtr[i] < 4) {
+                targetHead[bufferPtr[i]] = bufferPtr[i + 1];
+                manualHeadQ = true;
+              } else
+                nonHeadJointQ = true;
+              if (token == T_INDEXED_SEQUENTIAL_BIN) {
+                transform(targetFrame, 1, transformSpeed);
+                delay(10);
+              }
             }
-          }
-          if (token == T_INDEXED_SIMULTANEOUS_BIN) {
-            PTL(token);  //make real-time motion instructions more timely
-            if (autoHeadDuringWalkingQ || lastToken != T_SKILL)
-              transform(targetFrame, 1, transformSpeed);
+            PTL(token);
+            if (nonHeadJointQ || lastToken != T_SKILL) {
+              transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_BIN) it will be useless
+              skill->convertTargetToPosture(targetFrame);
+            }
+            // if (token == T_INDEXED_SEQUENTIAL_BIN)
+            //   skill->convertTargetToPosture();
+            // if (token == T_INDEXED_SIMULTANEOUS_BIN) {
+            //   PTL(token);  //make real-time motion instructions more timely
+            //                // if (lastToken != T_SKILL)
+            //   if (nonHeadJointQ || lastToken != T_SKILL) {
+            //     transform(targetFrame, 1, 4);
+            //     skill->convertTargetToPosture();
+            //   }
+            // }
           }
           break;
         }
@@ -376,10 +415,9 @@ void reaction() {
     }
     if (token != T_SKILL || skill->period > 0) {
       printToken();  //postures, gaits and other tokens can confirm completion by sending the token back
-      char lowerToken = tolower(token);
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
-              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_AUTO_HEAD_DURING_WALKING || skill->period >= 1 && lowerToken == T_INDEXED_SIMULTANEOUS_ASC || token == T_PAUSE || token == T_TILT))
+              || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
         token = T_SKILL;
     }
     resetCmd();

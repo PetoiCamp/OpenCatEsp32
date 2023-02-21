@@ -182,7 +182,14 @@ public:
     //      info();
     transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period, runDelay);
   }
-
+  void convertTargetToPosture(int* targetFrame) {
+    arrayNCPY(dutyAngles, targetFrame, DOF);
+    period = 1;
+    firstMotionJoint = 0;
+    frameSize = DOF;
+    frame = 0;
+    info();
+  }
   void perform() {
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
@@ -251,13 +258,12 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && !autoHeadDuringWalkingQ) {
-          if (autoHeadDuringWalkingQ && jointIndex < 4) {
+        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && manualHeadQ) {
+          if (!manualHeadQ && jointIndex < 4) {
             duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
-            duty = currentHead[jointIndex];
-          //  duty = currentAng[jointIndex] + max(-10, min(10, (currentHead[jointIndex] - currentAng[jointIndex])));
+            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex]))) - currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
@@ -299,6 +305,10 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     if (skill->offsetLR < 0 || skill->period <= 1 && skill->offsetLR == 0 && esp_random() % 2 && token != T_CALIBRATE)
       skill->mirror();  //randomly mirror the direction of a behavior
     skill->transformToSkill(skill->nearestFrame());
+#ifdef NYBBLE
+    for (byte i = 0; i < HEAD_GROUP_LEN; i++)
+      targetHead[i] = currentAng[i] - currentAdjust[i];
+#endif
     //    runDelay = delayMid + 2;
   }
 }

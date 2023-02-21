@@ -137,18 +137,21 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
   else {
     int *diff = new int[DOF - offset], maxDiff = 0;
     for (byte i = offset; i < DOF; i++) {
-      if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
+      if (manualHeadQ && i < HEAD_GROUP_LEN && token == T_SKILL)  // the head motion will be handled by skill.perform()
         continue;
       diff[i - offset] = currentAng[i] - target[i - offset] * angleDataRatio;
       maxDiff = max(maxDiff, abs(diff[i - offset]));
     }
     int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;  //default speed is 1 degree per step
-
+    // if (maxDiff == 0) {
+    //   delete[] diff;
+    //   return;
+    // }
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef BiBoard
-        // if (!autoHeadDuringWalkingQ && i < HEAD_GROUP_LEN)
-        //   continue;
+        if (manualHeadQ && i < HEAD_GROUP_LEN && token == T_SKILL)  // the head motion will be handled by skill.perform()
+          continue;
         if (WALKING_DOF == 8 && i > 3 && i < 8)
           continue;
         if (WALKING_DOF == 12 && i < 4)
@@ -258,11 +261,6 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 };
 #endif
 
-float expectedRollPitch[2];
-float RollPitchDeviation[2];
-float currentAdjust[DOF] = {};
-int ramp = 1;
-
 float adjust(byte i) {
   float rollAdj, pitchAdj, adj;
   if (i == 1 || i > 3) {  //check idx = 1
@@ -284,7 +282,7 @@ float adjust(byte i) {
                         (i > 3 ? POSTURE_WALKING_FACTOR : 1) *
 #endif
                           rollAdj
-                        + ramp * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
+                        - ramp * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
   currentAdjust[i] += sign(idealAdjust - currentAdjust[i]) * (min(fabs(idealAdjust - currentAdjust[i]), float(ADJUSTMENT_GAP_DAMPER)));
 
   return currentAdjust[i];

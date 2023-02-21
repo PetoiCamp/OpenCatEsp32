@@ -1,11 +1,11 @@
 #define POWER_SAVER 120  //make the robot rest after a certain period, unit is seconds
-#define IDLE_SHORT 15
+#define IDLE_SHORT 5
 #define IDLE_LONG 30
 #define EVERY_X_SECONDS 5
 int idleThreshold = IDLE_SHORT;
 #define RANDOM_MIND true  //let the robot do random stuffs. use token 'z' to activate/deactivate
 int randomInterval = 1000;
-const char *randomMindList[] = { "iRand", "ksit",  //"u",
+const char *randomMindList[] = { "iRand", "i", "ksit",  //"u",
 #ifdef CUB
                                  "kfd", "krt",
 #else
@@ -13,7 +13,8 @@ const char *randomMindList[] = { "iRand", "ksit",  //"u",
 #endif
                                  NULL };
 byte choiceWeight[] = {
-  100,
+  50,
+  20,
   10,  // 5,
 #ifdef CUB
   1,
@@ -36,12 +37,12 @@ void allRandom() {
   //  byte rangeSet[] = {90, 90, 180, 50, 50, 100, 100, 50, 50};
 
   token = tokenSet[rand() % 2];
-  bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
+  bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SEQUENTIAL_BIN) ? (int8_t *)newCmd : dataBuffer;
   cmdLen = rand() % 4 + 4;
   for (byte r = 0; r < cmdLen; r++) {
     byte j = rand() % sizeof(jointSet);
     bufferPtr[r * 2] = jointSet[j];
-    bufferPtr[r * 2 + 1] = (int8_t)min(max(currentAng[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2, -90), 90);
+    bufferPtr[r * 2 + 1] = (int8_t)min(max(int(currentAng[jointSet[j]] - currentAdjust[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2), -90), 90);
     //    PT(jointSet[j]); PT('\t'); PTL(int(dataBuffer[r * 2 + 1]));
   }
   cmdLen *= 2;
@@ -62,12 +63,14 @@ void randomMind() {
         allRandom();
       else {
         token = randomMindList[randomChoice][0];
-        bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
-        strcpy((char*)bufferPtr, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
+        bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SEQUENTIAL_BIN) ? (int8_t *)newCmd : dataBuffer;
+        strcpy((char *)bufferPtr, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
       }
       newCmdIdx = 100;
+      transformSpeed = 0.3;
     }
-  }
+  } else
+    transformSpeed = 4;
 }
 
 void powerSaver(int idleThreshold = 10) {  //unit is second

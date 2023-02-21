@@ -56,9 +56,10 @@ class MyCallbacks : public BLECharacteristicCallbacks {
       if (bleMessageShift) {
         cmdLen = 0;
         token = rxValue[0];
-        bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
+        lowerToken = tolower(token);
+        bufferPtr = (token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) ? (int8_t *)newCmd : dataBuffer;
         terminator = (token < 'a') ? '~' : '\n';
-        serialTimeout = (token == T_SKILL_DATA || token == T_BEEP_BIN || token == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
+        serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
         bufferPtr[cmdLen++] = rxValue[i];
@@ -75,7 +76,6 @@ void readBle() {
     while ((char)bufferPtr[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)  //wait until the long message is completed
       delay(1);
     cmdLen = (bufferPtr[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-          PT("FIN");PTL(cmdLen);
     bufferPtr[cmdLen] = '\0';
     newCmdIdx = 2;
     PT((char *)bufferPtr);

@@ -175,7 +175,6 @@ bool newBoard = false;
 #define T_COLOR 'C'
 #define T_REST 'd'
 #define T_GYRO 'g'
-#define T_AUTO_HEAD_DURING_WALKING 'h'
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'
 #define T_JOINTS 'j'
@@ -214,6 +213,7 @@ int frame;
 int tStep = 1;
 char token;
 char lastToken;
+char lowerToken;
 #define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
 char *newCmd = new char[CMD_LEN + 1];
 char *lastCmd = new char[CMD_LEN + 1];
@@ -227,11 +227,16 @@ char terminator;
 int serialTimeout;
 long lastSerialTime = 0;
 
+
 bool checkGyro = false;
 bool printGyro = false;
 bool autoSwitch = false;
 bool walkingQ = false;
-bool autoHeadDuringWalkingQ = true;
+bool manualHeadQ = false;
+bool nonHeadJointQ = false;
+#define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
+int targetHead[HEAD_GROUP_LEN];
+
 bool imuUpdated;
 byte exceptions = 0;
 byte transformSpeed = 2;
@@ -334,8 +339,6 @@ int previousAng[DOF] = { -30, -80, -45, 0,
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};
-#define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
-int currentHead[HEAD_GROUP_LEN];
 
 int8_t servoCalib[DOF] = { 0, 0, 0, 0,
                            0, 0, 0, 0,
@@ -346,11 +349,22 @@ int16_t imuOffset[9] = { 0, 0, 0,
                          0, 0, 0,
                          0, 0, 0 };
 
+float expectedRollPitch[2];
+float RollPitchDeviation[2];
+float currentAdjust[DOF] = {};
+int ramp = 1;
+
 //abbreviations
 #define PT(s) Serial.print(s)  //makes life easier
 #define PTL(s) Serial.println(s)
 #define PTF(s) Serial.print(F(s))  //trade flash memory for dynamic memory with F() function
 #define PTLF(s) Serial.println(F(s))
+#define PTH(head, value) \
+  { \
+    Serial.print(head); \
+    Serial.print('\t'); \
+    Serial.println(value); \
+  }
 #define PRINT_SKILL_DATA
 
 //
