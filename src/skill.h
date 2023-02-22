@@ -35,13 +35,17 @@ public:
   int lookUp(const char* key) {
     byte nSkills = sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE;
     byte randSkillIdx = strcmp(key, "x") ? nSkills : random(nSkills);
+    byte keyLen = strlen(key);
+    char lr = key[keyLen - 1];
     for (int s = 0; s < nSkills; s++) {
-      char thisName[10];
-      strcpy(thisName, this->get(s)->skillName);
-      byte nameLen = strlen(thisName);
-      if (s == randSkillIdx  //random skill
-          || !strcmp(thisName, key)
-          || thisName[nameLen - 1] == 'L' && !strncmp(thisName, key, nameLen - 1)) {
+      char readName[10];
+      strcpy(readName, this->get(s)->skillName);
+      byte nameLen = strlen(readName);
+      if (s == randSkillIdx          //random skill
+          || !strcmp(readName, key)  //exact match: gait type + F or L, behavior
+          // || readName[nameLen - 1] == 'L' && !strncmp(readName, key, nameLen - 1)
+          || !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
+      ) {
         return s;
       }
     }
@@ -302,7 +306,8 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
       protectiveShift = 0;
     for (byte i = 0; i < DOF; i++)
       skill->dutyAngles[i] += protectiveShift;
-    if (skill->offsetLR < 0 || skill->period <= 1 && skill->offsetLR == 0 && esp_random() % 2 && token != T_CALIBRATE)
+    // if (skill->offsetLR < 0 || skill->period <= 1 && skill->offsetLR == 0 && esp_random() % 2 && token != T_CALIBRATE)
+    if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
       skill->mirror();  //randomly mirror the direction of a behavior
     skill->transformToSkill(skill->nearestFrame());
 #ifdef NYBBLE
