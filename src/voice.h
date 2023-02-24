@@ -18,29 +18,30 @@ void voiceSetup() {
 void read_voice() {
   // put your main code here, to run repeatedly:
   if (Serial2.available()) {
-    String temp = Serial2.readStringUntil('\n');
-    PTL(temp);
-    byte index = (byte)temp[2];  //interpret the 3rd byte as integer
+    String raw = Serial2.readStringUntil('\n');
+    PTL(raw);
+    byte index = (byte)raw[2];  //interpret the 3rd byte as integer
+    int shift = -1;
     if (index > 10) {
       if (index < 21) {  //11 ~ 20 are customized commands, and their indexes should be shifted by 11
         index -= 11;
         PT(index);
         PT(' ');
         if (index < listLength) {
-          temp = customizedCmdList[index];
-          token = temp[0];
-          bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN) ? (int8_t *)newCmd : dataBuffer;
-          strcpy((char *)bufferPtr, temp.c_str() + 1);
+          raw = customizedCmdList[index];
+          token = raw[0];
+          shift = 1;
         } else {
           PTLF("Undefined!");
         }
       } else if (index < 61) {  //21 ~ 60 are preset commands, and their indexes should be shifted by 21.
                                 //But we don't need to use their indexes.
         token = T_SKILL;
-        strcpy(newCmd, temp.c_str() + 3);
+        shift = 3;
       }
-      newCmdIdx = 5;
-      PTL(newCmd);
+      if (shift > 0)
+        tQueue->push_back(new Task(token, raw.c_str() + shift, 2000));
+      tQueue->push_back(new Task('p', ""));
     }
   }
 }

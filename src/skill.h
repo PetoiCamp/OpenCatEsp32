@@ -1,5 +1,3 @@
-#include "QList/QList.h"
-
 #define MEMORY_ADDRESS_SIZE 4
 
 class SkillPreview {
@@ -137,8 +135,13 @@ public:
   void info() {
     PT("Skill Name: ");
     PTL(skillName);
-    PTL("period: " + String(period) + ",\texpected (pitch,roll) angles: (" + expectedRollPitch[0] + "," + expectedRollPitch[1] + "),\tangle ratio: " + angleDataRatio);
-
+    PTF("period:");
+    PT(period);
+    PT(",\texpected(pitch,roll):(");
+    PT(expectedRollPitch[0]);
+    PT(",");
+    PT(expectedRollPitch[1]);
+    PTL(")");
     if (period < 0) {
       PT("loop frame: ");
       for (byte i = 0; i < 3; i++)
@@ -146,18 +149,15 @@ public:
       PTL();
     }
 #ifdef PRINT_SKILL_DATA
-    if (period == 1) {
-      PTL("frame:");
-      for (int k = 0; k < abs(period); k++) {
-        for (int col = 0; col < frameSize; col++) {
-          PT(String((int8_t)dutyAngles[k * frameSize + col]) + ", ");
-          PT('\t');
-        }
-        PTL();
+    for (int k = 0; k < abs(period); k++) {
+      for (int col = 0; col < frameSize; col++) {
+        PT((int8_t)dutyAngles[k * frameSize + col]);
+        PT(",\t");
       }
+      PTL();
     }
-    PTL();
 #endif
+    PTL();
   }
   void mirror() {  //Create a mirror function to allow the robot to pick random directions of behaviors.
     //It makes the robot more unpredictable and helps it get rid of an infinite loop,

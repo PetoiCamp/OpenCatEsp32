@@ -36,12 +36,6 @@ void readEnvironment() {
   read_GPS();
 }
 
-template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *source, int len) {  //deep copy regardless of '\0'
-  for (int i = 0; i < len; i++) {
-    destination[i] = min((T1)125, max((T1)-125, source[i]));
-  }
-}
-
 //— read master computer’s signals (middle level) —
 
 //This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -114,12 +108,12 @@ void blueSspSetup() {
 //end of Richard Li's code
 
 void resetCmd() {
-  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
+  printCmd();
   if (lastToken == T_SKILL)
     idleThreshold = IDLE_SHORT;
   else
     idleThreshold = IDLE_LONG;
-  if (strcmp(newCmd, "rc")) {
+  if (token == T_SKILL && strcmp(newCmd, "rc")) {
     strcpy(lastCmd, newCmd);
   }
   newCmdIdx = 0;
@@ -128,7 +122,7 @@ void resetCmd() {
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
-  PTL("lastT: " + String(lastToken) + "\tT: " + String(token) + "\tLastCmd: " + String(lastCmd) + "\tCmd: " + String(newCmd));
+  printCmd();
 }
 
 
@@ -157,7 +151,7 @@ void read_serial() {
           do { serialPort->read(); } while (serialPort->available());
           PTL(token);
           token = T_SKILL;
-          strcpy(newCmd, "balance");
+          strcpy(newCmd, "up");
           break;
         }
         bufferPtr[cmdLen++] = serialPort->read();

@@ -3,48 +3,63 @@ long taskInterval = -1;
 class Task {
 public:
   char tkn;
-  const char* parameters;
+  char* parameters;
+  int paraLength;
   int dly;
   Task(char t, const char* p, int d = 0)
-    : tkn{ t }, parameters{ p }, dly{ d } {
-    // PT(tkn);
+    : tkn{ t }, dly{ d } {
+    paraLength = (tkn < 'a') ? strlenUntil(p, '~') : strlen(p);
+    if (paraLength) {
+      parameters = new char[paraLength + 1];
+      arrayNCPY(parameters, p, paraLength);
+      parameters[paraLength] = '\0';
+    }
   };
-  ~Task();
+  ~Task() {
+    if (paraLength)
+      delete[] parameters;
+  };
+  void info() {
+    PT(tkn);
+    PT('\t');
+    PT(dly);
+    PT('\t');
+    PTL(paraLength);
+    if (paraLength) {
+      if (tkn < 'a')
+        printList((int8_t*)parameters, paraLength);
+      else
+        PTL(parameters);
+    }
+  }
 };
 
 class TaskQueue : public QList<Task* > {
 public:
-  TaskQueue(){};
-  TaskQueue(const Task* t, int len) {
-    PT("Build task queue...");
-  }
-  void createTask() {//this is an example task
-    this->push_back(new Task('k', "wkF", 2000));
-    this->push_back(new Task('k', "vtL", 2000));
-    this->push_back(new Task('k', "pee"));
-    this->push_back(new Task('m', "0 -30 0 30 0 0"));
-    PTL(this->size());
+  TaskQueue() {
+    PTLF("TaskQ");
+  };
+  void createTask() {  //this is an example task
+    this->push_back(new Task('k', "vtF", 2000));
+    this->push_back(new Task('k', "up"));
   }
   void popTask() {
     if (taskInterval == -1 || millis() - taskTimer > taskInterval) {
       Task* t = this->front();
-      // PT("task: ");
-      // PT(t->tkn);
-      // PT('\t');
-      // PT(t->parameters);
-      // PT('\t');
-      // PTL(t->dly);
-      this->pop_front();
+      t->info();
       token = t->tkn;
-      cmdLen = strlen(t->parameters);
+      lowerToken = tolower(token);
+      cmdLen = t->paraLength;
       taskInterval = t->dly;
-      char* destination = (token == T_SKILL || token == T_TILT) ? newCmd : (char*)dataBuffer;
-      arrayNCPY(destination, t->parameters, cmdLen);
-      destination[cmdLen] = '\0';
-      PT(cmdLen);
-      PTL(destination);
+      if (cmdLen) {
+        bufferPtr = (token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) ? (int8_t*)newCmd : dataBuffer;
+        arrayNCPY(bufferPtr, t->parameters, cmdLen);
+        bufferPtr[cmdLen] = '\0';
+      }
       taskTimer = millis();
       newCmdIdx = 5;
+      delete t;
+      this->pop_front();
     }
   }
 };

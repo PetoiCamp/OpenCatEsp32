@@ -437,7 +437,7 @@ void reaction() {
         idleTimer = 0;
         token = '\0';
       } else {
-        //        strcpy(newCmd, "balance");
+        //        strcpy(newCmd, "up");
         strcpy(newCmd, "");
         arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
         skill->period = 1;
