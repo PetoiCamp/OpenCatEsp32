@@ -118,6 +118,18 @@ void resetCmd() {
   // printCmd();
 }
 
+void printCmd() {
+  PTF("lastT:");
+  PT(lastToken);
+  PTF("\tT:");
+  PT(token);
+  PTF("\tLastCmd:");
+  PT(lastCmd);
+  PT('\t');
+  PT(cmdLen);
+  PTF("\tCmd:");
+  PTL(newCmd);
+}
 
 void read_serial() {
   Stream *serialPort = NULL;
