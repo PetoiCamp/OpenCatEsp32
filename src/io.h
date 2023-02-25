@@ -1,12 +1,7 @@
 #include "soc/gpio_sig_map.h"
 void read_sound() {
 }
-int read_light() {
-  return 0;
-}
-int read_distance() {
-  return 0;
-}
+
 void read_GPS() {
 }
 #ifdef TOUCH0
@@ -31,8 +26,6 @@ void readEnvironment() {
     imuUpdated = read_IMU();
 #endif
   read_sound();
-  read_light();
-  read_distance();
   read_GPS();
 }
 
@@ -108,7 +101,7 @@ void blueSspSetup() {
 //end of Richard Li's code
 
 void resetCmd() {
-  printCmd();
+  // printCmd();
   if (lastToken == T_SKILL)
     idleThreshold = IDLE_SHORT;
   else
@@ -122,7 +115,7 @@ void resetCmd() {
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
-  printCmd();
+  // printCmd();
 }
 
 
@@ -188,6 +181,18 @@ void readSignal() {
 #ifdef CAMERA
     read_camera();
 #endif
+#ifdef GESTURE
+    read_gesture();
+#endif
+#ifdef PIR
+    read_PIR();
+#endif
+#ifdef DOUBLE_TOUCH
+    read_doubleTouch();
+#endif
+#ifdef DOUBLE_LIGHT
+    read_doubleLight();
+#endif
 #ifdef TOUCH0
     read_touch();
 #endif
@@ -209,12 +214,8 @@ void printToken(char t = token) {
 }
 //— read human sensors (top level) —
 
-String read_gesture() {
-  return "";
-}
 
 void readHuman() {
-  read_gesture();
 #ifdef TOUCH0
   read_touch();
 #endif

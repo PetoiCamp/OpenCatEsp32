@@ -6,9 +6,9 @@ public:
   char* parameters;
   int paraLength;
   int dly;
-  Task(char t, const char* p, int d = 0)
+  template<typename T> Task(char t, T* p, int d = 0)
     : tkn{ t }, dly{ d } {
-    paraLength = (tkn < 'a') ? strlenUntil(p, '~') : strlen(p);
+    paraLength = (tkn < 'a') ? strlenUntil(p, '~') : strlen((char*)p);
     if (paraLength) {
       parameters = new char[paraLength + 1];
       arrayNCPY(parameters, p, paraLength);
@@ -29,7 +29,7 @@ public:
       if (tkn < 'a')
         printList((int8_t*)parameters, paraLength);
       else
-        PTL(parameters);
+        PTL((char*)parameters);
     }
   }
 };

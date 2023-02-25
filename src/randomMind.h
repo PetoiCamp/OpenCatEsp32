@@ -1,6 +1,6 @@
 #define POWER_SAVER 120  //make the robot rest after a certain period, unit is seconds
 #define IDLE_SHORT 5
-#define IDLE_LONG 30
+#define IDLE_LONG 10
 #define EVERY_X_SECONDS 5
 int idleThreshold = IDLE_SHORT;
 #define RANDOM_MIND false//true  //let the robot do random stuffs. use token 'z' to activate/deactivate

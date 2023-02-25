@@ -372,7 +372,7 @@ int ramp = 1;
 //template <typename T> int8_t sign(T val) {
 //  return (T(0) < val) - (val < T(0));
 //}
-int strlenUntil(const char *s, char terminator) {
+template<typename T> int strlenUntil(T *s, char terminator) {
   int l = 0;
   while (s[l++] != terminator)
     ;
@@ -485,10 +485,21 @@ template<typename T> void printTable(T *list) {
 #ifdef CAMERA
 #include "camera.h"
 #endif
-
-// #ifdef GESTURE
-// #include "gesture.h"
-// #endif
+#ifdef ULTRASONIC
+#include "ultrasonic.h"
+#endif
+#ifdef GESTURE
+#include "gesture.h"
+#endif
+#ifdef PIR
+#include "pir.h"
+#endif
+#ifdef DOUBLE_TOUCH
+#include "doubleTouch.h"
+#endif
+#ifdef DOUBLE_LIGHT
+#include "doubleLight.h"
+#endif
 
 #include "randomMind.h"
 #include "io.h"
@@ -555,6 +566,12 @@ void initRobot() {
 #ifdef CAMERA
   cameraSetup();
 #endif
+#ifdef GESTURE
+  gestureSetup();
+#endif
+#ifdef DOUBLE_LIGHT
+  doubleLightSetup();
+#endif
 
   lastCmd[0] = '\0';
   newCmd[0] = '\0';
@@ -579,6 +596,7 @@ void initRobot() {
   newCmdIdx = 2;
 #endif
   tQueue = new TaskQueue();
+
   PTLF("k");
   PTL("Ready!");
   idleTimer = millis();
