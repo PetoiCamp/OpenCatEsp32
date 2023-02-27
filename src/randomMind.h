@@ -37,16 +37,15 @@ void allRandom() {
   //  byte rangeSet[] = {90, 90, 180, 50, 50, 100, 100, 50, 50};
 
   token = tokenSet[rand() % 2];
-  bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SEQUENTIAL_BIN) ? (int8_t *)newCmd : dataBuffer;
   cmdLen = rand() % 4 + 4;
   for (byte r = 0; r < cmdLen; r++) {
     byte j = rand() % sizeof(jointSet);
-    bufferPtr[r * 2] = jointSet[j];
-    bufferPtr[r * 2 + 1] = (int8_t)min(max(int(currentAng[jointSet[j]] - currentAdjust[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2), -90), 90);
+    dataBuffer[r * 2] = jointSet[j];
+    dataBuffer[r * 2 + 1] = (int8_t)min(max(int(currentAng[jointSet[j]] - currentAdjust[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2), -90), 90);
     //    PT(jointSet[j]); PT('\t'); PTL(int(dataBuffer[r * 2 + 1]));
   }
   cmdLen *= 2;
-  bufferPtr[cmdLen] = '\0';
+  dataBuffer[cmdLen] = '\0';
 }
 
 void randomMind() {
@@ -63,8 +62,7 @@ void randomMind() {
         allRandom();
       else {
         token = randomMindList[randomChoice][0];
-        bufferPtr = (token == T_SKILL || token == T_INDEXED_SIMULTANEOUS_BIN || token == T_INDEXED_SEQUENTIAL_BIN) ? (int8_t *)newCmd : dataBuffer;
-        strcpy((char *)bufferPtr, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
+        strcpy((char *)dataBuffer, randomMindList[randomChoice] + 1);  // this is duable only because dataBuffer+1 is after dataBuffer!
       }
       newCmdIdx = 100;
       transformSpeed = 0.3;

@@ -215,18 +215,17 @@ char token;
 char lastToken;
 char lowerToken;
 #define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
-char *newCmd = new char[CMD_LEN + 1];
+// char *dataBuffer = new char[CMD_LEN + 1];
 char *lastCmd = new char[CMD_LEN + 1];
-int cmdLen;
+int cmdLen=0;
 byte newCmdIdx = 0;
 #define BUFF_LEN 1524
-int8_t *dataBuffer = new int8_t[BUFF_LEN + 1];
-int8_t *bufferPtr;
+char *dataBuffer = new char[BUFF_LEN + 1];
+int spaceAfterStoringData = BUFF_LEN;
 int lastVoltage;
 char terminator;
 int serialTimeout;
 long lastSerialTime = 0;
-
 
 bool checkGyro = false;
 bool printGyro = false;
@@ -431,6 +430,7 @@ void initRobot() {
   bleSetup();
   blueSspSetup();
   servoSetup();
+  skill = new Skill();
   skillList = new SkillList();
   for (byte i = 0; i < randomMindListLength; i++) {
     randomBase += choiceWeight[i];
@@ -468,18 +468,18 @@ void initRobot() {
 #endif
 
   lastCmd[0] = '\0';
-  newCmd[0] = '\0';
+  dataBuffer[0] = '\0';
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
-  //    strcpy(newCmd, "calib");
+  //    strcpy(dataBuffer, "calib");
   //    exceptions = 0;
   //  }
   //  else {// Otherwise start up normally
-  //    strcpy(newCmd, "rest");
+  //    strcpy(dataBuffer, "rest");
   //    token = 'd';
   //    newCmdIdx = 6;
   //  }
-  //  loadBySkillName(newCmd);
+  //  loadBySkillName(dataBuffer);
   //
   allCalibratedPWM(currentAng);  //soft boot for servos
   delay(500);

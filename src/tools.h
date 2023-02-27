@@ -27,8 +27,22 @@ template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *sourc
   for (int i = 0; i < len; i++) {
     // destination[i] = min((T1)125, max((T1)-125, source[i]));
     destination[i] = source[i];
+    //    PT(source[i]); PT(','); PT(destination[i]);
+  }
+  PTL();
+}
+
+template<typename T> void getExtreme(T *arr, T *extreme, int len = DOF) {
+  extreme[0] = 128;   //min
+  extreme[1] = -127;  // max
+  for (int i = 0; i < len; i++) {
+    if (arr[i] < extreme[0])
+      extreme[0] = arr[i];
+    if (arr[i] > extreme[1])
+      extreme[1] = arr[i];
   }
 }
+
 void printRange(int r0 = 0, int r1 = 0) {
   if (r1 == 0)
     for (byte i = 0; i < r0; i++) {
@@ -74,6 +88,16 @@ template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
     PT('\t');
   }
   PTL();
+}
+
+template<typename T> void printCmdByType(char t, T *data, int len) {
+  PT(t);
+  if (len > 0) {
+    if (t < 'a')
+      printListWithoutString((int8_t *)data, len);
+    else
+      PTL((char *)data);
+  }
 }
 
 template<typename T> String list2String(T *arr, byte len = DOF) {

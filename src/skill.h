@@ -54,10 +54,11 @@ SkillList* skillList;
 
 class Skill {
 public:
-  char* skillName;  //use char array instead of String to save memory
+  char skillName[20];  //use char array instead of String to save memory
   int8_t offsetLR;
   int period;  //the period of a skill. 1 for posture, >1 for gait, <-1 for behavior
   float transformSpeed;
+  byte skillHeader;
   byte frameSize;
   int expectedRollPitch[2];  //expected body orientation (roll, pitch)
   byte angleDataRatio;       //divide large angles by 1 or 2. if the max angle of a skill is >128, all the angls will be divided by 2
@@ -77,25 +78,26 @@ public:
     firstMotionJoint = 0;
     dutyAngles = NULL;
   }
-  Skill(int8_t* dataBuffer) {
-    skillName = new char[strlen("temp") + 1];
+  void buildSkill(int8_t* dataBuffer) {
     strcpy(skillName, "temp");
     offsetLR = 0;
-    period = int8_t(dataBuffer[0]);  //automatically cast to char*
+    period = (int8_t)dataBuffer[0];  //automatically cast to char*
     dataLen(period);
-    formatSkill(dataBuffer);
+    formatSkill((int8_t*)dataBuffer);
   }
 
-  Skill(int s) {
+  void buildSkill(int s) {
     unsigned int pgmAddress = (unsigned int)progmemPointer[s];
     period = (int8_t)pgm_read_byte(pgmAddress);  //automatically cast to char*
     for (int i = 0; i < dataLen(period); i++) {
       dataBuffer[i] = pgm_read_byte(pgmAddress++);
     }
-    formatSkill(dataBuffer);
+    formatSkill((int8_t*)dataBuffer);
+  }
+  ~Skill() {
   }
   int dataLen(int8_t p) {
-    byte skillHeader = p > 0 ? 4 : 7;
+    skillHeader = p > 0 ? 4 : 7;
     frameSize = p > 1 ? WALKING_DOF :  //gait
                   p == 1 ? DOF
                          :  //posture
@@ -103,6 +105,21 @@ public:
     int len = skillHeader + abs(p) * frameSize;
     return len;
   }
+
+  void inplaceShift() {
+    int angleLen = abs(period) * frameSize;                 // need one extra byte for terminator '~'
+    int shiftRequiredByNewCmd = CMD_LEN - skillHeader + 1;  // required shift to store CMD_LEN + 1 chars. it can hold a command with CMD_LEN chars. the additioanl byte is required by '\0'.
+    spaceAfterStoringData = BUFF_LEN - angleLen - 1;        // the bytes before the dutyAngles. The allowed command's bytes needs to -1
+    // PTH("request", shiftRequiredByNewCmd);
+    // PTH("aloShft", BUFF_LEN - (skillHeader + angleLen));
+    if (CMD_LEN > spaceAfterStoringData)
+      PTF("LMT");
+    PTH("available ", spaceAfterStoringData);
+    for (int i = 0; i <= angleLen; i++)
+      dataBuffer[BUFF_LEN - i] = dataBuffer[skillHeader + angleLen - i];
+    dutyAngles = (int8_t*)dataBuffer + BUFF_LEN - angleLen;
+  }
+
   void formatSkill(int8_t* dataBuffer) {
     transformSpeed = 1;  //period > 1 ? 1 : 0.5;
     firstMotionJoint = (period <= 1) ? 0 : DOF - WALKING_DOF;
@@ -112,26 +129,27 @@ public:
       yprTilt[2 - i] = 0;
     }
     angleDataRatio = (int8_t)dataBuffer[3];
-    byte skillHeader = 4;
+    byte baseHeader = 4;
     if (period < 0) {
       for (byte i = 0; i < 3; i++)
-        loopCycle[i] = (int8_t)dataBuffer[skillHeader++];
+        loopCycle[i] = (int8_t)dataBuffer[baseHeader++];
     }
-    int len = abs(period) * frameSize;
-    dutyAngles = new int8_t[len];
-    for (int k = 0; k < abs(period); k++) {
-      for (int col = 0; col < frameSize; col++) {
-        if (WALKING_DOF == 12 && GAIT_ARRAY_DOF == 8 && period > 1)
-          if (col < 4)
-            dutyAngles[k * frameSize + col] = 0;
-          else
-            dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * GAIT_ARRAY_DOF + col - 4]);
-        else
-          dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * frameSize + col]);
-      }
-    }
+    inplaceShift();
+    // int len = abs(period) * frameSize;
+    // dutyAngles = new int8_t[len];
+    // for (int k = 0; k < abs(period); k++) {
+    //   for (int col = 0; col < frameSize; col++) {
+    //     if (WALKING_DOF == 12 && GAIT_ARRAY_DOF == 8 && period > 1)
+    //       if (col < 4)
+    //         dutyAngles[k * frameSize + col] = 0;
+    //       else
+    //         dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * GAIT_ARRAY_DOF + col - 4]);
+    //     else
+    //       dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * frameSize + col]);
+    //   }
+    // }
   }
-
+#define PRINT_SKILL_DATA
   void info() {
     PT("Skill Name: ");
     PTL(skillName);
@@ -141,7 +159,9 @@ public:
     PT(expectedRollPitch[0]);
     PT(",");
     PT(expectedRollPitch[1]);
-    PTL(")");
+    PT(")\t");
+    PTF("angleRatio: ");
+    PT(angleDataRatio);
     if (period < 0) {
       PT("loop frame: ");
       for (byte i = 0; i < 3; i++)
@@ -187,6 +207,18 @@ public:
     transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period, runDelay);
   }
   void convertTargetToPosture(int* targetFrame) {
+    PTL("convert");
+    int extreme[2];
+    getExtreme(targetFrame, extreme);
+    if (extreme[0] < -125 || extreme[1] > 125) {
+      PT(extreme[0]);
+      PT('\t');
+      PTL(extreme[1]);
+      angleDataRatio = 2;
+    } else
+      angleDataRatio = 1;
+    for (int i = 0; i < DOF; i++)
+      targetFrame[i] /= 2;
     arrayNCPY(dutyAngles, targetFrame, DOF);
     period = 1;
     firstMotionJoint = 0;
@@ -292,10 +324,10 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
   if (skillIndex == -1) {
     PTL("?");
   } else {
-    if (skill != NULL)
-      delete[] skill;
-    skill = new Skill(skillList->get(skillIndex)->index);
-    skill->skillName = new char[strlen(skillName) + 1];
+    // if (skill != NULL)
+    //   delete[] skill;
+    skill->buildSkill(skillList->get(skillIndex)->index);
+    // skill->skillName = new char[strlen(skillName) + 1];
     strcpy(skill->skillName, skillName);
     skill->skillName[strlen(skillName)] = '\0';  //drop the last charactor of skill type
     char lr = skillName[strlen(skillName) - 1];

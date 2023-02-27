@@ -17,9 +17,9 @@ decode_results results;
 #define K01 "F"  //forward
 #define K02 "g"  //turn off gyro feedback to boost speed
 
-#define K10 "L"        //left
+#define K10 "L"   //left
 #define K11 "up"  //neutral stand up posture
-#define K12 "R"        //right
+#define K12 "R"   //right
 
 #define K20 ","  //pause motion and shut off all servos
 #define K21 "B"  //backward
@@ -197,16 +197,17 @@ String irParser(String raw) {
 
 void read_infrared() {
   if (irrecv.decode(&results)) {
+    PTL(String(token) + "\t" + String(gait) + "\t" + String(direct) + "\tCmd: " + String(dataBuffer) + "\t" + String(runDelay));
     String IRsig = irParser(translateIR());
     //PTL(IRsig);
     if (IRsig != "") {
-      strcpy(newCmd, IRsig.c_str());
-      if (strlen(newCmd) == 1)
-        token = newCmd[0];
+      strcpy(dataBuffer, IRsig.c_str());
+      if (strlen(dataBuffer) == 1)
+        token = dataBuffer[0];
       else
         token = T_SKILL;
       newCmdIdx = 1;
-      //      PTL(String(token) + "\t" + String(gait) + "\t" + String(direct) + "\tCmd: " + String(newCmd) + "\t" + String(runDelay));
+      PTL(String(token) + "\t" + String(gait) + "\t" + String(direct) + "\tCmd: " + String(dataBuffer) + "\t" + String(runDelay));
     }
     irrecv.resume();  // receive the next value
   }
