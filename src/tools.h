@@ -10,7 +10,6 @@
     Serial.print('\t'); \
     Serial.println(value); \
   }
-#define PRINT_SKILL_DATA
 
 //
 //template <typename T> int8_t sign(T val) {

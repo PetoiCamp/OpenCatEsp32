@@ -166,7 +166,7 @@ void read_serial() {
     cmdLen = (dataBuffer[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     dataBuffer[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-   printCmdByType(token, dataBuffer, cmdLen);
+    // printCmdByType(token, dataBuffer, cmdLen);
   }
 }
 

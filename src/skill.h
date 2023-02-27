@@ -42,7 +42,7 @@ public:
       if (s == randSkillIdx          //random skill
           || !strcmp(readName, key)  //exact match: gait type + F or L, behavior
           // || readName[nameLen - 1] == 'L' && !strncmp(readName, key, nameLen - 1)
-          || !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
+          || readName[nameLen - 1] != 'F' && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
       ) {
         return s;
       }
@@ -112,9 +112,10 @@ public:
     spaceAfterStoringData = BUFF_LEN - angleLen - 1;        // the bytes before the dutyAngles. The allowed command's bytes needs to -1
     // PTH("request", shiftRequiredByNewCmd);
     // PTH("aloShft", BUFF_LEN - (skillHeader + angleLen));
-    if (CMD_LEN > spaceAfterStoringData)
-      PTF("LMT");
-    PTH("available ", spaceAfterStoringData);
+    if (CMD_LEN > spaceAfterStoringData) {
+      PTF("LMT ");
+      PTL(spaceAfterStoringData);
+    }
     for (int i = 0; i <= angleLen; i++)
       dataBuffer[BUFF_LEN - i] = dataBuffer[skillHeader + angleLen - i];
     dutyAngles = (int8_t*)dataBuffer + BUFF_LEN - angleLen;
@@ -161,7 +162,7 @@ public:
     PT(expectedRollPitch[1]);
     PT(")\t");
     PTF("angleRatio: ");
-    PT(angleDataRatio);
+    PTL(angleDataRatio);
     if (period < 0) {
       PT("loop frame: ");
       for (byte i = 0; i < 3; i++)
@@ -207,7 +208,6 @@ public:
     transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period, runDelay);
   }
   void convertTargetToPosture(int* targetFrame) {
-    PTL("convert");
     int extreme[2];
     getExtreme(targetFrame, extreme);
     if (extreme[0] < -125 || extreme[1] > 125) {
@@ -224,7 +224,7 @@ public:
     firstMotionJoint = 0;
     frameSize = DOF;
     frame = 0;
-    info();
+    // info();
   }
   void perform() {
     if (period < 0) {  //behaviors

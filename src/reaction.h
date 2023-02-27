@@ -67,6 +67,7 @@ bool lowBattery() {
 void reaction() {
   if (newCmdIdx) {
     lowerToken = tolower(token);
+    cmdLen = (token < 'a') ? strlenUntil(dataBuffer, '~') : strlen((char *)dataBuffer);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
       autoSwitch = RANDOM_MIND;
@@ -414,7 +415,7 @@ void reaction() {
               strcpy(lastCmd, dataBuffer);
             }
             loadBySkillName(dataBuffer);
-            skill->info();
+            // skill->info();
           }
           break;
         }

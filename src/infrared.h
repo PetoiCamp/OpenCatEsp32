@@ -197,7 +197,6 @@ String irParser(String raw) {
 
 void read_infrared() {
   if (irrecv.decode(&results)) {
-    PTL(String(token) + "\t" + String(gait) + "\t" + String(direct) + "\tCmd: " + String(dataBuffer) + "\t" + String(runDelay));
     String IRsig = irParser(translateIR());
     //PTL(IRsig);
     if (IRsig != "") {
@@ -207,7 +206,6 @@ void read_infrared() {
       else
         token = T_SKILL;
       newCmdIdx = 1;
-      PTL(String(token) + "\t" + String(gait) + "\t" + String(direct) + "\tCmd: " + String(dataBuffer) + "\t" + String(runDelay));
     }
     irrecv.resume();  // receive the next value
   }
