@@ -78,12 +78,12 @@ public:
     firstMotionJoint = 0;
     dutyAngles = NULL;
   }
-  void buildSkill(int8_t* newCmd) {// K token
+  void buildSkill() {// K token
     strcpy(skillName, "temp");
     offsetLR = 0;
     period = (int8_t)newCmd[0];  //automatically cast to char*
     dataLen(period);
-    formatSkill((int8_t*)newCmd);
+    formatSkill();
   }
 
   void buildSkill(int s) {
@@ -93,7 +93,7 @@ public:
     for (int i = 0; i < dataLen(period); i++) {
       newCmd[i] = pgm_read_byte(pgmAddress++);
     }
-    formatSkill((int8_t*)newCmd);
+    formatSkill();
   }
   ~Skill() {
   }
@@ -122,7 +122,7 @@ public:
     dutyAngles = (int8_t*)newCmd + BUFF_LEN - angleLen;
   }
 
-  void formatSkill(int8_t* newCmd) {
+  void formatSkill() {
     transformSpeed = 1;  //period > 1 ? 1 : 0.5;
     firstMotionJoint = (period <= 1) ? 0 : DOF - WALKING_DOF;
 
@@ -327,9 +327,9 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
   } else {
     // if (skill != NULL)
     //   delete[] skill;
-    skill->buildSkill(skillList->get(skillIndex)->index);
-    char lr = skill->skillName[strlen(skill->skillName) - 1];
+    char lr = skillName[strlen(skillName) - 1];
     skill->offsetLR = (lr == 'L' ? 30 : (lr == 'R' ? -30 : 0));
+    skill->buildSkill(skillList->get(skillIndex)->index);
     if (strcmp(skill->skillName, "calib") && skill->period == 1)
       protectiveShift = esp_random() % 100 / 10.0 - 5;
     else

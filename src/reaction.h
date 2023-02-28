@@ -379,7 +379,7 @@ void reaction() {
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
           // if (skill != NULL)
           //   delete[] skill;
-          skill->buildSkill((int8_t *)newCmd);
+          skill->buildSkill();
           // skill->info();
           skill->transformToSkill(skill->nearestFrame());
           printToken(token);
@@ -391,7 +391,7 @@ void reaction() {
           unsigned int i2cEepromAddress = SERIAL_BUFF + 2 + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
           i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
-          skill->buildSkill((int8_t *)newCmd);
+          skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
 
           newCmdIdx = 0;
@@ -408,9 +408,6 @@ void reaction() {
                                           //it's better to compare skill->skillName and newCmd.
                                           //but need more logics for non skill cmd in between
             if (strcmp(newCmd, "rc")) {
-              if (lastCmd != NULL)
-                delete[] lastCmd;
-              lastCmd = new char[cmdLen + 1];
               strcpy(lastCmd, newCmd);
             }
             loadBySkillName(newCmd);
