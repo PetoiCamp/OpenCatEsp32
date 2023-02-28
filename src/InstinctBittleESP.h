@@ -1,5 +1,5 @@
 #define BITTLE
-//number of skills: 57
+//number of skills: 58
 
 const int8_t bdF[] PROGMEM = { 
 37, 0, 0, 1,
@@ -1493,19 +1493,24 @@ const int8_t tbl[] PROGMEM = {
 };
 const int8_t ts[] PROGMEM = { 
 -2, 0, 0, 1,
- 0, 0, 0, 
+ 0, 1, 2, 
    30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,	32, 0, 0, 0,
    75,  75,  75,  75,  75,  75,  75,  75,  75,  75,  75,  75, -55, -55, -55, -55,	32, 0, 0, 0,
 };
-  const char* skillNameWithType[]={"bdFI","bkI","bkLI","crFI","crLI","gpFI","gpLI","hlwI","jpFI","pcFI","phFI","phLI","trFI","trLI","vtFI","vtLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","restI","sitI","strI","upI","zeroN","angI","bfI","bxI","chrI","ckI","clupI","cmhI","dgI","ffI","fivI","hdsI","hgI","hiI","hskI","huI","jmpI","kcI","lpovI","ndI","pdI","peeI","puI","pu1I","rcI","rlI","scrhI","snfI","tblI","tsI",};
+const int8_t zz[] PROGMEM = { 
+-1, 0, 0, 1,
+ 0, 0, 0, 
+    0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,	 4, 0, 0, 0,
+};
+  const char* skillNameWithType[]={"bdFI","bkI","bkLI","crFI","crLI","gpFI","gpLI","hlwI","jpFI","pcFI","phFI","phLI","trFI","trLI","vtFI","vtLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","restI","sitI","strI","upI","zeroN","angI","bfI","bxI","chrI","ckI","clupI","cmhI","dgI","ffI","fivI","hdsI","hgI","hiI","hskI","huI","jmpI","kcI","lpovI","ndI","pdI","peeI","puI","pu1I","rcI","rlI","scrhI","snfI","tblI","tsI","zzI",};
 #if !defined(MAIN_SKETCH) || !defined(I2C_EEPROM)
 		//if it's not the main sketch to save data or there's no external EEPROM, 
 		//the list should always contain all information.
-  const int8_t* progmemPointer[] = {bdF, bk, bkL, crF, crL, gpF, gpL, hlw, jpF, pcF, phF, phL, trF, trL, vtF, vtL, wkF, wkL, balance, buttUp, calib, dropped, lifted, rest, sit, str, up, zero, ang, bf, bx, chr, ck, clup, cmh, dg, ff, fiv, hds, hg, hi, hsk, hu, jmp, kc, lpov, nd, pd, pee, pu, pu1, rc, rl, scrh, snf, tbl, ts, };
+  const int8_t* progmemPointer[] = {bdF, bk, bkL, crF, crL, gpF, gpL, hlw, jpF, pcF, phF, phL, trF, trL, vtF, vtL, wkF, wkL, balance, buttUp, calib, dropped, lifted, rest, sit, str, up, zero, ang, bf, bx, chr, ck, clup, cmh, dg, ff, fiv, hds, hg, hi, hsk, hu, jmp, kc, lpov, nd, pd, pee, pu, pu1, rc, rl, scrh, snf, tbl, ts, zz, };
 #else	//only need to know the pointers to newbilities, because the intuitions have been saved onto external EEPROM,
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };
 #endif
-//the total byte of instincts is 14019
+//the total byte of instincts is 14046
 //the maximal array size is 933 bytes of wkF. 
 //Make sure to leave enough memory for SRAM to work properly. Any single skill should be smaller than 400 bytes for safety.

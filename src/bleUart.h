@@ -61,7 +61,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
-        dataBuffer[cmdLen++] = rxValue[i];
+        newCmd[cmdLen++] = rxValue[i];
       }
       PTL(cmdLen);
       bleMessageShift = 0;
@@ -72,12 +72,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
 void readBle() {
   if (!bleMessageShift) {
-    while ((char)dataBuffer[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)  //wait until the long message is completed
+    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)  //wait until the long message is completed
       delay(1);
-    cmdLen = (dataBuffer[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-    dataBuffer[cmdLen] = '\0';
+    cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+    newCmd[cmdLen] = '\0';
     newCmdIdx = 2;
-    PT((char *)dataBuffer);
+    PT((char *)newCmd);
     bleMessageShift = 1;
   }
 }

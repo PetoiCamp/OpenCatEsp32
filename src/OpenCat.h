@@ -215,12 +215,11 @@ char token;
 char lastToken;
 char lowerToken;
 #define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
-// char *dataBuffer = new char[CMD_LEN + 1];
 char *lastCmd = new char[CMD_LEN + 1];
 int cmdLen=0;
 byte newCmdIdx = 0;
 #define BUFF_LEN 1524
-char *dataBuffer = new char[BUFF_LEN + 1];
+char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int lastVoltage;
 char terminator;
@@ -468,18 +467,18 @@ void initRobot() {
 #endif
 
   lastCmd[0] = '\0';
-  dataBuffer[0] = '\0';
+  newCmd[0] = '\0';
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
-  //    strcpy(dataBuffer, "calib");
+  //    strcpy(newCmd, "calib");
   //    exceptions = 0;
   //  }
   //  else {// Otherwise start up normally
-  //    strcpy(dataBuffer, "rest");
+  //    strcpy(newCmd, "rest");
   //    token = 'd';
   //    newCmdIdx = 6;
   //  }
-  //  loadBySkillName(dataBuffer);
+  //  loadBySkillName(newCmd);
   //
   allCalibratedPWM(currentAng);  //soft boot for servos
   delay(500);

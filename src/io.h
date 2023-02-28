@@ -106,14 +106,14 @@ void resetCmd() {
   //   idleThreshold = IDLE_SHORT;
   // else
   //   idleThreshold = IDLE_LONG;
-  // if (token == T_SKILL && strcmp(dataBuffer, "rc")) {
-  //   strcpy(lastCmd, dataBuffer);
+  // if (token == T_SKILL && strcmp(newCmd, "rc")) {
+  //   strcpy(lastCmd, newCmd);
   // }
   newCmdIdx = 0;
   lastToken = token;
   if (token != T_SKILL && token != T_CALIBRATE)
     token = '\0';
-  dataBuffer[0] = '\0';
+  newCmd[0] = '\0';
   cmdLen = 0;
   // printCmd();
 }
@@ -128,7 +128,7 @@ void printCmd() {
   PT('\t');
   PT(cmdLen);
   PTF("\tCmd:");
-  PTL(dataBuffer);
+  PTL(newCmd);
 }
 
 void read_serial() {
@@ -152,21 +152,22 @@ void read_serial() {
     do {
       if (serialPort->available()) {
         if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen > spaceAfterStoringData || cmdLen > BUFF_LEN) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
-          PTLF("OVF");                                                                                                                                                          //when it overflows, the head value of dataBuffer will be changed. why???
+          PTLF("OVF");                                                                                                                                                          //when it overflows, the head value of newCmd will be changed. why???
           do { serialPort->read(); } while (serialPort->available());
           PTL(token);
           token = T_SKILL;
-          strcpy(dataBuffer, "up");
+          strcpy(newCmd, "up");
           break;
         }
-        dataBuffer[cmdLen++] = serialPort->read();
+        newCmd[cmdLen++] = serialPort->read();
         lastSerialTime = millis();
       }
-    } while ((char)dataBuffer[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
-    cmdLen = (dataBuffer[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-    dataBuffer[cmdLen] = token < 'a' ? '~' : '\0';
+    } while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
+    cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+    newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    // printCmdByType(token, dataBuffer, cmdLen);
+    PTH("cmdLen",cmdLen);
+    // printCmdByType(token, newCmd, cmdLen);
   }
 }
 

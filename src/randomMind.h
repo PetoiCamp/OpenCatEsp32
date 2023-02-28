@@ -40,12 +40,12 @@ void allRandom() {
   cmdLen = rand() % 4 + 4;
   for (byte r = 0; r < cmdLen; r++) {
     byte j = rand() % sizeof(jointSet);
-    dataBuffer[r * 2] = jointSet[j];
-    dataBuffer[r * 2 + 1] = (int8_t)min(max(int(currentAng[jointSet[j]] - currentAdjust[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2), -90), 90);
-    //    PT(jointSet[j]); PT('\t'); PTL(int(dataBuffer[r * 2 + 1]));
+    newCmd[r * 2] = jointSet[j];
+    newCmd[r * 2 + 1] = (int8_t)min(max(int(currentAng[jointSet[j]] - currentAdjust[jointSet[j]] + rand() % rangeSet[j] - rangeSet[j] / 2), -90), 90);
+    //    PT(jointSet[j]); PT('\t'); PTL(int(newCmd[r * 2 + 1]));
   }
   cmdLen *= 2;
-  dataBuffer[cmdLen] = '\0';
+  newCmd[cmdLen] = '\0';
 }
 
 void randomMind() {
@@ -62,7 +62,7 @@ void randomMind() {
         allRandom();
       else {
         token = randomMindList[randomChoice][0];
-        strcpy((char *)dataBuffer, randomMindList[randomChoice] + 1);  // this is duable only because dataBuffer+1 is after dataBuffer!
+        strcpy(newCmd, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
       }
       newCmdIdx = 100;
       transformSpeed = 0.3;

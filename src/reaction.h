@@ -5,7 +5,7 @@ void dealWithExceptions() {
     //  for (int m = 0; m < 2; m++)
     //    meow(30 - m * 12, 42 - m * 12, 20);
     token = 'k';
-    strcpy(dataBuffer, "rc");
+    strcpy(newCmd, "rc");
     newCmdIdx = -1;
   }
 }
@@ -67,7 +67,7 @@ bool lowBattery() {
 void reaction() {
   if (newCmdIdx) {
     lowerToken = tolower(token);
-    cmdLen = (token < 'a') ? strlenUntil(dataBuffer, '~') : strlen((char *)dataBuffer);
+    cmdLen = (token < 'a') ? strlenUntil(newCmd, '~') : strlen((char *)newCmd);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
       autoSwitch = RANDOM_MIND;
@@ -137,9 +137,9 @@ void reaction() {
         }
       case T_REST:
         {
-          strcpy(dataBuffer, "rest");
-          if (strcmp(dataBuffer, lastCmd)) {
-            loadBySkillName(dataBuffer);
+          strcpy(newCmd, "rest");
+          if (strcmp(newCmd, lastCmd)) {
+            loadBySkillName(newCmd);
           }
           shutServos();
           checkGyro = false;
@@ -165,11 +165,11 @@ void reaction() {
 #ifdef ULTRASONIC
       case T_COLOR:
         {
-          long color = ((long)(dataBuffer[0]) << 16) + ((long)(dataBuffer[1]) << 8) + (long)(dataBuffer[2]);
-          if (dataBuffer[4] == -1)  //no special effect
-            mRUS04.SetRgbColor(E_RGB_INDEX(dataBuffer[3]), color);
+          long color = ((long)(newCmd[0]) << 16) + ((long)(newCmd[1]) << 8) + (long)(newCmd[2]);
+          if (newCmd[4] == -1)  //no special effect
+            mRUS04.SetRgbColor(E_RGB_INDEX(newCmd[3]), color);
           else
-            mRUS04.SetRgbEffect(E_RGB_INDEX(dataBuffer[3]), color, dataBuffer[4]);
+            mRUS04.SetRgbEffect(E_RGB_INDEX(newCmd[3]), color, newCmd[4]);
           break;
         }
 #endif
@@ -223,7 +223,7 @@ void reaction() {
             }
             targetFrame[DOF] = '~';
             char *pch;
-            pch = strtok(dataBuffer, " ,");
+            pch = strtok(newCmd, " ,");
             nonHeadJointQ = false;
             do {  //it supports combining multiple commands at one time
               //for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
@@ -250,8 +250,8 @@ void reaction() {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
 #endif
-                  strcpy(dataBuffer, "calib");
-                  loadBySkillName(dataBuffer);
+                  strcpy(newCmd, "calib");
+                  loadBySkillName(newCmd);
                 }
                 if (inLen == 2) {
                   if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is adding 2 and 1009 is adding 9 degrees
@@ -302,8 +302,8 @@ void reaction() {
               delay(5);
             } while (pch != NULL);
 
-            PTL(token);
             if ((token == T_INDEXED_SIMULTANEOUS_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
+              printToken(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -333,9 +333,9 @@ void reaction() {
             }
             targetFrame[DOF] = '~';
             for (int i = 0; i < cmdLen; i += 2) {
-              targetFrame[dataBuffer[i]] = (int8_t)dataBuffer[i + 1];
-              if (token == T_INDEXED_SIMULTANEOUS_BIN && dataBuffer[i] < 4) {
-                targetHead[dataBuffer[i]] = (int8_t)dataBuffer[i + 1];
+              targetFrame[newCmd[i]] = (int8_t)newCmd[i + 1];
+              if (token == T_INDEXED_SIMULTANEOUS_BIN && newCmd[i] < 4) {
+                targetHead[newCmd[i]] = (int8_t)newCmd[i + 1];
                 manualHeadQ = true;
               } else
                 nonHeadJointQ = true;
@@ -344,8 +344,8 @@ void reaction() {
                 delay(10);
               }
             }
-            printToken();
             if (nonHeadJointQ || lastToken != T_SKILL) {
+              printToken(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_BIN) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -365,13 +365,13 @@ void reaction() {
       case T_LISTED_BIN:  //list of all 16 joint: angle0, angle2,... angle15 (binary encoding)
         {
           printToken();
-          transform((int8_t *)dataBuffer, 1, transformSpeed);  //need to add angleDataRatio if the angles are large
+          transform((int8_t *)newCmd, 1, transformSpeed);  //need to add angleDataRatio if the angles are large
           break;
         }
       case T_BEEP_BIN:
         {
           for (byte b = 0; b < cmdLen / 2; b++)
-            beep(dataBuffer[2 * b], 1000 / dataBuffer[2 * b + 1]);
+            beep((int8_t)newCmd[2 * b], 1000 / (int8_t)newCmd[2 * b + 1]);
           break;
         }
       case T_TEMP:
@@ -379,42 +379,41 @@ void reaction() {
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
           // if (skill != NULL)
           //   delete[] skill;
-          skill->buildSkill((int8_t *)dataBuffer);
-          //          skill->info();
+          skill->buildSkill((int8_t *)newCmd);
+          // skill->info();
           skill->transformToSkill(skill->nearestFrame());
           printToken(token);
           token = T_SKILL;
           break;
         }
-      case T_SKILL_DATA:
-        {  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
-          // if (skill != NULL)
-          //   delete[] skill;
-          skill->buildSkill((int8_t *)dataBuffer);
-          skill->transformToSkill(skill->nearestFrame());
+      case T_SKILL_DATA:  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
+        {
           unsigned int i2cEepromAddress = SERIAL_BUFF + 2 + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
           i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);
-          copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)dataBuffer);
+          copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
+          skill->buildSkill((int8_t *)newCmd);
+          skill->transformToSkill(skill->nearestFrame());
+
           newCmdIdx = 0;
-          dataBuffer[0] = '\0';
+          newCmd[0] = '\0';
           token = T_SKILL;
 
           break;
         }
       case T_SKILL:
         {
-          if (!strcmp("x", dataBuffer)        // x for random skill
-              || strcmp(lastCmd, dataBuffer)  //won't transform for the same gait.
-              || skill->period <= 1) {        // skill->period can be NULL!
-                                              //it's better to compare skill->skillName and dataBuffer.
-                                              //but need more logics for non skill cmd in between
-            if (strcmp(dataBuffer, "rc")) {
+          if (!strcmp("x", newCmd)        // x for random skill
+              || strcmp(lastCmd, newCmd)  //won't transform for the same gait.
+              || skill->period <= 1) {    // skill->period can be NULL!
+                                          //it's better to compare skill->skillName and newCmd.
+                                          //but need more logics for non skill cmd in between
+            if (strcmp(newCmd, "rc")) {
               if (lastCmd != NULL)
                 delete[] lastCmd;
               lastCmd = new char[cmdLen + 1];
-              strcpy(lastCmd, dataBuffer);
+              strcpy(lastCmd, newCmd);
             }
-            loadBySkillName(dataBuffer);
+            loadBySkillName(newCmd);
             // skill->info();
           }
           break;
@@ -428,7 +427,7 @@ void reaction() {
     if (token != T_SKILL || skill->period > 0) {
       printToken();  //postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL
-          && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_BEEP || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
+          && (lowerToken == T_GYRO || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
         token = T_SKILL;
     }
@@ -441,7 +440,7 @@ void reaction() {
 
     if (skill->period < 0) {
       if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here. check OpenCat2.0
-        strcpy(dataBuffer, lastCmd);
+        strcpy(newCmd, lastCmd);
       } else if (!strcmp(skill->skillName, "fd")) {  //need to optimize logic to combine "rest" and "fold"
         shutServos();
         checkGyro = false;
@@ -449,16 +448,16 @@ void reaction() {
         idleTimer = 0;
         token = '\0';
       } else {
-        //        strcpy(dataBuffer, "up");
-        strcpy(dataBuffer, "");
+        //        strcpy(newCmd, "up");
+        newCmd[0] = '\0';
         arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
         skill->period = 1;
         frame = 0;
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
-      if (strcmp(dataBuffer, ""))
-        loadBySkillName(dataBuffer);
+      if (strcmp(newCmd, ""))
+        loadBySkillName(newCmd);
       printToken();  //behavior can confirm completion by sending the token back
     }
   }

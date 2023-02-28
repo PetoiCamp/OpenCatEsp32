@@ -47,8 +47,8 @@ public:
       cmdLen = t->paraLength;
       taskInterval = t->dly;
       if (cmdLen) {
-        arrayNCPY(dataBuffer, t->parameters, cmdLen);
-        dataBuffer[cmdLen] = '\0';
+        arrayNCPY(newCmd, t->parameters, cmdLen);
+        newCmd[cmdLen] = '\0';
       }
       taskTimer = millis();
       newCmdIdx = 5;

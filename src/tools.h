@@ -28,7 +28,6 @@ template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *sourc
     destination[i] = source[i];
     //    PT(source[i]); PT(','); PT(destination[i]);
   }
-  PTL();
 }
 
 template<typename T> void getExtreme(T *arr, T *extreme, int len = DOF) {

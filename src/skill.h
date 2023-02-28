@@ -78,21 +78,22 @@ public:
     firstMotionJoint = 0;
     dutyAngles = NULL;
   }
-  void buildSkill(int8_t* dataBuffer) {
+  void buildSkill(int8_t* newCmd) {// K token
     strcpy(skillName, "temp");
     offsetLR = 0;
-    period = (int8_t)dataBuffer[0];  //automatically cast to char*
+    period = (int8_t)newCmd[0];  //automatically cast to char*
     dataLen(period);
-    formatSkill((int8_t*)dataBuffer);
+    formatSkill((int8_t*)newCmd);
   }
 
   void buildSkill(int s) {
+    strcpy(skillName, newCmd);
     unsigned int pgmAddress = (unsigned int)progmemPointer[s];
     period = (int8_t)pgm_read_byte(pgmAddress);  //automatically cast to char*
     for (int i = 0; i < dataLen(period); i++) {
-      dataBuffer[i] = pgm_read_byte(pgmAddress++);
+      newCmd[i] = pgm_read_byte(pgmAddress++);
     }
-    formatSkill((int8_t*)dataBuffer);
+    formatSkill((int8_t*)newCmd);
   }
   ~Skill() {
   }
@@ -117,23 +118,23 @@ public:
       PTL(spaceAfterStoringData);
     }
     for (int i = 0; i <= angleLen; i++)
-      dataBuffer[BUFF_LEN - i] = dataBuffer[skillHeader + angleLen - i];
-    dutyAngles = (int8_t*)dataBuffer + BUFF_LEN - angleLen;
+      newCmd[BUFF_LEN - i] = newCmd[skillHeader + angleLen - i];
+    dutyAngles = (int8_t*)newCmd + BUFF_LEN - angleLen;
   }
 
-  void formatSkill(int8_t* dataBuffer) {
+  void formatSkill(int8_t* newCmd) {
     transformSpeed = 1;  //period > 1 ? 1 : 0.5;
     firstMotionJoint = (period <= 1) ? 0 : DOF - WALKING_DOF;
 
     for (int i = 0; i < 2; i++) {
-      expectedRollPitch[i] = (int8_t)dataBuffer[1 + i];
+      expectedRollPitch[i] = (int8_t)newCmd[1 + i];
       yprTilt[2 - i] = 0;
     }
-    angleDataRatio = (int8_t)dataBuffer[3];
+    angleDataRatio = (int8_t)newCmd[3];
     byte baseHeader = 4;
     if (period < 0) {
       for (byte i = 0; i < 3; i++)
-        loopCycle[i] = (int8_t)dataBuffer[baseHeader++];
+        loopCycle[i] = (int8_t)newCmd[baseHeader++];
     }
     inplaceShift();
     // int len = abs(period) * frameSize;
@@ -144,9 +145,9 @@ public:
     //       if (col < 4)
     //         dutyAngles[k * frameSize + col] = 0;
     //       else
-    //         dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * GAIT_ARRAY_DOF + col - 4]);
+    //         dutyAngles[k * frameSize + col] = int8_t(newCmd[skillHeader + k * GAIT_ARRAY_DOF + col - 4]);
     //     else
-    //       dutyAngles[k * frameSize + col] = int8_t(dataBuffer[skillHeader + k * frameSize + col]);
+    //       dutyAngles[k * frameSize + col] = int8_t(newCmd[skillHeader + k * frameSize + col]);
     //   }
     // }
   }
@@ -211,9 +212,9 @@ public:
     int extreme[2];
     getExtreme(targetFrame, extreme);
     if (extreme[0] < -125 || extreme[1] > 125) {
-      PT(extreme[0]);
-      PT('\t');
-      PTL(extreme[1]);
+      // PT(extreme[0]);
+      // PT('\t');
+      // PTL(extreme[1]);
       angleDataRatio = 2;
     } else
       angleDataRatio = 1;
@@ -224,7 +225,7 @@ public:
     firstMotionJoint = 0;
     frameSize = DOF;
     frame = 0;
-    // info();
+    info();
   }
   void perform() {
     if (period < 0) {  //behaviors
@@ -327,18 +328,15 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     // if (skill != NULL)
     //   delete[] skill;
     skill->buildSkill(skillList->get(skillIndex)->index);
-    // skill->skillName = new char[strlen(skillName) + 1];
-    strcpy(skill->skillName, skillName);
-    skill->skillName[strlen(skillName)] = '\0';  //drop the last charactor of skill type
-    char lr = skillName[strlen(skillName) - 1];
+    char lr = skill->skillName[strlen(skill->skillName) - 1];
     skill->offsetLR = (lr == 'L' ? 30 : (lr == 'R' ? -30 : 0));
-    if (strcmp(skillName, "calib") && skill->period == 1)
+    if (strcmp(skill->skillName, "calib") && skill->period == 1)
       protectiveShift = esp_random() % 100 / 10.0 - 5;
     else
       protectiveShift = 0;
     for (byte i = 0; i < DOF; i++)
       skill->dutyAngles[i] += protectiveShift;
-    // if (skill->offsetLR < 0 || skill->period <= 1 && skill->offsetLR == 0 && esp_random() % 2 && token != T_CALIBRATE)
+    // skill->info();
     if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
       skill->mirror();  //randomly mirror the direction of a behavior
     skill->transformToSkill(skill->nearestFrame());

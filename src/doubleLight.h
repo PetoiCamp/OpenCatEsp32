@@ -62,9 +62,8 @@ void read_doubleLight() {
   //   actualOffset = (last + clippedOffset) / 2;
   //   actualOffset = max(min(actualOffset, 90), -90);
   //   token = T_INDEXED_SIMULTANEOUS_BIN;
-  //   dataBuffer[0] = 0;
-  //   dataBuffer[1] = actualOffset;
-  //   bufferPtr = dataBuffer;
+  //   newCmd[0] = 0;
+  //   newCmd[1] = actualOffset;
   //   last = actualOffset;
   //   cmdLen = 2;
   //   newCmdIdx = 5;
