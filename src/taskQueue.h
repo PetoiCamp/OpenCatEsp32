@@ -9,15 +9,15 @@ public:
   template<typename T> Task(char t, T* p, int d = 0)
     : tkn{ t }, dly{ d } {
     paraLength = (tkn < 'a') ? strlenUntil(p, '~') : strlen((char*)p);
-    if (paraLength) {
-      parameters = new char[paraLength + 1];
-      arrayNCPY(parameters, p, paraLength);
-      parameters[paraLength] = tkn < 'a' ? '~' : '\0';
-    }
+    parameters = new char[paraLength + 1];
+    // if (paraLength) {
+    arrayNCPY(parameters, p, paraLength);
+    parameters[paraLength] = tkn < 'a' ? '~' : '\0';
+    // }
   };
   ~Task() {
-    if (paraLength)
-      delete[] parameters;
+    // if (paraLength)
+    delete[] parameters;
   };
   void info() {
     PT(tkn);
@@ -41,15 +41,15 @@ public:
   void popTask() {
     if (taskInterval == -1 || millis() - taskTimer > taskInterval) {
       Task* t = this->front();
-      t->info();
+      // t->info();
       token = t->tkn;
       lowerToken = tolower(token);
       cmdLen = t->paraLength;
       taskInterval = t->dly;
-      if (cmdLen) {
+      // if (cmdLen) {
         arrayNCPY(newCmd, t->parameters, cmdLen);
         newCmd[cmdLen] = token < 'a' ? '~' : '\0';
-      }
+      // }
       taskTimer = millis();
       newCmdIdx = 5;
       delete t;

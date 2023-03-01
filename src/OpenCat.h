@@ -62,8 +62,8 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-#define SERIAL_TIMEOUT_SHORT 5
-#define SERIAL_TIMEOUT_LONG 50
+#define SERIAL_TIMEOUT 50  // 5 may cut off the message
+// #define SERIAL_TIMEOUT_LONG 50
 #define SOFTWARE_VERSION "B230216"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
@@ -202,7 +202,7 @@ bool newBoard = false;
 #define T_DECELERATE ','
 #define T_RANDOM_MIND 'z'
 
-bool updated[10];
+// bool updated[10];
 float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
 
@@ -214,16 +214,16 @@ int tStep = 1;
 char token;
 char lastToken;
 char lowerToken;
-#define CMD_LEN 20  //the last char will be '\0' so only CMD_LEN-1 elements are allowed
-char *lastCmd = new char[CMD_LEN + 1];
-int cmdLen=0;
+#define CMD_LEN 10
+char *lastCmd = new char[CMD_LEN + 1];  //the last char must be '\0' for safe so CMD_LEN+1 elements are required
+int cmdLen = 0;
 byte newCmdIdx = 0;
 #define BUFF_LEN 1524
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int lastVoltage;
 char terminator;
-int serialTimeout;
+// int serialTimeout;
 long lastSerialTime = 0;
 
 bool checkGyro = false;

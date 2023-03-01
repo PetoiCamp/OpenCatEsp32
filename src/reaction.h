@@ -69,7 +69,6 @@ void reaction() {
     lowerToken = tolower(token);
     if (!cmdLen)
       cmdLen = (token < 'a') ? strlenUntil(newCmd, '~') : strlen((char *)newCmd);
-    PTH("react ", cmdLen);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
       autoSwitch = RANDOM_MIND;
@@ -366,7 +365,6 @@ void reaction() {
         }
       case T_LISTED_BIN:  //list of all 16 joint: angle0, angle2,... angle15 (binary encoding)
         {
-          printToken();
           transform((int8_t *)newCmd, 1, transformSpeed);  //need to add angleDataRatio if the angles are large
           break;
         }

@@ -101,21 +101,12 @@ void blueSspSetup() {
 //end of Richard Li's code
 
 void resetCmd() {
-  // printCmd();
-  // if (lastToken == T_SKILL)
-  //   idleThreshold = IDLE_SHORT;
-  // else
-  //   idleThreshold = IDLE_LONG;
-  // if (token == T_SKILL && strcmp(newCmd, "rc")) {
-  //   strcpy(lastCmd, newCmd);
-  // }
   newCmdIdx = 0;
   lastToken = token;
   if (token != T_SKILL && token != T_CALIBRATE)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
-  // printCmd();
 }
 
 void printCmd() {
@@ -143,27 +134,29 @@ void read_serial() {
     lowerToken = tolower(token);
     delay(1);  //leave enough time for serial read
       // save in a independent memory to avoid breaking the current running skill
-    terminator = (token < 'a') ? '~' : '\n';                                                                       //capitalized tokens use binary encoding for long data commands
-                                                                                                                   //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
-    serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
-                                                                                                                   //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
-                                                                                                                   //so it needs a timeout for the no line ending case
-    lastSerialTime = 0;
+    terminator = (token < 'a') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
+                                              //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+    // serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
+    lastSerialTime = millis();
     do {
       if (serialPort->available()) {
-        if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen > spaceAfterStoringData || cmdLen > BUFF_LEN) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
-          PTLF("OVF");                                                                                                                                                          //when it overflows, the head value of newCmd will be changed. why???
-          do { serialPort->read(); } while (serialPort->available());
-          PTL(token);
-          token = T_SKILL;
-          strcpy(newCmd, "up");
-          break;
-        }
-        newCmd[cmdLen++] = serialPort->read();
-        // PT((int8_t)newCmd[cmdLen-1]);PT('\t');
+        do {
+          newCmd[cmdLen++] = serialPort->read();
+          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen > spaceAfterStoringData || cmdLen > BUFF_LEN) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
+            do { serialPort->read(); } while (serialPort->available());
+            PTF("OVF");
+            PTL(cmdLen);
+            PTL(token);
+            token = T_SKILL;
+            strcpy(newCmd, "up");
+            break;
+          }
+        } while (serialPort->available());
         lastSerialTime = millis();
       }
-    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
+    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < SERIAL_TIMEOUT);  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                     //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                     //so it needs a timeout for the no line ending case
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;

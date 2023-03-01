@@ -212,22 +212,16 @@ public:
     int extreme[2];
     getExtreme(targetFrame, extreme);
     if (extreme[0] < -125 || extreme[1] > 125) {
-      // PT(extreme[0]);
-      // PT('\t');
-      // PTL(extreme[1]);
       angleDataRatio = 2;
       for (int i = 0; i < DOF; i++)
         targetFrame[i] /= 2;
     } else
       angleDataRatio = 1;
-
     arrayNCPY(dutyAngles, targetFrame, DOF);
     period = 1;
     firstMotionJoint = 0;
     frameSize = DOF;
     frame = 0;
-    // info();
-    // printListWithoutString(currentAng);
   }
   void perform() {
     if (period < 0) {  //behaviors
