@@ -15,12 +15,6 @@
 //template <typename T> int8_t sign(T val) {
 //  return (T(0) < val) - (val < T(0));
 //}
-template<typename T> int strlenUntil(T *s, char terminator) {
-  int l = 0;
-  while (s[l++] != terminator)
-    ;
-  return l - 1;
-}
 
 template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *source, int len) {  //deep copy regardless of '\0'
   for (int i = 0; i < len; i++) {
@@ -80,16 +74,29 @@ template<typename T> void printList(T *arr, byte len = DOF) {
   }
   PTL(temp);
 }
+
 template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
   for (byte i = 0; i < len; i++) {
     PT((T)(arr[i]));
-    PT('\t');
+    if (!(i+1) % 20)
+      PTL();
+    else
+      PT('\t');
   }
   PTL();
 }
 
+template<typename T> int strlenUntil(T *s, char terminator) {
+  int l = 0;
+  while (s[l++] != terminator)
+    ;
+  return l - 1;
+}
+
 template<typename T> void printCmdByType(char t, T *data, int len) {
   PT(t);
+  int l = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
+  PTL(l);
   if (len > 0) {
     if (t < 'a')
       printListWithoutString((int8_t *)data, len);

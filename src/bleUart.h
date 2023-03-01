@@ -75,7 +75,7 @@ void readBle() {
     while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)  //wait until the long message is completed
       delay(1);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-    newCmd[cmdLen] = '\0';
+    newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
     PT((char *)newCmd);
     bleMessageShift = 1;

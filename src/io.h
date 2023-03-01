@@ -128,7 +128,7 @@ void printCmd() {
   PT('\t');
   PT(cmdLen);
   PTF("\tCmd:");
-  PTL(newCmd);
+  printCmdByType(token, newCmd, cmdLen);
 }
 
 void read_serial() {
@@ -160,14 +160,16 @@ void read_serial() {
           break;
         }
         newCmd[cmdLen++] = serialPort->read();
+        // PT((int8_t)newCmd[cmdLen-1]);PT('\t');
         lastSerialTime = millis();
       }
-    } while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
+    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    PTH("cmdLen",cmdLen);
+    // PTH("cmdLen", cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
+    // printCmd();
   }
 }
 

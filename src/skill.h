@@ -78,7 +78,7 @@ public:
     firstMotionJoint = 0;
     dutyAngles = NULL;
   }
-  void buildSkill() {// K token
+  void buildSkill() {  // K token
     strcpy(skillName, "temp");
     offsetLR = 0;
     period = (int8_t)newCmd[0];  //automatically cast to char*
@@ -216,16 +216,18 @@ public:
       // PT('\t');
       // PTL(extreme[1]);
       angleDataRatio = 2;
+      for (int i = 0; i < DOF; i++)
+        targetFrame[i] /= 2;
     } else
       angleDataRatio = 1;
-    for (int i = 0; i < DOF; i++)
-      targetFrame[i] /= 2;
+
     arrayNCPY(dutyAngles, targetFrame, DOF);
     period = 1;
     firstMotionJoint = 0;
     frameSize = DOF;
     frame = 0;
-    info();
+    // info();
+    // printListWithoutString(currentAng);
   }
   void perform() {
     if (period < 0) {  //behaviors

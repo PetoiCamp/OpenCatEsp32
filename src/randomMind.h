@@ -3,19 +3,22 @@
 #define IDLE_LONG 10
 #define EVERY_X_SECONDS 5
 int idleThreshold = IDLE_SHORT;
-#define RANDOM_MIND false//true  //let the robot do random stuffs. use token 'z' to activate/deactivate
+#define RANDOM_MIND false  //true  //let the robot do random stuffs. use token 'z' to activate/deactivate
 int randomInterval = 1000;
-const char *randomMindList[] = { "iRand", "i", "ksit",  //"u",
+const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh",  //"u",
 #ifdef CUB
                                  "kfd", "krt",
 #else
-                                 "kck", "m0 -45 0 45 0 -45 0 45",
+                                 "kck", "m0 -45 0 45 0 0",
 #endif
                                  NULL };
 byte choiceWeight[] = {
-  50,
+  15,
+  30,
   20,
-  10,  // 5,
+  5,
+  5,
+  3,  // 5,
 #ifdef CUB
   1,
   1,
@@ -33,7 +36,7 @@ long randTimer;
 void allRandom() {
   char tokenSet[] = { T_INDEXED_SIMULTANEOUS_BIN, T_INDEXED_SEQUENTIAL_BIN };
   int8_t jointSet[] = { 0, 1, 2, 8, 9, 12, 13, 14, 15 };
-  byte rangeSet[] = { 90, 45, 180, 5, 5, 10, 10, 5, 5 };
+  byte rangeSet[] = { 30, 30, 30, 2, 2, 5, 5, 2, 2 };
   //  byte rangeSet[] = {90, 90, 180, 50, 50, 100, 100, 50, 50};
 
   token = tokenSet[rand() % 2];
@@ -45,7 +48,7 @@ void allRandom() {
     //    PT(jointSet[j]); PT('\t'); PTL(int(newCmd[r * 2 + 1]));
   }
   cmdLen *= 2;
-  newCmd[cmdLen] = '\0';
+  newCmd[cmdLen] = '~';
 }
 
 void randomMind() {
@@ -65,10 +68,10 @@ void randomMind() {
         strcpy(newCmd, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
       }
       newCmdIdx = 100;
-      transformSpeed = 0.3;
+      transformSpeed = 0.2;
     }
   } else
-    transformSpeed = 4;
+    transformSpeed = 1;
 }
 
 void powerSaver(int idleThreshold = 10) {  //unit is second

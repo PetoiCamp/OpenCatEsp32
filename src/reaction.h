@@ -67,7 +67,9 @@ bool lowBattery() {
 void reaction() {
   if (newCmdIdx) {
     lowerToken = tolower(token);
-    cmdLen = (token < 'a') ? strlenUntil(newCmd, '~') : strlen((char *)newCmd);
+    if (!cmdLen)
+      cmdLen = (token < 'a') ? strlenUntil(newCmd, '~') : strlen((char *)newCmd);
+    PTH("react ", cmdLen);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
       autoSwitch = RANDOM_MIND;
@@ -140,6 +142,7 @@ void reaction() {
           strcpy(newCmd, "rest");
           if (strcmp(newCmd, lastCmd)) {
             loadBySkillName(newCmd);
+            skill->info();
           }
           shutServos();
           checkGyro = false;
@@ -230,14 +233,13 @@ void reaction() {
               //the combined commands should be less than four. string len <=30 to be exact.
               int target[2] = {};
               byte inLen = 0;
+
               for (byte b = 0; b < 2 && pch != NULL; b++) {
                 target[b] = atoi(pch);  //@@@ cast
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
-              // PT(target[0]);PT('\t');PT(target[1]);PT('\t');
               targetFrame[target[0]] = target[1];
-              // PTL(targetFrame[target[0]]);
               if (token == T_INDEXED_SIMULTANEOUS_ASC) {
                 if (target[0] < 4) {
                   targetHead[target[0]] = target[1];
@@ -303,7 +305,7 @@ void reaction() {
             } while (pch != NULL);
 
             if ((token == T_INDEXED_SIMULTANEOUS_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
-              printToken(token);
+              // printToken(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -345,7 +347,7 @@ void reaction() {
               }
             }
             if (nonHeadJointQ || lastToken != T_SKILL) {
-              printToken(token);
+              // printToken(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_BIN) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -388,8 +390,8 @@ void reaction() {
         }
       case T_SKILL_DATA:  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
         {
-          unsigned int i2cEepromAddress = SERIAL_BUFF + 2 + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
-          i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);
+          unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
+          i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  //the address takes 2 bytes to store
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
@@ -428,6 +430,7 @@ void reaction() {
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
         token = T_SKILL;
     }
+
     resetCmd();
   }
   if (token == T_SKILL) {
