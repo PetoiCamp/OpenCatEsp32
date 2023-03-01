@@ -47,7 +47,7 @@ String range2String(int r0 = 0, int r1 = 0) {
 template<typename T> void printList(T *arr, byte len = DOF) {
   String temp = "";
   for (byte i = 0; i < len; i++) {
-    temp += String(int(arr[i]));
+    temp += String(float(arr[i]));
     temp += ",\t";
     //PT((T)(arr[i]));
     //PT('\t');
@@ -90,8 +90,10 @@ template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
 }
 
 template<typename T> void printCmdByType(char t, T *data, int len) {
-  // PT(t);
+  PT(t);
+  PTL(len);
   // int l = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
+  // PT("calculated len: ");
   // PTL(l);
   if (len > 0) {
     if (t < 'a')
@@ -108,8 +110,10 @@ template<typename T> void printCmdByType(char t, T *data, int len) {
 template<typename T, typename T1> void arrayNCPY(T *destination, const T1 *source, int len) {  //deep copy regardless of '\0'
   for (int i = 0; i < len; i++) {
     // destination[i] = min((T1)125, max((T1)-125, source[i]));
+    // PT(destination[i]);
+    // PT('\t');
+    // PT(source[i]);
     destination[i] = source[i];
-    //    PT(source[i]); PT(','); PT(destination[i]);
   }
 }
 

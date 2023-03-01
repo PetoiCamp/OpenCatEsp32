@@ -10,10 +10,8 @@ public:
     : tkn{ t }, dly{ d } {
     paraLength = (tkn < 'a') ? strlenUntil(p, '~') : strlen((char*)p);
     parameters = new char[paraLength + 1];
-    // if (paraLength) {
     arrayNCPY(parameters, p, paraLength);
     parameters[paraLength] = tkn < 'a' ? '~' : '\0';
-    // }
   };
   ~Task() {
     // if (paraLength)
@@ -46,10 +44,8 @@ public:
       lowerToken = tolower(token);
       cmdLen = t->paraLength;
       taskInterval = t->dly;
-      // if (cmdLen) {
-        arrayNCPY(newCmd, t->parameters, cmdLen);
-        newCmd[cmdLen] = token < 'a' ? '~' : '\0';
-      // }
+      arrayNCPY(newCmd, t->parameters, cmdLen);
+      newCmd[cmdLen] = token < 'a' ? '~' : '\0';
       taskTimer = millis();
       newCmdIdx = 5;
       delete t;

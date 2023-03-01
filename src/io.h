@@ -100,15 +100,6 @@ void blueSspSetup() {
 
 //end of Richard Li's code
 
-void resetCmd() {
-  newCmdIdx = 0;
-  lastToken = token;
-  if (token != T_SKILL && token != T_CALIBRATE)
-    token = '\0';
-  newCmd[0] = '\0';
-  cmdLen = 0;
-}
-
 void printCmd() {
   PTF("lastT:");
   PT(lastToken);
@@ -120,6 +111,16 @@ void printCmd() {
   PT(cmdLen);
   PTF("\tCmd:");
   printCmdByType(token, newCmd, cmdLen);
+}
+
+void resetCmd() {
+  newCmdIdx = 0;
+  lastToken = token;
+  if (token != T_SKILL && token != T_CALIBRATE)
+    token = '\0';
+  newCmd[0] = '\0';
+  cmdLen = 0;
+  // printCmd();
 }
 
 void read_serial() {
@@ -141,16 +142,18 @@ void read_serial() {
     do {
       if (serialPort->available()) {
         do {
-          newCmd[cmdLen++] = serialPort->read();
-          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen > spaceAfterStoringData || cmdLen > BUFF_LEN) {  //} || token == T_INDEXED_SIMULTANEOUS_ASC)) {
+          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData
+              || cmdLen >= BUFF_LEN) {
             do { serialPort->read(); } while (serialPort->available());
             PTF("OVF");
             PTL(cmdLen);
             PTL(token);
             token = T_SKILL;
             strcpy(newCmd, "up");
-            break;
+            cmdLen = 2;
+            return;
           }
+          newCmd[cmdLen++] = serialPort->read();
         } while (serialPort->available());
         lastSerialTime = millis();
       }
@@ -160,9 +163,7 @@ void read_serial() {
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    // PTH("cmdLen", cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
-    // printCmd();
   }
 }
 

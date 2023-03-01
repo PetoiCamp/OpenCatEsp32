@@ -64,7 +64,7 @@
 */
 #define SERIAL_TIMEOUT 50  // 5 may cut off the message
 // #define SERIAL_TIMEOUT_LONG 50
-#define SOFTWARE_VERSION "B230216"  //BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B230301"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
 #define GYRO_PIN

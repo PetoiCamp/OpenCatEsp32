@@ -221,7 +221,7 @@ void reaction() {
             int targetFrame[DOF + 1];
             // arrayNCPY(targetFrame, currentAng, DOF);
             for (int i = 0; i < DOF; i++) {
-              targetFrame[i] = currentAng[i] - currentAdjust[i];
+              targetFrame[i] = currentAng[i];
             }
             targetFrame[DOF] = '~';
             char *pch;
@@ -330,7 +330,7 @@ void reaction() {
           else {
             int targetFrame[DOF + 1];
             for (int i = 0; i < DOF; i++) {
-              targetFrame[i] = currentAng[i] - currentAdjust[i];
+              targetFrame[i] = currentAng[i];
             }
             targetFrame[DOF] = '~';
             for (int i = 0; i < cmdLen; i += 2) {
