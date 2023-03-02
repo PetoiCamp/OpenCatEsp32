@@ -114,13 +114,15 @@ void printCmd() {
 }
 
 void resetCmd() {
+  if (strcmp(newCmd, "rc")) {
+    strcpy(lastCmd, newCmd);
+  }
   newCmdIdx = 0;
   lastToken = token;
   if (token != T_SKILL && token != T_CALIBRATE)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
-  // printCmd();
 }
 
 void read_serial() {
@@ -217,7 +219,8 @@ void readSignal() {
 void printToken(char t = token) {
   if (deviceConnected)
     bleWrite(String(t));
-  if (!confirmRequestPending)
+  // if (!confirmRequestPending)
+  if (deviceConnected)
     SerialBT.println(t);
   PTL(t);
 }

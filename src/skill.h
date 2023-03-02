@@ -93,6 +93,7 @@ public:
     for (int i = 0; i < dataLen(period); i++) {
       newCmd[i] = pgm_read_byte(pgmAddress++);
     }
+    newCmd[dataLen(period)] = '~';
     formatSkill();
   }
   ~Skill() {
@@ -171,12 +172,21 @@ public:
       PTL();
     }
 #ifdef PRINT_SKILL_DATA
+    int showRows = 1;
     for (int k = 0; k < abs(period); k++) {
-      for (int col = 0; col < frameSize; col++) {
-        PT((int8_t)dutyAngles[k * frameSize + col]);
-        PT(",\t");
+      if (k < showRows || k == abs(period) - 1) {
+        for (int col = 0; col < frameSize; col++) {
+          PT((int8_t)dutyAngles[k * frameSize + col]);
+          PT(",\t");
+        }
+        PTL();
+      } else {
+        if (k == showRows)
+          PT("skip");
+        PT('.');
+        if (k == abs(period) - 2)
+          PTL();
       }
-      PTL();
     }
 #endif
     PTL();
@@ -326,7 +336,8 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     char lr = skillName[strlen(skillName) - 1];
     skill->offsetLR = (lr == 'L' ? 30 : (lr == 'R' ? -30 : 0));
     skill->buildSkill(skillList->get(skillIndex)->index);
-    if (strcmp(skill->skillName, "calib") && skill->period == 1)
+    strcpy(newCmd, skill->skillName);
+    if (strcmp(newCmd, "calib") && skill->period == 1)
       protectiveShift = esp_random() % 100 / 10.0 - 5;
     else
       protectiveShift = 0;

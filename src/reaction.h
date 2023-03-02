@@ -67,8 +67,6 @@ bool lowBattery() {
 void reaction() {
   if (newCmdIdx) {
     lowerToken = tolower(token);
-    if (!cmdLen)
-      cmdLen = (token < 'a') ? strlenUntil(newCmd, '~') : strlen((char *)newCmd);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       checkGyro = true;
       autoSwitch = RANDOM_MIND;
@@ -80,7 +78,7 @@ void reaction() {
       beep(15 + newCmdIdx, 5);  //ToDo: check the muted sound when newCmdIdx = -1
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
-//      setServoP(P_SOFT);
+      // setServoP(P_SOFT);
 #endif
       checkGyro = true;
       printToken('G');
@@ -141,7 +139,6 @@ void reaction() {
           strcpy(newCmd, "rest");
           if (strcmp(newCmd, lastCmd)) {
             loadBySkillName(newCmd);
-            skill->info();
           }
           shutServos();
           checkGyro = false;
@@ -221,7 +218,7 @@ void reaction() {
             int targetFrame[DOF + 1];
             // arrayNCPY(targetFrame, currentAng, DOF);
             for (int i = 0; i < DOF; i++) {
-              targetFrame[i] = currentAng[i];
+              targetFrame[i] = currentAng[i] - currentAdjust[i];
             }
             targetFrame[DOF] = '~';
             char *pch;
@@ -330,7 +327,7 @@ void reaction() {
           else {
             int targetFrame[DOF + 1];
             for (int i = 0; i < DOF; i++) {
-              targetFrame[i] = currentAng[i];
+              targetFrame[i] = currentAng[i] - currentAdjust[i];
             }
             targetFrame[DOF] = '~';
             for (int i = 0; i < cmdLen; i += 2) {
@@ -407,10 +404,7 @@ void reaction() {
               || skill->period <= 1) {    // skill->period can be NULL!
                                           //it's better to compare skill->skillName and newCmd.
                                           //but need more logics for non skill cmd in between
-            if (strcmp(newCmd, "rc")) {
-              strcpy(lastCmd, newCmd);
-            }
-            loadBySkillName(newCmd);
+            loadBySkillName(newCmd);      //newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             // skill->info();
           }
           break;
@@ -418,6 +412,11 @@ void reaction() {
       case T_TASK_QUEUE:
         {
           tQueue->createTask();
+          break;
+        }
+      default:
+        {
+          PTLF("Undef");
           break;
         }
     }
@@ -428,9 +427,9 @@ void reaction() {
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
         token = T_SKILL;
     }
-
     resetCmd();
   }
+
   if (token == T_SKILL) {
     skill->perform();
     if (skill->period > 1)

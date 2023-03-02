@@ -47,7 +47,7 @@ String range2String(int r0 = 0, int r1 = 0) {
 template<typename T> void printList(T *arr, byte len = DOF) {
   String temp = "";
   for (byte i = 0; i < len; i++) {
-    temp += String(float(arr[i]));
+    temp += String(int(arr[i]));
     temp += ",\t";
     //PT((T)(arr[i]));
     //PT('\t');
@@ -84,22 +84,26 @@ template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
     if (!(i + 1) % 20)
       PTL();
     else
-      PT('\t');
+      PT(",\t");
   }
   PTL();
 }
 
 template<typename T> void printCmdByType(char t, T *data, int len) {
-  PT(t);
-  PTL(len);
+  PT("token ");PT(t);
+  PT(" len ");PTL(len);
   // int l = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
   // PT("calculated len: ");
   // PTL(l);
   if (len > 0) {
-    if (t < 'a')
+    if (t < 'a'){
+      PT("nums ");
       printListWithoutString((int8_t *)data, len);
-    else
+    }
+    else{
+      PT("chars ");
       PTL((char *)data);
+    }
   }
 }
 

@@ -5,7 +5,7 @@
 int idleThreshold = IDLE_SHORT;
 #define RANDOM_MIND false  //true  //let the robot do random stuffs. use token 'z' to activate/deactivate
 int randomInterval = 1000;
-const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh",  //"u",
+const char *randomMindList[] = { "iRand", "i", "ksit", //"kscrh", "ksnf", "kcmh",  //"u",
 #ifdef CUB
                                  "kfd", "krt",
 #else
@@ -16,9 +16,9 @@ byte choiceWeight[] = {
   15,
   30,
   20,
-  5,
-  5,
-  3,  // 5,
+  // 5,
+  // 5,
+  // 3,  // 5,
 #ifdef CUB
   1,
   1,

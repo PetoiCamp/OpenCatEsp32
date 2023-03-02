@@ -64,7 +64,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
       for (int i = bleMessageShift; i < buffLen; i++) {
         newCmd[cmdLen++] = rxValue[i];
       }
-      PTL(cmdLen);
       bleMessageShift = 0;
       lastSerialTime = millis();
     }
@@ -72,13 +71,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 };
 
 void readBle() {
-  if (!bleMessageShift) {
+  if (deviceConnected && !bleMessageShift) {
     while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < SERIAL_TIMEOUT)  //wait until the long message is completed
       delay(1);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    printCmdByType(token, newCmd, cmdLen);
     bleMessageShift = 1;
   }
 }

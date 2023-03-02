@@ -165,81 +165,81 @@ void print6Axis() {
 
 #ifdef OUTPUT_READABLE_QUATERNION
   // display quaternion values in easy matrix form: w x y z
-  Serial.print("quat\t");
-  Serial.print(q.w);
-  Serial.print("\t");
-  Serial.print(q.x);
-  Serial.print("\t");
-  Serial.print(q.y);
-  Serial.print("\t");
-  Serial.print(q.z);
-  Serial.print("\t");
+  PT("quat\t");
+  PT(q.w);
+  PT("\t");
+  PT(q.x);
+  PT("\t");
+  PT(q.y);
+  PT("\t");
+  PT(q.z);
+  PT("\t");
 #endif
 
 #ifdef OUTPUT_READABLE_EULER
   // display Euler angles in degrees
-  Serial.print("euler\t");
-  Serial.print(euler[0] * 180 / M_PI);
-  Serial.print("\t");
-  Serial.print(euler[1] * 180 / M_PI);
-  Serial.print("\t");
-  Serial.print(euler[2] * 180 / M_PI);
-  Serial.print("\t");
+  PT("euler\t");
+  PT(euler[0] * 180 / M_PI);
+  PT("\t");
+  PT(euler[1] * 180 / M_PI);
+  PT("\t");
+  PT(euler[2] * 180 / M_PI);
+  PT("\t");
 #endif
 
 #ifdef OUTPUT_READABLE_YAWPITCHROLL
   // display angles in degrees
-  Serial.print("ypr\t");
-  Serial.print(ypr[0]);
-  Serial.print("\t");
-  Serial.print(ypr[1]);
-  Serial.print("\t");
-  Serial.print(ypr[2]);
-  Serial.print("\t");
+  PT("ypr\t");
+  PT(ypr[0]);
+  PT("\t");
+  PT(ypr[1]);
+  PT("\t");
+  PT(ypr[2]);
+  PT("\t");
   /*
     mpu.dmpGetAccel(&aa, fifoBuffer);
-    Serial.print("\tRaw Accl XYZ\t");
-    Serial.print(aa.x);
-    Serial.print("\t");
-    Serial.print(aa.y);
-    Serial.print("\t");
-    Serial.print(aa.z);
+    PT("\tRaw Accl XYZ\t");
+    PT(aa.x);
+    PT("\t");
+    PT(aa.y);
+    PT("\t");
+    PT(aa.z);
     mpu.dmpGetGyro(&gy, fifoBuffer);
-    Serial.print("\tRaw Gyro XYZ\t");
-    Serial.print(gy.x);
-    Serial.print("\t");
-    Serial.print(gy.y);
-    Serial.print("\t");
-    Serial.print(gy.z);
-    Serial.print("\t");
+    PT("\tRaw Gyro XYZ\t");
+    PT(gy.x);
+    PT("\t");
+    PT(gy.y);
+    PT("\t");
+    PT(gy.z);
+    PT("\t");
   */
 #endif
 
 #ifdef OUTPUT_READABLE_WORLDACCEL
   // display initial world-frame acceleration, adjusted to remove gravity
   // and rotated based on known orientation from quaternion
-  Serial.print("aworld\t");
-  Serial.print(aaWorld.x);
-  Serial.print("\t");
-  Serial.print(aaWorld.y);
-  Serial.print("\t");
-  Serial.print(aaWorld.z);
-  Serial.print("\t");
+  PT("aworld\t");
+  PT(aaWorld.x);
+  PT("\t");
+  PT(aaWorld.y);
+  PT("\t");
+  PT(aaWorld.z);
+  PT("\t");
 #endif
 
 #ifdef OUTPUT_READABLE_REALACCEL
   // display real acceleration, adjusted to remove gravity
-  Serial.print("areal\t");
-  Serial.print(aaReal.x);
-  Serial.print("\t");
-  Serial.print(aaReal.y);
-  Serial.print("\t");
+  PT("areal\t");
+  PT(aaReal.x);
+  PT("\t");
+  PT(aaReal.y);
+  PT("\t");
 #endif
-  Serial.print("areal.z\t");
-  Serial.print(aaReal.z);  //becomes negative when flipped
-  Serial.print("\t");
+  PT("areal.z\t");
+  PT(aaReal.z);  //becomes negative when flipped
+  PT("\t");
 
-  Serial.println();
+  PTL();
 }
 
 bool read_IMU() {
@@ -293,25 +293,24 @@ void imuSetup() {
   // crystal solution for the UART timer.
   int connectAttempt = 0;
   do {
-    delay(500);
     // initialize device
-    Serial.println(F("Initializing MPU..."));
+    PTLF("Initializing MPU...");
 #if defined CONFIG_DISABLE_HAL_LOCKS && CONFIG_DISABLE_HAL_LOCKS == 1
-    Serial.println("OK");
+    PTL("OK");
 #else
-    Serial.println("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
+    PTL("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
 #endif
     mpu.initialize();
     pinMode(INTERRUPT_PIN, INPUT);
     // verify connection
-    Serial.print(F("- Testing MPU connections...attempt "));
-    Serial.println(connectAttempt++);
-
+    PTF("- Testing MPU connections...attempt ");
+    PTL(connectAttempt++);
+    delay(500);
   } while (!mpu.testConnection());
-  Serial.println(F("- MPU6050 connection successful"));
+  PTLF("- MPU6050 connection successful");
 
   // load and configure the DMP
-  Serial.println(F("- Initializing DMP..."));
+  PTLF("- Initializing DMP...");
 
   devStatus = mpu.dmpInitialize();
 
@@ -331,9 +330,10 @@ void imuSetup() {
     if (newBoard) {
 #ifndef AUTO_INIT
       PTL("- Calibrate the Inertial Measurement Unit (IMU)? (Y/n): ");
-      while (!Serial.available());
+      while (!Serial.available())
+        ;
       char choice = Serial.read();
-      Serial.println(choice);
+      PTL(choice);
       if (choice == 'Y' || choice == 'y') {
 #else
       PTL("- Calibrate the Inertial Measurement Unit (IMU)...");
@@ -358,18 +358,18 @@ void imuSetup() {
       mpu.PrintActiveOffsets();
     }
     // turn on the DMP, now that it's ready
-    Serial.println(F("- Enabling DMP..."));
+    PTLF("- Enabling DMP...");
     mpu.setDMPEnabled(true);
 
     // enable Arduino interrupt detection
-    Serial.print(F("- Enabling interrupt detection (Arduino external interrupt "));
-    Serial.print(digitalPinToInterrupt(INTERRUPT_PIN));
-    Serial.println(F(")..."));
+    PTF("- Enabling interrupt detection (Arduino external interrupt ");
+    PT(digitalPinToInterrupt(INTERRUPT_PIN));
+    PTLF(")...");
     attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
 
     // set our DMP Ready flag so the main loop() function knows it's okay to use it
-    Serial.println(F("- DMP ready! Waiting for the first interrupt..."));
+    PTLF("- DMP ready! Waiting for the first interrupt...");
     dmpReady = true;
 
     // get expected DMP packet size for later comparison
@@ -379,9 +379,9 @@ void imuSetup() {
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
     // (if it's going to break, usually the code will be 1)
-    Serial.print(F("- DMP Initialization failed (code "));
-    Serial.print(devStatus);
-    Serial.println(F(")"));
+    PTF("- DMP Initialization failed (code ");
+    PT(devStatus);
+    PTLF(")");
   }
 
   delay(10);

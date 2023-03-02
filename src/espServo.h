@@ -8,7 +8,7 @@ ServoModel servoP1L   (270,    SERVO_FREQ,      500,      2500);
 #endif
 
 #define P_STEP 32
-#define P_BASE 3000 + 6 * P_STEP // 3000~3320
+#define P_BASE 3000 + 3 * P_STEP // 3000~3320
 #define P_HARD (P_BASE + P_STEP * 2)
 #define P_SOFT (P_BASE - P_STEP * 2)
 

@@ -209,7 +209,7 @@ float radPerDeg = M_PI / 180;
 //control related variables
 #define CHECK_BATTERY_PERIOD 10000  //every 10 seconds. 60 mins -> 3600 seconds
 int uptime = -1;
-int frame;
+int frame = 0;
 int tStep = 1;
 char token;
 char lastToken;
@@ -466,9 +466,6 @@ void initRobot() {
   doubleLightSetup();
 #endif
 
-  lastCmd[0] = '\0';
-  newCmd[0] = '\0';
-
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
   //    strcpy(newCmd, "calib");
   //    exceptions = 0;
@@ -482,6 +479,8 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  //soft boot for servos
   delay(500);
+  strcpy(newCmd,"rest");
+  loadBySkillName(newCmd);
   playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef GYRO_PIN
   read_IMU();                                   //ypr is slow when starting up. leave enough time between IMU initialization and this reading
@@ -494,4 +493,6 @@ void initRobot() {
   PTL("Ready!");
   idleTimer = millis();
   beep(24, 50);
+  // lastCmd[0] = '\0';
+  // newCmd[0] = '\0';
 }
