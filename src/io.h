@@ -114,7 +114,8 @@ void printCmd() {
 }
 
 void resetCmd() {
-  if (strcmp(newCmd, "rc")) {
+  // PTL("Reset Cmd");
+  if (token == T_SKILL && strcmp(newCmd, "rc")) {
     strcpy(lastCmd, newCmd);
   }
   newCmdIdx = 0;
@@ -123,14 +124,18 @@ void resetCmd() {
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
+  // PTL("Done Reset");
 }
 
 void read_serial() {
   Stream *serialPort = NULL;
-  if (Serial.available()) {
-    serialPort = &Serial;
-  } else if (SerialBT.available()) {
+  // String source;
+  if (SerialBT.available()) {  //BT has higher priority over wired serial
     serialPort = &SerialBT;
+    // source = "BT";
+  } else if (Serial.available()) {
+    serialPort = &Serial;
+    // source = "SER";
   }
   if (serialPort) {
     token = serialPort->read();
@@ -139,10 +144,12 @@ void read_serial() {
       // save in a independent memory to avoid breaking the current running skill
     terminator = (token < 'a') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
                                               //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
-    // serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
+    serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
     lastSerialTime = millis();
     do {
       if (serialPort->available()) {
+        long current = millis();
+        // PTH(source, current - lastSerialTime);
         do {
           if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData
               || cmdLen >= BUFF_LEN) {
@@ -159,13 +166,15 @@ void read_serial() {
         } while (serialPort->available());
         lastSerialTime = millis();
       }
-    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < SERIAL_TIMEOUT);  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
-                                                                                                     //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
-                                                                                                     //so it needs a timeout for the no line ending case
+    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                    //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                    //so it needs a timeout for the no line ending case
+    // PTH("* " + source, long(millis() - lastSerialTime));
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
     // printCmdByType(token, newCmd, cmdLen);
+    // PTL(cmdLen);
   }
 }
 

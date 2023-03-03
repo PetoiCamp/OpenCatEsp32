@@ -142,6 +142,7 @@ void reaction() {
           }
           shutServos();
           checkGyro = false;
+          manualHeadQ = false;
           printToken('g');
           break;
         }
@@ -228,19 +229,19 @@ void reaction() {
               //for example: "m8 40 m8 -35 m 0 50" can be written as "m8 40 8 -35 0 50"
               //the combined commands should be less than four. string len <=30 to be exact.
               int target[2] = {};
-              byte inLen = 0;
-
+              int inLen = 0;
               for (byte b = 0; b < 2 && pch != NULL; b++) {
                 target[b] = atoi(pch);  //@@@ cast
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
-              targetFrame[target[0]] = target[1];
-              if (token == T_INDEXED_SIMULTANEOUS_ASC) {
+              if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 && target[0] < DOF) {
+                targetFrame[target[0]] = target[1];
                 if (target[0] < 4) {
                   targetHead[target[0]] = target[1];
                   manualHeadQ = true;
-                } else nonHeadJointQ = true;
+                } else
+                  nonHeadJointQ = true;
               }
               if (token == T_CALIBRATE) {
                 checkGyro = false;
@@ -316,8 +317,9 @@ void reaction() {
             // }
             delete[] pch;
           }
+          break;
         }
-        break;
+
       // this block handles array like arguments
       case T_INDEXED_SEQUENTIAL_BIN:
       case T_INDEXED_SIMULTANEOUS_BIN:
@@ -331,12 +333,14 @@ void reaction() {
             }
             targetFrame[DOF] = '~';
             for (int i = 0; i < cmdLen; i += 2) {
-              targetFrame[newCmd[i]] = (int8_t)newCmd[i + 1];
-              if (token == T_INDEXED_SIMULTANEOUS_BIN && newCmd[i] < 4) {
-                targetHead[newCmd[i]] = (int8_t)newCmd[i + 1];
-                manualHeadQ = true;
-              } else
-                nonHeadJointQ = true;
+              if (newCmd[i] >= 0 && newCmd[i] < DOF) {
+                targetFrame[newCmd[i]] = (int8_t)newCmd[i + 1];
+                if (newCmd[i] < 4) {
+                  targetHead[newCmd[i]] = (int8_t)newCmd[i + 1];
+                  manualHeadQ = true;
+                } else
+                  nonHeadJointQ = true;
+              }
               if (token == T_INDEXED_SEQUENTIAL_BIN) {
                 transform(targetFrame, 1, transformSpeed);
                 delay(10);
@@ -374,13 +378,11 @@ void reaction() {
       case T_TEMP:
         {  //call the last skill data received from the serial port
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
-          // if (skill != NULL)
-          //   delete[] skill;
           skill->buildSkill();
-          // skill->info();
           skill->transformToSkill(skill->nearestFrame());
           printToken(token);
           token = T_SKILL;
+          strcpy(newCmd, "temp");
           break;
         }
       case T_SKILL_DATA:  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
@@ -390,11 +392,9 @@ void reaction() {
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
-
-          newCmdIdx = 0;
-          newCmd[0] = '\0';
+          // newCmdIdx = 0;
           token = T_SKILL;
-
+          strcpy(newCmd, "temp");
           break;
         }
       case T_SKILL:
@@ -445,7 +445,6 @@ void reaction() {
         idleTimer = 0;
         token = '\0';
       } else {
-        //        strcpy(newCmd, "up");
         newCmd[0] = '\0';
         arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
         skill->period = 1;

@@ -1,3 +1,4 @@
+#include "esp32-hal.h"
 /*
     Video: https://www.youtube.com/watch?v=oCMOYS71NIU
     Based on Neil Kolban example for IDF: https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/tests/BLE%20Tests/SampleNotify.cpp
@@ -52,14 +53,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
     if (rxValue.length() > 0) {
-      lastSerialTime = millis();
+      long current = millis();
+      // PTH("BLE", current - lastSerialTime);
       int buffLen = rxValue.length();
       if (bleMessageShift) {
         cmdLen = 0;
         token = rxValue[0];
         lowerToken = tolower(token);
         terminator = (token < 'a') ? '~' : '\n';
-        // serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT_SHORT;
+        serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
         newCmd[cmdLen++] = rxValue[i];
@@ -72,12 +74,15 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
 void readBle() {
   if (deviceConnected && !bleMessageShift) {
-    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < SERIAL_TIMEOUT)  //wait until the long message is completed
-      delay(1);
+    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout) {  //wait until the long message is completed
+      delay(SERIAL_TIMEOUT);
+    }
+    // PTH("* BLE", millis() - lastSerialTime);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
+    // PTL(cmdLen);
   }
 }
 

@@ -30,7 +30,7 @@
 //After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
 //The tracking demo works the best with a yellow tennis ball or some other round objects. Demo: https://www.youtube.com/watch?v=CxGI-MzCGWM
 
-#define MUTED
+// #define MUTED
 #include "src/OpenCat.h"
 
 void setup() {
@@ -58,7 +58,6 @@ void loop() {
   readEnvironment();
   //  //— special behaviors based on sensor events
   dealWithExceptions();  //low battery, fall over, lifted, etc.
-
   if (tQueue->size() > 0) {
     tQueue->popTask();
   } else {
@@ -66,7 +65,6 @@ void loop() {
     readSignal();
     //  readHuman();
   }
-
   //  //— generate behavior by fusing all sensors and instruction
   //  decision();
 

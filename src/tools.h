@@ -97,11 +97,11 @@ template<typename T> void printCmdByType(char t, T *data, int len) {
   // PTL(l);
   if (len > 0) {
     if (t < 'a'){
-      PT("nums ");
+      PTL("Binary ");
       printListWithoutString((int8_t *)data, len);
     }
     else{
-      PT("chars ");
+      PT("ASCII ");
       PTL((char *)data);
     }
   }

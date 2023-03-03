@@ -62,8 +62,8 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
-#define SERIAL_TIMEOUT 50  // 5 may cut off the message
-// #define SERIAL_TIMEOUT_LONG 50
+#define SERIAL_TIMEOUT 10  // 5 may cut off the message
+#define SERIAL_TIMEOUT_LONG 200
 #define SOFTWARE_VERSION "B230301"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
@@ -218,9 +218,10 @@ char lowerToken;
 char *lastCmd = new char[CMD_LEN + 1];  //the last char must be '\0' for safe so CMD_LEN+1 elements are required
 int cmdLen = 0;
 byte newCmdIdx = 0;
-#define BUFF_LEN 1524
+#define BUFF_LEN 2507//1524 =125*20+7=2507
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
+int serialTimeout;
 int lastVoltage;
 char terminator;
 // int serialTimeout;
@@ -489,10 +490,9 @@ void initRobot() {
 #endif
   tQueue = new TaskQueue();
 
-  PTLF("k");
   PTL("Ready!");
   idleTimer = millis();
   beep(24, 50);
-  // lastCmd[0] = '\0';
-  // newCmd[0] = '\0';
+  lastCmd[0] = '\0';
+  newCmd[0] = '\0';
 }

@@ -79,7 +79,7 @@ public:
     dutyAngles = NULL;
   }
   void buildSkill() {  // K token
-    strcpy(skillName, "temp");
+    strcpy(skillName, "tmp");
     offsetLR = 0;
     period = (int8_t)newCmd[0];  //automatically cast to char*
     dataLen(period);
