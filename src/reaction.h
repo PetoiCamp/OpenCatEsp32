@@ -382,7 +382,7 @@ void reaction() {
           skill->transformToSkill(skill->nearestFrame());
           printToken(token);
           token = T_SKILL;
-          strcpy(newCmd, "temp");
+          strcpy(newCmd, "tmp");
           break;
         }
       case T_SKILL_DATA:  //takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
@@ -394,7 +394,7 @@ void reaction() {
           skill->transformToSkill(skill->nearestFrame());
           // newCmdIdx = 0;
           token = T_SKILL;
-          strcpy(newCmd, "temp");
+          strcpy(newCmd, "tmp");
           break;
         }
       case T_SKILL:
@@ -434,7 +434,6 @@ void reaction() {
     skill->perform();
     if (skill->period > 1)
       delay(delayShort + max(0, int(runDelay - (max(abs(ypr[1]), abs(ypr[2])) / 10))));
-
     if (skill->period < 0) {
       if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here. check OpenCat2.0
         strcpy(newCmd, lastCmd);

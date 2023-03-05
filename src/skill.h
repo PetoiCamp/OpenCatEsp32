@@ -47,6 +47,8 @@ public:
         return s;
       }
     }
+    PT('?');  //key not found
+    PTL(key);
     return -1;
   }
 };
@@ -328,9 +330,7 @@ Skill* skill;
 
 void loadBySkillName(const char* skillName) {  //get lookup information from on-board EEPROM and read the data array from storage
   int skillIndex = skillList->lookUp(skillName);
-  if (skillIndex == -1) {
-    PTL("?");
-  } else {
+  if (skillIndex != -1) {
     // if (skill != NULL)
     //   delete[] skill;
     char lr = skillName[strlen(skillName) - 1];

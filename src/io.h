@@ -130,7 +130,7 @@ void resetCmd() {
 void read_serial() {
   Stream *serialPort = NULL;
   // String source;
-  if (SerialBT.available()) {  //BT has higher priority over wired serial
+  if (SerialBT.available()) {  //give BT a higher priority over wired serial
     serialPort = &SerialBT;
     // source = "BT";
   } else if (Serial.available()) {
@@ -140,23 +140,23 @@ void read_serial() {
   if (serialPort) {
     token = serialPort->read();
     lowerToken = tolower(token);
-    delay(1);  //leave enough time for serial read
-      // save in a independent memory to avoid breaking the current running skill
+    newCmdIdx = 2;
+    delay(1);                                 //leave enough time for serial read
     terminator = (token < 'a') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
                                               //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
     serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
     lastSerialTime = millis();
     do {
       if (serialPort->available()) {
-        long current = millis();
+        // long current = millis();
         // PTH(source, current - lastSerialTime);
         do {
           if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData
               || cmdLen >= BUFF_LEN) {
-            do { serialPort->read(); } while (serialPort->available());
             PTF("OVF");
-            PTL(cmdLen);
-            PTL(token);
+            beep(5, 100, 50, 5);
+            do { serialPort->read(); } while (serialPort->available());
+            printToken(token);
             token = T_SKILL;
             strcpy(newCmd, "up");
             cmdLen = 2;
@@ -173,8 +173,8 @@ void read_serial() {
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    // printCmdByType(token, newCmd, cmdLen);
     // PTL(cmdLen);
+    // printCmdByType(token, newCmd, cmdLen);
   }
 }
 
