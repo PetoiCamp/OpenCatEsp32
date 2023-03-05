@@ -30,7 +30,6 @@
 //After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
 //The tracking demo works the best with a yellow tennis ball or some other round objects. Demo: https://www.youtube.com/watch?v=CxGI-MzCGWM
 
-// #define MUTED
 #include "src/OpenCat.h"
 
 void setup() {
@@ -38,9 +37,8 @@ void setup() {
   Serial.begin(115200);  //USB serial
   Serial.setTimeout(SERIAL_TIMEOUT);
   //  Serial1.begin(115200); //second serial port
-  while (Serial.available() && Serial.read()) {
-    delay(1);
-  };  // empty buffer
+  while (Serial.available() && Serial.read())
+    ;  // empty buffer
   initRobot();
 }
 

@@ -189,7 +189,7 @@ bool newBoard = false;
 #define T_RAMP 'r'
 #define T_RESET 'R'
 #define T_SAVE 's'
-#define T_SOUND 'S'
+#define T_BOOTUP_SOUND_SWITCH 'S'  //toggle the bootup sound on/off
 #define T_TILT 't'
 #define T_TEMP 'T'  //call the last skill data received from the serial port
 #define T_MEOW 'u'
@@ -218,7 +218,7 @@ char lowerToken;
 char *lastCmd = new char[CMD_LEN + 1];  //the last char must be '\0' for safe so CMD_LEN+1 elements are required
 int cmdLen = 0;
 byte newCmdIdx = 0;
-#define BUFF_LEN 2507//1524 =125*20+7=2507
+#define BUFF_LEN 2507  //1524 =125*20+7=2507
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
@@ -269,6 +269,7 @@ int8_t middleShift[] = { 0, 15, 0, 0,
                          -45, -45, -45, -45 };
 #endif
 
+// #define INVERSE_SERVO_DIRECTION
 #ifdef CUB
 int8_t rotationDirection[] = { 1, -1, 1, 1,
                                1, -1, 1, -1,
@@ -408,6 +409,7 @@ int ramp = 1;
 #include "qualityAssurance.h"
 
 void initRobot() {
+  beep(20);
   Wire.begin();
   PTL('k');
   PTLF("Flush the serial buffer...");
@@ -420,8 +422,10 @@ void initRobot() {
 #elif defined CUB
   PTLF("Cub");
 #endif
-  while (Serial.available() && Serial.read())
-    ;  // empty buffer
+
+  if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
+    playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
+
   i2cDetect();
   i2cEepromSetup();
 #ifdef GYRO_PIN
@@ -480,9 +484,8 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  //soft boot for servos
   delay(500);
-  strcpy(newCmd,"rest");
+  strcpy(newCmd, "rest");
   loadBySkillName(newCmd);
-  playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef GYRO_PIN
   read_IMU();                                   //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   token = (exceptions) ? T_CALIBRATE : T_REST;  //put the robot's side on the table to enter calibration posture for attaching legs

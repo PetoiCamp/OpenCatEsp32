@@ -105,7 +105,6 @@ void soundFallOver() {
     chirp();
 }
 void playMelody(byte m[], int len) {
-#ifndef MUTED
   for (int i = 0; i < len; i++) {
     if (!m[i])
       delay(1000 / m[len + i]);
@@ -113,7 +112,6 @@ void playMelody(byte m[], int len) {
       tone(BUZZER, 1046.50 * pow(1.05946, m[i]),  // C
            1000 / m[len + i]);
   }
-#endif
 }
 
 void playSound() {

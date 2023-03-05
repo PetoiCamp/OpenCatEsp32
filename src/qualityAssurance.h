@@ -107,6 +107,7 @@ bool testIR() {
 #endif
 void QA() {
   if (newBoard) {
+    i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
 #ifndef AUTO_INIT
     PTL("Run factory quality assurance program? (Y/n)");
     while (!Serial.available())

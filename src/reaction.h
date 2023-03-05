@@ -120,7 +120,9 @@ void reaction() {
         {
           tStep = !tStep;             //tStep can be -1
           token = tStep ? 'p' : 'P';  //P for pause activated
-          if (!tStep)
+          if (tStep)
+            token = T_SKILL;
+          else
             shutServos();
           break;
         }
@@ -155,6 +157,13 @@ void reaction() {
             bleWrite(range2String(DOF));
             bleWrite(list2String(currentAng));
           }
+          break;
+        }
+      case T_BOOTUP_SOUND_SWITCH: //toggle on/off the bootup melody
+        {
+          bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
+          PTL(soundState ? "Unmute" : "Muted");
+          i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
           break;
         }
       case T_MELODY:
@@ -416,7 +425,7 @@ void reaction() {
         }
       default:
         {
-          PTLF("Undef");
+          PTLF("Undefined token!");
           break;
         }
     }

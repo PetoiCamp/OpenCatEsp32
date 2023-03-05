@@ -42,7 +42,7 @@ decode_results results;
 #define K61 "buttUp"  //butt up
 #elif defined BITTLE
 #define K60 "ck"  //check around
-#define K61 "bf"  //
+#define K61 "bf"  //backflip
 #else
 #define K60 "fd"  //fold
 #define K61 "rt"  //

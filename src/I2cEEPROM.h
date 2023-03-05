@@ -40,9 +40,10 @@ bool EEPROMOverflow = false;
 
 
 #define EEPROM_BIRTHMARK_ADDRESS 0
-#define EEPROM_IMU 1
-#define EEPROM_CALIB 20
-#define EEPROM_BLE_NAME 36
+#define EEPROM_IMU 1           // 2x9 = 18 bytes
+#define EEPROM_CALIB 20        // 16 bytes
+#define EEPROM_BLE_NAME 36     // 10 bytes
+#define EEPROM_BOOTUP_SOUND_STATE 46  // 1 byte
 #define EEPROM_RESERVED 50
 #define SERIAL_BUFF 100
 

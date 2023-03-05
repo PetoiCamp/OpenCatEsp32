@@ -100,6 +100,15 @@ void blueSspSetup() {
 
 //end of Richard Li's code
 
+void printToken(char t = token) {
+  if (deviceConnected)
+    bleWrite(String(t));
+  // if (!confirmRequestPending)
+  if (deviceConnected)
+    SerialBT.println(t);
+  PTL(t);
+}
+
 void printCmd() {
   PTF("lastT:");
   PT(lastToken);
@@ -225,17 +234,7 @@ void readSignal() {
   }
 }
 
-void printToken(char t = token) {
-  if (deviceConnected)
-    bleWrite(String(t));
-  // if (!confirmRequestPending)
-  if (deviceConnected)
-    SerialBT.println(t);
-  PTL(t);
-}
 //— read human sensors (top level) —
-
-
 void readHuman() {
 #ifdef TOUCH0
   read_touch();
