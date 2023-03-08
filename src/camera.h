@@ -163,7 +163,7 @@ void read_camera() {
           int allParameter[DOF] = { currentX, 0, 0, 0,
                                     0, 0, 0, 0,
                                     75 - currentY / 2 + currentX / u1, 75 - currentY / 2 - currentX / u1, 90 + currentY / 3 - currentX / u2, 90 + currentY / 3 + currentX / u2,
-                                    10 + currentY / 1.2 - currentX / d1, 10 + currentY / 1.2 + currentX / d1, -30 - currentY / 3 + currentX / d2, -30 - currentY / 3 - currentX / d2 };
+                                    int(10 + currentY / 1.2 - currentX / d1), int(10 + currentY / 1.2 + currentX / d1), -30 - currentY / 3 + currentX / d2, -30 - currentY / 3 - currentX / d2 };
           //      transform(a, 4);
           cmdLen = DOF;
           token = T_LISTED_BIN;
@@ -173,12 +173,12 @@ void read_camera() {
           newCmdIdx = 6;
           //      printList(newCmd);}
         }
-        // else {
-        //   tQueue->push_back(new Task('k', (currentX < 0 ? "vtR" : "vtL"), 2000));
-        //   tQueue->push_back(new Task('k', "sit"));
-        //   tQueue->push_back(new Task('i', ""));
-        //   currentX = 0;
-        // }
+        else {
+          tQueue->push_back(new Task('k', (currentX < 0 ? "vtR" : "vtL"), 2000));
+          tQueue->push_back(new Task('k', "sit"));
+          tQueue->push_back(new Task('i', ""));
+          currentX = 0;
+        }
       }
     }
     FPS();
