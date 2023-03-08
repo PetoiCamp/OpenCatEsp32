@@ -131,3 +131,14 @@ template<typename T> void getExtreme(T *arr, T *extreme, int len = DOF) {
       extreme[1] = arr[i];
   }
 }
+
+void FPS() {
+  if (millis() - loopTimer < 1000)
+    fps++;
+  else {
+    PT("FPS:\t");
+    PTL(fps);
+    fps = 0;
+    loopTimer = millis();
+  }
+}

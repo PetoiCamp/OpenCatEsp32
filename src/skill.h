@@ -276,7 +276,7 @@ public:
       printToken();
     } else {  //postures and gaits
 #ifdef GYRO_PIN
-      if (imuUpdated) {
+      if (imuUpdated && gyroBalanceQ && !(frame % imuSkip)) {
         //          PT(ypr[2]); PT('\t');
         //          PT(RollPitchDeviation[0]); PT('\t');
         //          printList(currentAdjust);
@@ -308,14 +308,15 @@ public:
             duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
-            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex]))) - currentAdjust[jointIndex];
+            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])))
+                   - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
         //          PT(duty); PT('\t');
         calibratedPWM(jointIndex, duty
 #ifdef GYRO_PIN
-                                    + (checkGyro && !exceptions ? (imuUpdated ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
+                                    + gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
         );
       }

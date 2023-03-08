@@ -38,7 +38,7 @@ decode_results results;
 #define K52 "pee"  //standng with three legs
 
 #ifdef NYBBLE
-#define K60 "stand"   //"lu"      //look up
+#define K60 "wsf"     //wash face
 #define K61 "buttUp"  //butt up
 #elif defined BITTLE
 #define K60 "ck"  //check around

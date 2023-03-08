@@ -22,7 +22,7 @@ void read_touch() {
 #endif
 void readEnvironment() {
 #ifdef GYRO_PIN
-  if (checkGyro)
+  if (gyroBalanceQ && !(frame % imuSkip))
     imuUpdated = read_IMU();
 #endif
   read_sound();
@@ -182,7 +182,7 @@ void read_serial() {
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    // PTL(cmdLen);
+    PTL(cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
   }
 }

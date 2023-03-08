@@ -3,7 +3,7 @@
 #define IDLE_LONG 15
 #define EVERY_X_SECONDS 10
 int idleThreshold = IDLE_SHORT;
-#define RANDOM_MIND true  //let the robot do random stuffs. use token 'z' to activate/deactivate
+#define RANDOM_MIND false//true  //let the robot do random stuffs. use token 'z' to activate/deactivate
 int randomInterval = 1000;
 const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh",  //"u",
 #ifdef CUB

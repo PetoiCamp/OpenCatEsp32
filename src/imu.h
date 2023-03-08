@@ -148,6 +148,10 @@ int8_t yprTilt[3];
 
 float originalYawDirection;
 
+#define IMU_SKIP 3
+#define IMU_SKIP_MORE 23  //use prime number to avoid repeatly skipping the same joint
+byte imuSkip = IMU_SKIP;
+
 // packet structure for InvenSense teapot demo
 uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
 
