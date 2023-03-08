@@ -1,4 +1,3 @@
-// #include "Arduino.h"
 /*
    Choose communication mode define here:
       I2C_MODE    : I2C mode, default pin: MU_SDA <==> ARDUINO_SDA, MU_SCL <==> ARDUINO_SCL

@@ -399,7 +399,6 @@ void reaction() {
         }
       case T_BEEP_BIN:
         {
-          delay(5000);
           if (cmdLen == 0) {  //toggle on/off the bootup melody
             bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
             PTL(soundState ? "Unmute" : "Muted");

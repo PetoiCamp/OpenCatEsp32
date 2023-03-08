@@ -170,7 +170,8 @@ bool newBoard = false;
 //token list
 #define T_ABORT 'a'      //abort the calibration values
 #define T_BEEP 'b'       //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4
-#define T_BEEP_BIN 'B'   //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4
+#define T_BEEP_BIN 'B'   //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+                         //a single B will toggle the melody on/off
 #define T_CALIBRATE 'c'  //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
 #define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor
@@ -183,7 +184,7 @@ bool newBoard = false;
 #define T_JOINTS 'j'                    //print the joint angles
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
-#define T_LISTED_BIN 'L'
+#define T_LISTED_BIN 'L'              //a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
 #define T_INDEXED_SEQUENTIAL_ASC 'm'  //m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
 #define T_INDEXED_SEQUENTIAL_BIN 'M'  //M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_MELODY 'o'

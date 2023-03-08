@@ -4,7 +4,7 @@
 #define EVERY_X_SECONDS 10
 int idleThreshold = IDLE_SHORT;
 #define RANDOM_MIND false//true  //let the robot do random stuffs. use token 'z' to activate/deactivate
-int randomInterval = 1000;
+int randomInterval = 5000;
 const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh",  //"u",
 #ifdef CUB
                                  "kfd", "krt",
@@ -53,7 +53,7 @@ void allRandom() {
 
 void randomMind() {
   if (token != T_CALIBRATE && token != T_REST && idleTimer && (millis() - idleTimer) > idleThreshold * 1000) {  //in idle state
-    if (millis() - randTimer > randomInterval) {                                                                //every second throw a dice
+    if (millis() - randTimer > randomInterval) {                                                                //every randomInterval(ms) throw a dice
       randTimer = millis();
       int randomNum = esp_random() % randomBase;
       byte randomChoice = -1;
