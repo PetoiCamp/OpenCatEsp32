@@ -175,6 +175,7 @@ bool newBoard = false;
 #define T_CALIBRATE 'c'  //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
 #define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor
+                         //a single 'C' will cancel the manual eye colors
 #define T_REST 'd'
 #define T_GYRO_FINENESS 'g'             //adjust the finess of gyroscope adjustment to accelerate motion
 #define T_GYRO_BALANCE 'G'              //toggle on/off the gyro adjustment
@@ -243,6 +244,7 @@ bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool hardServoQ = true;
+bool manualEyeColorQ = false;
 #define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];
 
@@ -382,6 +384,8 @@ int ramp = 1;
 #include "led.h"
 #endif
 
+#include "randomMind.h"
+
 #ifdef VOICE
 #include "voice.h"
 #endif
@@ -405,16 +409,9 @@ int ramp = 1;
 #include "doubleLight.h"
 #endif
 
-#include "randomMind.h"
 #include "io.h"
 #include "motion.h"
 #include "skill.h"
-
-
-#ifdef ULTRASONIC
-#include "ultrasonic.h"
-#endif
-
 #include "reaction.h"
 #include "qualityAssurance.h"
 

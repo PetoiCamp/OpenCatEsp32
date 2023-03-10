@@ -142,3 +142,17 @@ void FPS() {
     loopTimer = millis();
   }
 }
+
+void resetCmd() {
+  // PTL("Reset Cmd");
+  if (token == T_SKILL && strcmp(newCmd, "rc")) {
+    strcpy(lastCmd, newCmd);
+  }
+  newCmdIdx = 0;
+  lastToken = token;
+  if (token != T_SKILL && token != T_CALIBRATE)
+    token = '\0';
+  newCmd[0] = '\0';
+  cmdLen = 0;
+  // PTL("Done Reset");
+}

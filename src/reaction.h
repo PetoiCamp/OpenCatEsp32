@@ -175,11 +175,16 @@ void reaction() {
 #ifdef ULTRASONIC
       case T_COLOR:
         {
-          long color = ((long)(newCmd[0]) << 16) + ((long)(newCmd[1]) << 8) + (long)(newCmd[2]);
-          if (newCmd[4] == -1)  //no special effect
-            mRUS04.SetRgbColor(E_RGB_INDEX(newCmd[3]), color);
-          else
-            mRUS04.SetRgbEffect(E_RGB_INDEX(newCmd[3]), color, newCmd[4]);
+          if (cmdLen == 0)  //a single 'C' will turn off the manual color mode
+            manualEyeColorQ = false;
+          else {  // turn on the manual color mode
+            manualEyeColorQ = true;
+            long color = ((long)(newCmd[0]) << 16) + ((long)(newCmd[1]) << 8) + (long)(newCmd[2]);
+            if (newCmd[4] == -1)  //no special effect
+              mRUS04.SetRgbColor(E_RGB_INDEX(newCmd[3]), color);
+            else
+              mRUS04.SetRgbEffect(E_RGB_INDEX(newCmd[3]), color, newCmd[4]);
+          }
           break;
         }
 #endif
@@ -309,7 +314,7 @@ void reaction() {
               } else if (token == T_MEOW) {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
-                if (target[1])
+                if (target[0] > 0 && target[1] > 0)
                   beep(target[0], 1000 / target[1]);
               }
 #ifdef T_TUNER
@@ -404,8 +409,10 @@ void reaction() {
             PTL(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
           } else {
-            for (byte b = 0; b < cmdLen / 2; b++)
-              beep((int8_t)newCmd[2 * b], 1000 / (int8_t)newCmd[2 * b + 1]);
+            for (byte b = 0; b < cmdLen / 2; b++) {
+              if ((int8_t)newCmd[2 * b] > 0 && (int8_t)newCmd[2 * b + 1] > 0)
+                beep((int8_t)newCmd[2 * b], 1000 / (int8_t)newCmd[2 * b + 1]);
+            }
           }
           break;
         }
