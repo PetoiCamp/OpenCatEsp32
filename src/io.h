@@ -45,6 +45,7 @@ void readEnvironment() {
 
 BluetoothSerial SerialBT;
 boolean confirmRequestPending = true;
+boolean BTconnected = false;
 
 void BTConfirmRequestCallback(uint32_t numVal) {
   confirmRequestPending = true;
@@ -54,8 +55,10 @@ void BTConfirmRequestCallback(uint32_t numVal) {
 void BTAuthCompleteCallback(boolean success) {
   confirmRequestPending = false;
   if (success) {
+    BTconnected = true;
     Serial.println("Pairing success!!");
   } else {
+    BTconnected = false;
     Serial.println("Pairing failed, rejected by user!!");
   }
 }
@@ -104,7 +107,7 @@ void printToken(char t = token) {
   if (deviceConnected)
     bleWrite(String(t));
   // if (!confirmRequestPending)
-  if (deviceConnected)
+  if (BTconnected)
     SerialBT.println(t);
   PTL(t);
 }

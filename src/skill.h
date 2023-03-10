@@ -36,8 +36,12 @@ public:
     byte keyLen = strlen(key);
     char lr = key[keyLen - 1];
     for (int s = 0; s < nSkills; s++) {
-      char readName[10];
+      char readName[CMD_LEN + 1];
       strcpy(readName, this->get(s)->skillName);
+      if (s == randSkillIdx && (!strcmp(readName, "bf") || !strcmp(readName, "ff") || !strcmp(readName, "rc") || !strcmp(readName, "rl") || !strcmp(readName, "jmp"))) {  //forbid violent motions in random mode
+        randSkillIdx++;
+        continue;
+      }
       byte nameLen = strlen(readName);
       if (s == randSkillIdx          //random skill
           || !strcmp(readName, key)  //exact match: gait type + F or L, behavior

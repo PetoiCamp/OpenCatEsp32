@@ -63,7 +63,7 @@
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
-#define SERIAL_TIMEOUT_LONG 200
+#define SERIAL_TIMEOUT_LONG 150
 #define SOFTWARE_VERSION "B230305"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 #ifdef BiBoard
