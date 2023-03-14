@@ -144,10 +144,15 @@ VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measureme
 VectorFloat gravity;  // [x, y, z]            gravity vector
 float euler[3];       // [psi, theta, phi]    Euler angle container
 float ypr[3];         // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
+int16_t *xyzReal[3] = { &aaReal.x, &aaReal.y, &aaReal.z };
+int16_t previous_xyzReal[3];
+float previous_ypr[3];
 int8_t yprTilt[3];
 
-float originalYawDirection;
-
+#define ARX *xyzReal[0]
+#define ARY *xyzReal[1]
+#define ARZ *xyzReal[2]
+#define AWZ aaWorld.z
 #define IMU_SKIP 3
 #define IMU_SKIP_MORE 23  //use prime number to avoid repeatly skipping the same joint
 byte imuSkip = IMU_SKIP;
@@ -165,8 +170,33 @@ void dmpDataReady() {
   mpuInterrupt = true;
 }
 
-void print6Axis() {
+// The REALACCEL numbers are calculated with respect to the orientation of the sensor itself, so that if it is flat and you move it straight up, the "Z" accel will change, but if you flip it up on one side and move it in the new relative "up" direction (along the sensor's Z axis), it will still register acceleration on the Z axis. Essentially, it is sensor-oriented acceleration which removes the effects of gravity and any non-flat/level orientation.
 
+// The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
+#define READ_ACCELERATION
+void print6Axis() {
+  // PT_FMT(ypr[0], 5);
+  // PT('\t');
+  // PT_FMT(ypr[1], 5);
+  // PT('\t');
+  // PT_FMT(ypr[2], 5);
+#ifdef READ_ACCELERATION
+  PT("\t");
+  // PT(aaWorld.x);
+  // PT("\t");
+  // PT(aaWorld.y);
+  PT(*xyzReal[0]);  //x is along the longer direction of the robot
+  PT("\t");
+  PT(*xyzReal[1]);
+  PT("\t");
+  PT(aaWorld.z);
+  // PT('\t');
+  // PT(aaReal.z);
+#endif
+  PTL();
+}
+
+void print6AxisMacro() {
 #ifdef OUTPUT_READABLE_QUATERNION
   // display quaternion values in easy matrix form: w x y z
   PT("quat\t");
@@ -259,13 +289,38 @@ bool read_IMU() {
 
     for (byte i = 0; i < 3; i++) {  //no need to flip yaw
       ypr[i] *= degPerRad;
+
 #ifdef BiBoard
       ypr[i] = -ypr[i];
+      *xyzReal[i] = -*xyzReal[i];
 #endif
     }
     if (printGyro)
       print6Axis();
-    exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+    // exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+
+    // Acceleration Real
+    //        ^ x+
+    //        |
+    //  y+ <------ y-
+    //        |
+    //        | x-
+    if (AWZ < -8000 && AWZ > -9000)
+      exceptions = -1;  //dropping
+    else if (ARZ < 0 && fabs(ypr[2]) > 85)
+      exceptions = -2;  // flipped
+    else if ((abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > 8000 || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > 6000))
+      exceptions = -3;
+    else if (abs(previous_ypr[0] - ypr[0]) > 10 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 10)
+      exceptions = -4;
+    else exceptions = 0;
+    //however, its change is very slow.
+    for (byte m = 0; m < 3; m++) {
+      previous_xyzReal[m] = *xyzReal[m];
+      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
+        previous_ypr[m] = ypr[m];
+      }
+    }
     return true;
   }
   return false;
@@ -391,7 +446,7 @@ void imuSetup() {
   delay(10);
   read_IMU();
   exceptions = aaReal.z < 0;
-  originalYawDirection = ypr[0];
+  previous_ypr[0] = ypr[0];
 }
 
 // ================================================================

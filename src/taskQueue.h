@@ -36,6 +36,10 @@ public:
     this->push_back(new Task('k', "vtF", 2000));
     this->push_back(new Task('k', "up"));
   }
+  template<typename T> void addTask(char t, T* p, int d = 0) {
+    this->push_back(new Task(t, p, d));
+    taskTimer = millis();
+  }
   void popTask() {
     if (taskInterval == -1 || millis() - taskTimer > taskInterval) {
       Task* t = this->front();

@@ -41,8 +41,8 @@ decode_results results;
 #define K60 "wsf"     //wash face
 #define K61 "buttUp"  //butt up
 #elif defined BITTLE
-#define K60 "ck"  //check around
-#define K61 "scrh"  //backflip
+#define K60 "ck"    //check around
+#define K61 "scrh"  //scratch
 #else
 #define K60 "fd"  //fold
 #define K61 "rt"  //
@@ -203,8 +203,11 @@ void read_infrared() {
       strcpy(newCmd, IRsig.c_str());
       if (strlen(newCmd) == 1)
         token = newCmd[0];
-      else
+      else {
         token = T_SKILL;
+        if (!strcmp(newCmd, "up"))
+          direct = 'F';
+      }
       newCmdIdx = 1;
     }
     irrecv.resume();  // receive the next value

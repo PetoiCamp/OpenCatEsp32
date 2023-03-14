@@ -1,13 +1,95 @@
-
 void dealWithExceptions() {
   if (gyroBalanceQ && exceptions) {  //the gyro reaction switch can be toggled on/off by the 'g' token
-    soundFallOver();
-    //  for (int m = 0; m < 2; m++)
-    //    meow(30 - m * 12, 42 - m * 12, 20);
-    token = 'k';
-    strcpy(newCmd, "rc");
-    newCmdIdx = -1;
+    switch (exceptions) {
+      case -1:
+        {
+          strcpy(newCmd, "lnd");
+          loadBySkillName(newCmd);
+          shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ? delay(1000);
+          strcpy(newCmd, "up");
+          token = 'k';
+          newCmdIdx = 1;
+          break;
+        }
+      case -2:
+        {
+          soundFallOver();
+          //  for (int m = 0; m < 2; m++)
+          //    meow(30 - m * 12, 42 - m * 12, 20);
+          token = 'k';
+          strcpy(newCmd, "rc");
+          newCmdIdx = -1;
+          break;
+        }
+      case -3:
+        {
+          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
+            char xSymbol[] = { '^', 'v' };
+            char ySymbol[] = { '<', '>' };
+            char xDirection = xSymbol[sign(ARX) > 0];
+            char yDirection = ySymbol[sign(ARY) > 0];
+            float forceAngle = atan(float(abs(aaReal.x)) / aaReal.y) * degPerRad;
+            if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval)) {
+              if (abs(forceAngle) < 45) {
+                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 500);
+                tQueue->addTask('i', yDirection == '<' ? "0 -100" : "0 100");
+                tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 1000);
+                tQueue->addTask('i', "");
+              } else {
+                tQueue->addTask('k', xDirection == '^' ? "wkF" : "bk", 500);
+                if (xDirection == '^') {
+                  tQueue->addTask('i', rand() % 2 ? "0 135" : "0 -135", 500);
+                  tQueue->addTask('i', "");
+                }
+              }
+              tQueue->addTask('k', "up", 100);
+              runDelay = 2;
+            }
+            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+            PTL();
+          }
+          break;
+        }
+      case -4:
+        {
+          char *currentGait = skill->skillName;  //it may not be gait
+          char gaitDirection = currentGait[strlen(currentGait) - 1];
+          float yawDiff = ypr[0] - previous_ypr[0];
+          if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval)) {
+            if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  //not gait or stepping
+              tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
+              tQueue->addTask('k', "up", 100);
+              runDelay = 4;
+            } else {
+              if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
+                previous_ypr[0] = ypr[0];
+              }
+            }
+            // else {
+            //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
+            //     previous_ypr[0] = ypr[0];
+            //   } else {
+            //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
+            //     PTL(currentGait);
+            //     tQueue->addTask('k', currentGait, round(abs(yawDiff) * 15));
+            //     currentGait[strlen(currentGait) - 1] = 'F';
+            //     PTL(currentGait);
+            //     tQueue->addTask('k', currentGait);
+            //   }
+            // }
+          }
+          break;
+        }
+      default:
+        {
+          break;
+        }
+    }
+    PT(exceptions);
+    print6Axis();
   }
+  if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval) && runDelay <= delayException)
+    runDelay = delayMid;
 }
 
 #ifdef VOLTAGE

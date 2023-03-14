@@ -174,7 +174,7 @@ bool newBoard = false;
                          //a single B will toggle the melody on/off
 #define T_CALIBRATE 'c'  //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor
+#define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
 #define T_REST 'd'
 #define T_GYRO_FINENESS 'g'             //adjust the finess of gyroscope adjustment to accelerate motion
@@ -249,7 +249,7 @@ bool manualEyeColorQ = false;
 int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
-byte exceptions = 0;
+int exceptions = 0;
 byte transformSpeed = 2;
 float protectiveShift;  //reduce the wearing of the potentiometer
 
@@ -259,6 +259,7 @@ bool safeRest = true;
 
 int delayLong = 20;
 int delayMid = 8;
+int delayException = 4;
 int delayShort = 2;
 int delayStep = 1;
 int runDelay = delayMid;
