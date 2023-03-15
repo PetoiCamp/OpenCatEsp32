@@ -152,6 +152,8 @@ int8_t yprTilt[3];
 #define ARX *xyzReal[0]
 #define ARY *xyzReal[1]
 #define ARZ *xyzReal[2]
+#define AWX aaWorld.x
+#define AWY aaWorld.y
 #define AWZ aaWorld.z
 #define IMU_SKIP 3
 #define IMU_SKIP_MORE 23  //use prime number to avoid repeatly skipping the same joint
