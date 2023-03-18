@@ -18,34 +18,37 @@ public:
     delete[] parameters;
   };
   void info() {
-    PT(tkn);
-    PT('\t');
-    PT(dly);
-    PT('\t');
-    PTL(paraLength);
-    printCmdByType(tkn, parameters, paraLength);
+    printCmdByType(tkn, parameters);
   }
 };
 
 class TaskQueue : public QList<Task* > {
 public:
+  int exceptionQ;
   TaskQueue() {
     PTLF("TaskQ");
+    exceptionQ = false;
   };
   void createTask() {  //this is an example task
     this->push_back(new Task('k', "vtF", 2000));
     this->push_back(new Task('k', "up"));
   }
   template<typename T> void addTask(char t, T* p, int d = 0) {
+    PTH("add ", p);
     this->push_back(new Task(t, p, d));
-    taskTimer = millis();
+  }
+  template<typename T> void addTaskToFront(char t, T* p, int d = 0) {
+    PTH("add front", p);
+    this->push_front(new Task(t, p, d));
+  }
+  bool Cleared() {
+    return this->size() == 0 && long(millis() - taskTimer) > taskInterval;
   }
   void popTask() {
     if (taskInterval == -1 || millis() - taskTimer > taskInterval) {
       Task* t = this->front();
       // t->info();
       token = t->tkn;
-      lowerToken = tolower(token);
       cmdLen = t->paraLength;
       taskInterval = t->dly;
       arrayNCPY(newCmd, t->parameters, cmdLen);
@@ -54,6 +57,9 @@ public:
       newCmdIdx = 5;
       delete t;
       this->pop_front();
+    }
+    if (this->size() == 0 && exceptionQ) {
+      exceptionQ = false;
     }
   }
 };

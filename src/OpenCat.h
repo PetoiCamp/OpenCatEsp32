@@ -245,6 +245,7 @@ bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool hardServoQ = true;
 bool manualEyeColorQ = false;
+// bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4  //used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];
 
@@ -262,6 +263,7 @@ int delayMid = 8;
 int delayException = 4;
 int delayShort = 2;
 int delayStep = 1;
+int delayPrevious;
 int runDelay = delayMid;
 
 #ifdef NYBBLE

@@ -112,19 +112,6 @@ void printToken(char t = token) {
   PTL(t);
 }
 
-void printCmd() {
-  PTF("lastT:");
-  PT(lastToken);
-  PTF("\tT:");
-  PT(token);
-  PTF("\tLastCmd:");
-  PT(lastCmd);
-  PT('\t');
-  PT(cmdLen);
-  PTF("\tCmd:");
-  printCmdByType(token, newCmd, cmdLen);
-}
-
 void read_serial() {
   Stream *serialPort = NULL;
   // String source;
@@ -171,7 +158,7 @@ void read_serial() {
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = token < 'a' ? '~' : '\0';
     newCmdIdx = 2;
-    PTL(cmdLen);
+    // PTL(cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
   }
 }

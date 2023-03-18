@@ -1,6 +1,6 @@
 #define SERIAL2_BAUD_RATE 9600
 #define MAX_CUSTOMIZED_CMD 10
-
+// #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
   "kbalance", "ksit", "d", "m0 80 0 -80 0 0", "khi", "krc", "kvtF", "kck", "kjy", "kstr"  //define up to 10 customized commands.
 };
@@ -55,14 +55,19 @@ void read_voice() {
         }
       } else if (index < 61) {  //21 ~ 60 are preset commands, and their indexes should be shifted by 21.
                                 //But we don't need to use their indexes.
-        token = raw[3];         //T_SKILL;
-        shift = 4;              //3;
+#ifdef VOICE_MODULE_SAMPLE
+        token = T_SKILL;
+        shift = 3;
+#else
+        token = raw[3];
+        shift = 4;
+#endif
       }
       const char *cmd = raw.c_str() + shift;
-      tQueue->push_back(new Task(token, shift > 0 ? cmd : "", 2000));
+      tQueue->addTask(token, shift > 0 ? cmd : "", 2000);
       char end = cmd[strlen(cmd) - 1];
       if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
-        tQueue->push_back(new Task('k', "up"));
+        tQueue->addTask('k', "up");
       }
     }
   }

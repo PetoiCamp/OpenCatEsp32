@@ -19,6 +19,7 @@ byte mpuBad[] = { 19, 17, 16, 14, 12,
 #define MEAN_THRESHOLD 0.2
 #define STD_THRESHOLD 0.02
 
+#ifdef GYRO_PIN
 void testMPU() {
   PTL("\nIMU test: both mean and standard deviation should be small on Pitch and Roll axis\n");
   delay(1000);
@@ -58,6 +59,8 @@ void testMPU() {
     delete[] history[a];
   delete[] history;
 };
+#endif
+
 #ifdef IR_PIN
 bool testIR() {
   long start = millis();
@@ -117,7 +120,9 @@ void QA() {
     if (choice != 'Y' && choice != 'y')
       return;
 #endif
+#ifdef GYRO_PIN
     testMPU();
+#endif
     //tests...
     PTL("\nServo test: all servos should rotate and in sync\n");
     loadBySkillName("ts");  //test EEPROM

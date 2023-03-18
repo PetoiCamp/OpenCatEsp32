@@ -89,21 +89,18 @@ template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
   PTL();
 }
 
-template<typename T> void printCmdByType(char t, T *data, int len) {
-  PT("token ");PT(t);
-  PT(" len ");PTL(len);
-  // int l = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
-  // PT("calculated len: ");
-  // PTL(l);
-  if (len > 0) {
-    if (t < 'a'){
-      PTL("Binary ");
-      printListWithoutString((int8_t *)data, len);
-    }
-    else{
-      PT("ASCII ");
-      PTL((char *)data);
-    }
+template<typename T> void printCmdByType(char t, T *data) {
+  PT("token ");
+  PT(t);
+  int len = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
+  PT("calculated len: ");
+  PTL(len);
+  if (t < 'a') {
+    PTL("Binary ");
+    printListWithoutString((int8_t *)data, len);
+  } else {
+    PT("ASCII ");
+    PTL((char *)data);
   }
 }
 
@@ -143,9 +140,21 @@ void FPS() {
   }
 }
 
+void printCmd() {
+  PTF("lastT:");
+  PT(lastToken);
+  PTF("\tT:");
+  PT(token);
+  PTF("\tLastCmd:");
+  PT(lastCmd);
+  PTF("\tCmd:");
+  printCmdByType(token, newCmd);
+}
+
 void resetCmd() {
   // PTL("Reset Cmd");
-  if (token == T_SKILL && strcmp(newCmd, "rc")) {
+  printCmd();
+  if (token == T_SKILL && newCmd[0] != '\0' && strcmp(newCmd, "rc")) {
     strcpy(lastCmd, newCmd);
   }
   newCmdIdx = 0;

@@ -135,7 +135,9 @@ public:
 
     for (int i = 0; i < 2; i++) {
       expectedRollPitch[i] = (int8_t)newCmd[1 + i];
+#ifdef GYRO_PIN
       yprTilt[2 - i] = 0;
+#endif
     }
     angleDataRatio = (int8_t)newCmd[3];
     byte baseHeader = 4;
@@ -346,6 +348,12 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
       protectiveShift = esp_random() % 100 / 10.0 - 5;
     else
       protectiveShift = 0;
+#ifdef GYRO_PIN
+    // keepDirectionQ = (skill->period > 1) ? false : true;
+    thresX = (skill->period > 1) ? 12000 : 8000;
+    thresY = (skill->period > 1) ? 10000 : 6000;
+// thresZ = (skill->period > 1) ? -8000 : -10000;
+#endif
     for (byte i = 0; i < DOF; i++)
       skill->dutyAngles[i] += protectiveShift;
     // skill->info();
