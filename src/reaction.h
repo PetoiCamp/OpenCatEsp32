@@ -1,14 +1,16 @@
 void dealWithExceptions() {
+#ifdef GYRO_PIN
   if (gyroBalanceQ && exceptions) {  //the gyro reaction switch can be toggled on/off by the 'g' token
     switch (exceptions) {
       case -1:
         {
           strcpy(newCmd, "lnd");
           loadBySkillName(newCmd);
-          shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ? delay(1000);
-          strcpy(newCmd, "up");
+          shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
+          delay(1000);
           token = 'k';
-          newCmdIdx = 1;
+          strcpy(newCmd, "up");
+          newCmdIdx = -1;
           break;
         }
       case -2:
@@ -17,33 +19,38 @@ void dealWithExceptions() {
           //  for (int m = 0; m < 2; m++)
           //    meow(30 - m * 12, 42 - m * 12, 20);
           token = 'k';
+          manualHeadQ = false;
           strcpy(newCmd, "rc");
-          newCmdIdx = -1;
+          loadBySkillName(newCmd);
           break;
         }
       case -3:
         {
-          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
+          if (  //skill->period == 1 &&
+            strncmp(lastCmd, "vt", 2)) {
             char xSymbol[] = { '^', 'v' };
             char ySymbol[] = { '<', '>' };
             char xDirection = xSymbol[sign(ARX) > 0];
             char yDirection = ySymbol[sign(ARY) > 0];
-            float forceAngle = atan(float(abs(aaReal.x)) / aaReal.y) * degPerRad;
-            if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval)) {
-              if (abs(forceAngle) < 45) {
-                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 500);
-                tQueue->addTask('i', yDirection == '<' ? "0 -100" : "0 100");
-                tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 1000);
+            float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
+            if (tQueue->Cleared()) {
+              if (abs(forceAngle) < 70) {
+                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR");
+                tQueue->addTask('i', yDirection == '<' ? "0 -45" : "0 45", 1000);
                 tQueue->addTask('i', "");
               } else {
-                tQueue->addTask('k', xDirection == '^' ? "wkF" : "bk", 500);
                 if (xDirection == '^') {
-                  tQueue->addTask('i', rand() % 2 ? "0 135" : "0 -135", 500);
+                  tQueue->addTask('k', "wkF", 300);
+                  tQueue->addTask('i', yDirection == '<' ? "0 75" : "0 -75", 700);
                   tQueue->addTask('i', "");
+                } else {
+                  tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
                 }
               }
-              tQueue->addTask('k', "up", 100);
-              runDelay = 2;
+              // tQueue->addTask('k', "up", 100);
+              delayPrevious = runDelay;
+              runDelay = 3;
             }
             PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
             PTL();
@@ -54,16 +61,16 @@ void dealWithExceptions() {
         {
           char *currentGait = skill->skillName;  //it may not be gait
           char gaitDirection = currentGait[strlen(currentGait) - 1];
-          float yawDiff = ypr[0] - previous_ypr[0];
-          if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval)) {
+          float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
+          if (tQueue->Cleared()) {
             if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  //not gait or stepping
               tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
-              tQueue->addTask('k', "up", 100);
-              runDelay = 4;
+              // tQueue->addTask('k', "up", 100);
+              delayPrevious = runDelay;
+              runDelay = 3;
             } else {
-              if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
-                previous_ypr[0] = ypr[0];
-              }
+              // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
+              previous_ypr[0] = ypr[0];
             }
             // else {
             //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
@@ -85,11 +92,21 @@ void dealWithExceptions() {
           break;
         }
     }
-    PT(exceptions);
-    print6Axis();
+    // PT("exc ");
+    // PTH(exceptions, tQueue->exceptionQ);
+    if (exceptions != -4)
+      print6Axis();
+    read_IMU();  //flush the IMU to avoid static readings and infinite loop
+
+    if (!tQueue->exceptionQ) {
+      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd"))
+        tQueue->addTask('k', lastCmd);
+      tQueue->exceptionQ = true;
+    }
   }
-  if (tQueue->size() == 0 && (taskInterval == -1 || long(millis() - taskTimer) > taskInterval) && runDelay <= delayException)
-    runDelay = delayMid;
+  if (tQueue->Cleared() && runDelay <= delayException)
+    runDelay = delayPrevious;
+#endif
 }
 
 #ifdef VOLTAGE
@@ -181,29 +198,28 @@ void reaction() {
       case T_RANDOM_MIND:
       case T_RAMP:
         {
-          if (token == T_GYRO_FINENESS) {
+          if (token == T_RANDOM_MIND) {
+            autoSwitch = !autoSwitch;
+            token = autoSwitch ? 'Z' : 'z';  //G for activated gyro
+          }
+#ifdef GYRO_PIN
+          else if (token == T_GYRO_FINENESS) {
             fineAdjust = !fineAdjust;
             imuSkip = fineAdjust ? IMU_SKIP : IMU_SKIP_MORE;
             token = fineAdjust ? 'G' : 'g';  //G for activated gyro
           } else if (token == T_GYRO_BALANCE) {
             gyroBalanceQ = !gyroBalanceQ;
             token = gyroBalanceQ ? 'G' : 'g';  //G for activated gyro
-          }
-#ifdef GYRO_PIN
-          else if (token == T_PRINT_GYRO) {
+          } else if (token == T_PRINT_GYRO) {
             print6Axis();
-          }
-#endif
-          else if (token == T_VERBOSELY_PRINT_GYRO) {
+          } else if (token == T_VERBOSELY_PRINT_GYRO) {
             printGyro = !printGyro;
             token = printGyro ? 'V' : 'v';  //V for verbosely print gyro data
-          } else if (token == T_RANDOM_MIND) {
-            autoSwitch = !autoSwitch;
-            token = autoSwitch ? 'Z' : 'z';  //G for activated gyro
           } else if (token == T_RAMP) {
             ramp = -ramp;
             token = ramp > 0 ? 'R' : 'r';  //G for activated gyro
           }
+#endif
           break;
         }
       case T_PAUSE:
@@ -257,7 +273,7 @@ void reaction() {
 #ifdef ULTRASONIC
       case T_COLOR:
         {
-          if (cmdLen == 0)  //a single 'C' will turn off the manual color mode
+          if (cmdLen < 2)  //a single 'C' will turn off the manual color mode
             manualEyeColorQ = false;
           else {  // turn on the manual color mode
             manualEyeColorQ = true;
@@ -391,9 +407,12 @@ void reaction() {
 #endif
               }
 #endif
+#ifdef GYRO_PIN
               else if (token == T_TILT) {
                 yprTilt[target[0]] = target[1];
-              } else if (token == T_MEOW) {
+              }
+#endif
+              else if (token == T_MEOW) {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
                 if (target[0] > 0 && target[1] > 0)
@@ -439,7 +458,7 @@ void reaction() {
       case T_INDEXED_SEQUENTIAL_BIN:
       case T_INDEXED_SIMULTANEOUS_BIN:
         {  //indexed joint motions: joint0, angle0, joint1, angle1, ... (binary encoding)
-          if (cmdLen == 0)
+          if (cmdLen < 2)
             manualHeadQ = false;
           else {
             int targetFrame[DOF + 1];
@@ -486,7 +505,7 @@ void reaction() {
         }
       case T_BEEP_BIN:
         {
-          if (cmdLen == 0) {  //toggle on/off the bootup melody
+          if (cmdLen < 2) {  //toggle on/off the bootup melody
             bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
             PTL(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
@@ -556,7 +575,11 @@ void reaction() {
   if (token == T_SKILL) {
     skill->perform();
     if (skill->period > 1)
-      delay(delayShort + max(0, int(runDelay - (max(abs(ypr[1]), abs(ypr[2])) / 10))));
+      delay(delayShort + max(0, int(runDelay
+#ifdef GYRO_PIN
+                                    - (max(abs(ypr[1]), abs(ypr[2])) / 10)  // accelerate gait when tilted
+#endif
+                                    )));
     if (skill->period < 0) {
       if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here. check OpenCat2.0
         strcpy(newCmd, lastCmd);
