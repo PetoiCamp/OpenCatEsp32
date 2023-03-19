@@ -164,9 +164,9 @@ public:
   void info() {
     PT("Skill Name: ");
     PTL(skillName);
-    PTF("period:");
+    PTF("period: ");
     PT(period);
-    PT(",\texpected(pitch,roll):(");
+    PT(",\texpected(pitch,roll): (");
     PT(expectedRollPitch[0]);
     PT(",");
     PT(expectedRollPitch[1]);
@@ -182,15 +182,18 @@ public:
 #ifdef PRINT_SKILL_DATA
     int showRows = 1;
     for (int k = 0; k < abs(period); k++) {
-      if (k < showRows || k == abs(period) - 1) {
+      if (abs(period) <= showRows + 2 || k < showRows || k == abs(period) - 1) {
         for (int col = 0; col < frameSize; col++) {
           PT((int8_t)dutyAngles[k * frameSize + col]);
           PT(",\t");
         }
         PTL();
       } else {
-        if (k == showRows)
-          PT("skip");
+        if (k == showRows) {
+          PTF(" skipping ");
+          PT(abs(period) - 1 - showRows);
+          PTF(" frames");
+        }
         PT('.');
         if (k == abs(period) - 2)
           PTL();
@@ -245,8 +248,8 @@ public:
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
-                                                //  PT("step "); PTL(c);
-                                                //  printList(dutyAngles + c * frameSize);
+        //  PT("step "); PTL(c);
+        //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 
 #ifdef GYRO_PIN  //if opt out the gyro, the calculation can be really fast
@@ -365,5 +368,6 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
       targetHead[i] = currentAng[i] - currentAdjust[i];
 #endif
     //    runDelay = delayMid + 2;
+    skill->info();
   }
 }

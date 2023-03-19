@@ -21,7 +21,8 @@ void dealWithExceptions() {
           token = 'k';
           manualHeadQ = false;
           strcpy(newCmd, "rc");
-          loadBySkillName(newCmd);
+          newCmdIdx = -2;
+          // tQueue->addTaskToFront('k', "rc");
           break;
         }
       case -3:
@@ -33,7 +34,7 @@ void dealWithExceptions() {
             char xDirection = xSymbol[sign(ARX) > 0];
             char yDirection = ySymbol[sign(ARY) > 0];
             float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
-            if (tQueue->Cleared()) {
+            if (tQueue->cleared()) {
               if (abs(forceAngle) < 70) {
                 tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR");
                 tQueue->addTask('i', yDirection == '<' ? "0 -45" : "0 45", 1000);
@@ -62,7 +63,7 @@ void dealWithExceptions() {
           char *currentGait = skill->skillName;  //it may not be gait
           char gaitDirection = currentGait[strlen(currentGait) - 1];
           float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
-          if (tQueue->Cleared()) {
+          if (tQueue->cleared()) {
             if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  //not gait or stepping
               tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
               // tQueue->addTask('k', "up", 100);
@@ -92,19 +93,19 @@ void dealWithExceptions() {
           break;
         }
     }
-    // PT("exc ");
-    // PTH(exceptions, tQueue->exceptionQ);
+
     if (exceptions != -4)
       print6Axis();
     read_IMU();  //flush the IMU to avoid static readings and infinite loop
 
-    if (!tQueue->exceptionQ) {
-      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd"))
-        tQueue->addTask('k', lastCmd);
-      tQueue->exceptionQ = true;
+    if (tQueue->lastTask == NULL) {
+      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && skill->period > 0 && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
+        PTH("save last task ", lastCmd);
+        tQueue->lastTask = new Task('k', lastCmd);
+      }
     }
   }
-  if (tQueue->Cleared() && runDelay <= delayException)
+  if (tQueue->cleared() && runDelay <= delayException)
     runDelay = delayPrevious;
 #endif
 }
@@ -164,6 +165,7 @@ bool lowBattery() {
 
 void reaction() {
   if (newCmdIdx) {
+    PTLF("-----");
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       fineAdjust = true;
@@ -535,8 +537,10 @@ void reaction() {
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           // newCmdIdx = 0;
-          token = T_SKILL;
           strcpy(newCmd, "tmp");
+          if (skill->period > 0)
+            printToken();
+          token = T_SKILL;
           break;
         }
       case T_SKILL:
@@ -547,6 +551,8 @@ void reaction() {
                                           //it's better to compare skill->skillName and newCmd.
                                           //but need more logics for non skill cmd in between
             loadBySkillName(newCmd);      //newCmd will be overwritten as dutyAngles then recovered from skill->skillName
+            if (skill->period > 0)
+              printToken();
             // skill->info();
           }
           break;
@@ -562,8 +568,13 @@ void reaction() {
           break;
         }
     }
-    if (token != T_SKILL || skill->period > 0) {
-      printToken();  //postures, gaits and other tokens can confirm completion by sending the token back
+
+    if (token == T_SKILL && newCmd[0] != '\0' && strcmp(newCmd, "rc")) {
+      strcpy(lastCmd, newCmd);
+    }
+
+    if (token != T_SKILL) {  //it will change the token and affect strcpy(lastCmd, newCmd)
+      printToken();          //postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_RAMP
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
@@ -581,25 +592,32 @@ void reaction() {
 #endif
                                     )));
     if (skill->period < 0) {
-      if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here. check OpenCat2.0
-        strcpy(newCmd, lastCmd);
-      } else if (!strcmp(skill->skillName, "fd")) {  //need to optimize logic to combine "rest" and "fold"
+      if (!strcmp(skill->skillName, "fd")) {  //need to optimize logic to combine "rest" and "fold"
         shutServos();
         gyroBalanceQ = false;
         printToken('g');
         idleTimer = 0;
         token = '\0';
       } else {
-        newCmd[0] = '\0';
-        arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
-        skill->period = 1;
-        frame = 0;
+        // newCmd[0] = '\0';
+        // arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
+        // skill->period = 1;
+        // frame = 0;
+        skill->convertTargetToPosture(currentAng);
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
-      if (strcmp(newCmd, ""))
-        loadBySkillName(newCmd);
       printToken();  //behavior can confirm completion by sending the token back
+    }
+    // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
+    //   if (lastCmd[0] != '\0')
+    //     loadBySkillName(lastCmd);
+    if (tQueue->cleared() && tQueue->lastTask != NULL) {
+      PT("Use last task ");
+      tQueue->loadTaskInfo(tQueue->lastTask);
+      delete tQueue->lastTask;
+      tQueue->lastTask = NULL;
+      PTL(newCmd);
     }
   }
 }

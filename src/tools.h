@@ -93,7 +93,7 @@ template<typename T> void printCmdByType(char t, T *data) {
   PT("token ");
   PT(t);
   int len = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
-  PT("calculated len: ");
+  PT("\tcalculated len: ");
   PTL(len);
   if (t < 'a') {
     PTL("Binary ");
@@ -153,15 +153,22 @@ void printCmd() {
 
 void resetCmd() {
   // PTL("Reset Cmd");
-  printCmd();
-  if (token == T_SKILL && newCmd[0] != '\0' && strcmp(newCmd, "rc")) {
-    strcpy(lastCmd, newCmd);
-  }
-  newCmdIdx = 0;
+  // printCmd();
   lastToken = token;
+  newCmdIdx = 0;
   if (token != T_SKILL && token != T_CALIBRATE)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
   // PTL("Done Reset");
+}
+
+char *strGet(char *s, int i) {  //allow negative index
+  int len = strlen(s);
+  if (abs(i) <= len)
+    return s + (i < 0 ? len + i : i);
+  else {
+    PTL("Invalid index!");
+    return s;
+  }
 }
