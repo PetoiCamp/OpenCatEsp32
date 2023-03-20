@@ -261,10 +261,12 @@ void reaction() {
           //          printRange(DOF);
           //          printList(currentAng);
           printTable(currentAng);
+#ifdef BT_BLE
           if (deviceConnected) {
             bleWrite(range2String(DOF));
             bleWrite(list2String(currentAng));
           }
+#endif
           break;
         }
       case T_MELODY:
@@ -390,10 +392,12 @@ void reaction() {
                 //              printRange(DOF);
                 //              printList(servoCalib);
                 printTable(servoCalib);
+#ifdef BT_BLE
                 if (deviceConnected) {
                   bleWrite(range2String(DOF));
                   bleWrite(list2String(servoCalib));
                 }
+#endif
                 PT(token);
                 printList(target, 2);
               } else if (token == T_INDEXED_SEQUENTIAL_ASC) {

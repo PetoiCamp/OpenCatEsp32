@@ -37,6 +37,7 @@ void readEnvironment() {
 //This example creates a bridge between Serial and Classical Bluetooth (SPP with authentication)
 //and also demonstrate that SerialBT has the same functionalities as a normal Serial
 
+#ifdef BT_SPP
 #include "BluetoothSerial.h"
 
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -103,22 +104,30 @@ void blueSspSetup() {
 
 //end of Richard Li's code
 
+#endif
+
 void printToken(char t = token) {
+#ifdef BT_BLE
   if (deviceConnected)
     bleWrite(String(t));
-  // if (!confirmRequestPending)
+#endif
+#ifdef BT_SPP
   if (BTconnected)
     SerialBT.println(t);
+#endif
   PTL(t);
 }
 
 void read_serial() {
   Stream *serialPort = NULL;
-  // String source;
+// String source;
+#ifdef BT_SPP
   if (SerialBT.available()) {  //give BT a higher priority over wired serial
     serialPort = &SerialBT;
     // source = "BT";
-  } else if (Serial.available()) {
+  } else
+#endif
+    if (Serial.available()) {
     serialPort = &Serial;
     // source = "SER";
   }
@@ -165,13 +174,16 @@ void read_serial() {
 
 void readSignal() {
 #ifdef IR_PIN
+#ifdef BT_BLE
   if (!deviceConnected)  //bluetooth controller will disable the IR receiver
-    read_infrared();     //  newCmdIdx = 1
+#endif
+    read_infrared();  //  newCmdIdx = 1
 #endif
   read_serial();  //  newCmdIdx = 2
-  detectBle();    //  newCmdIdx = 3;
+#ifdef BT_BLE
+  detectBle();  //  newCmdIdx = 3;
   readBle();
-
+#endif
 
 #ifdef VOICE
   read_voice();

@@ -40,9 +40,9 @@ bool EEPROMOverflow = false;
 
 
 #define EEPROM_BIRTHMARK_ADDRESS 0
-#define EEPROM_IMU 1           // 2x9 = 18 bytes
-#define EEPROM_CALIB 20        // 16 bytes
-#define EEPROM_BLE_NAME 36     // 10 bytes
+#define EEPROM_IMU 1                  // 2x9 = 18 bytes
+#define EEPROM_CALIB 20               // 16 bytes
+#define EEPROM_BLE_NAME 36            // 10 bytes
 #define EEPROM_BOOTUP_SOUND_STATE 46  // 1 byte
 #define EEPROM_RESERVED 50
 #define SERIAL_BUFF 100
@@ -272,7 +272,9 @@ void i2cEepromSetup() {
     PTLF("Set up the new board...");
     playMelody(melodyInit, sizeof(melodyInit) / 2);
     PTF("- Name the new robot as: ");
+#ifdef BT_BLE
     genBleID();
+#endif
 #ifndef AUTO_INIT
     PTL("- Reset the joints' calibration offsets? (Y/n): ");
     while (!Serial.available())

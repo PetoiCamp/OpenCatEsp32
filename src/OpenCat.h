@@ -66,8 +66,12 @@
 #define SERIAL_TIMEOUT_LONG 150
 #define SOFTWARE_VERSION "B230305"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
+
+#define BT_BLE    //toggle Bluetooth Low Energy (BLE）
+#define BT_SPP    //toggle Bluetooth Serial Port Profile (BT_SPP)
+#define GYRO_PIN  //toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+
 #ifdef BiBoard
-#define GYRO_PIN
 #define PWM_NUM 12
 #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 25
@@ -85,7 +89,6 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #endif
 
 #else  //BiBoard2
-#define GYRO_PIN
 #define PWM_NUM 16
 #define INTERRUPT_PIN 27  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 14
@@ -375,7 +378,9 @@ int ramp = 1;
 
 #include "sound.h"
 #include "I2cEEPROM.h"
+#ifdef BT_BLE
 #include "bleUart.h"
+#endif
 #ifdef GYRO_PIN
 #include "imu.h"
 #endif
@@ -441,8 +446,12 @@ void initRobot() {
 #ifdef GYRO_PIN
   imuSetup();
 #endif
+#ifdef BT_BLE
   bleSetup();
+#endif
+#ifdef BT_SPP
   blueSspSetup();
+#endif
   servoSetup();
   skill = new Skill();
   skillList = new SkillList();
