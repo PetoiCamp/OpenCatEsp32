@@ -56,7 +56,7 @@ void loop() {
   readEnvironment();
   //  //— special behaviors based on sensor events
   dealWithExceptions();  //low battery, fall over, lifted, etc.
-  if (!tQueue->Cleared()) {
+  if (!tQueue->cleared()) {
     tQueue->popTask();
   } else {
     readSignal();
