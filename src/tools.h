@@ -90,17 +90,19 @@ template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
 }
 
 template<typename T> void printCmdByType(char t, T *data) {
-  PT("token ");
-  PT(t);
-  int len = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
-  PT("\tcalculated len: ");
-  PTL(len);
-  if (t < 'a') {
-    PTL("Binary ");
-    printListWithoutString((int8_t *)data, len);
-  } else {
-    PT("ASCII ");
-    PTL((char *)data);
+  if (t != '\0') {
+    PT("token ");
+    PT(t);
+    int len = (t < 'a') ? strlenUntil(data, '~') : strlen((char *)data);
+    PT("\tcalculated len: ");
+    PTL(len);
+    if (t < 'a') {
+      PTL("Binary ");
+      printListWithoutString((int8_t *)data, len);
+    } else {
+      PT("ASCII ");
+      PTL((char *)data);
+    }
   }
 }
 

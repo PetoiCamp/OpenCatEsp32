@@ -194,21 +194,25 @@ bool newBoard = false;
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
-#define T_RAMP 'r'
-#define T_RESET 'R'
+#define T_SLOPE 'l'  //inverse the slope of the adjustment function
+#define T_RESET '!'
 #define T_SAVE 's'
 #define T_TILT 't'
 #define T_TEMP 'T'  //call the last skill data received from the serial port
 #define T_MEOW 'u'
 #define T_PRINT_GYRO 'v'            //print Gyro data once
 #define T_VERBOSELY_PRINT_GYRO 'V'  //toggle verbosely print Gyro data
-#define T_WORD 'w'
-#define T_SERVO_MICROSECOND 'W'  //PWM width modulation
+#define T_SERVO_MICROSECOND 'w'     //PWM width modulation
 #define T_XLEG 'x'
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 #define T_RANDOM_MIND 'z'  //toggle random behaviors
 // #define T_TUNER '}'
+
+#define T_READ 'R'        //read pin     R
+#define T_WRITE 'W'       //write pin                      W
+#define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
+#define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -370,7 +374,7 @@ int16_t imuOffset[9] = { 0, 0, 0,
 float expectedRollPitch[2];
 float RollPitchDeviation[2];
 float currentAdjust[DOF] = {};
-int ramp = 1;
+int slope = 1;
 
 #include "tools.h"
 #include "QList/QList.h"

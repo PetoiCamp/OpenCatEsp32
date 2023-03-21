@@ -246,7 +246,7 @@ float levelTolerance[2] = { ROLL_LEVEL_TOLERANCE, PITCH_LEVEL_TOLERANCE };  //th
 #define LEFT_RIGHT_FACTOR 2
 #define FRONT_BACK_FACTOR 1.2
 #define POSTURE_WALKING_FACTOR 0.5
-#define ADJUSTMENT_GAP_DAMPER 5
+#define ADJUSTMENT_DAMPER 5
 //#ifdef POSTURE_WALKING_FACTOR
 //float postureOrWalkingFactor = 1;
 //#endif
@@ -268,9 +268,9 @@ float adjust(byte i) {
     //bool frontQ = i % 4 < 2 ? true : false;
     //bool upperQ = i / 4 < 3 ? true : false;
     float leftRightFactor = 1;
-    if ((leftQ && ramp * RollPitchDeviation[0] > 0)  // operator * is higher than &&
-        || (!leftQ && ramp * RollPitchDeviation[0] < 0))
-      leftRightFactor = LEFT_RIGHT_FACTOR * abs(ramp);
+    if ((leftQ && slope * RollPitchDeviation[0] > 0)  // operator * is higher than &&
+        || (!leftQ && slope * RollPitchDeviation[0] < 0))
+      leftRightFactor = LEFT_RIGHT_FACTOR * abs(slope);
     rollAdj = (i == 1 || i > 7 ? fabs(RollPitchDeviation[0]) : RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
     //    rollAdj = fabs(RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
 
@@ -282,8 +282,11 @@ float adjust(byte i) {
                         (i > 3 ? POSTURE_WALKING_FACTOR : 1) *
 #endif
                           rollAdj
-                        - ramp * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
-  currentAdjust[i] += sign(idealAdjust - currentAdjust[i]) * (min(fabs(idealAdjust - currentAdjust[i]), float(ADJUSTMENT_GAP_DAMPER)));
-
+                        - slope * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
+#ifdef ADJUSTMENT_DAMPER
+  currentAdjust[i] += max(min(idealAdjust - currentAdjust[i], float(ADJUSTMENT_DAMPER)), -float(ADJUSTMENT_DAMPER));
+#else
+  currentAdjust[i] = idealAdjust;
+#endif
   return currentAdjust[i];
 }
