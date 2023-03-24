@@ -433,7 +433,6 @@ void initRobot() {
   PTL('k');
   PTLF("Flush the serial buffer...");
   PTLF("\n* Start *");
-  PTLF(SOFTWARE_VERSION);
 #ifdef BITTLE
   PTLF("Bittle");
 #elif defined NYBBLE
@@ -441,6 +440,7 @@ void initRobot() {
 #elif defined CUB
   PTLF("Cub");
 #endif
+  PTLF(SOFTWARE_VERSION);
 
   if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
     playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);

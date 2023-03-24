@@ -368,6 +368,6 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
       targetHead[i] = currentAng[i] - currentAdjust[i];
 #endif
     //    runDelay = delayMid + 2;
-    skill->info();
+    // skill->info();
   }
 }
