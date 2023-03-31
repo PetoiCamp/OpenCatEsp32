@@ -165,7 +165,7 @@ bool lowBattery() {
 
 void reaction() {
   if (newCmdIdx) {
-    PTLF("-----");
+    // PTLF("-----");
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       fineAdjust = true;
@@ -175,7 +175,9 @@ void reaction() {
     }
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
-    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT)
+    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW
+        && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN
+        && token != T_TILT && token != T_READ && token != T_WRITE)
       beep(15 + newCmdIdx, 5);  //ToDo: check the muted sound when newCmdIdx = -1
     if (hardServoQ && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
@@ -260,13 +262,18 @@ void reaction() {
         {  //show the list of current joint anles
           //          printRange(DOF);
           //          printList(currentAng);
-          printTable(currentAng);
+          PT('=');
+          if (cmdLen)
+            PTL(currentAng[atoi(newCmd)]);
+          else {
+            printTable(currentAng);
 #ifdef BT_BLE
-          if (deviceConnected) {
-            bleWrite(range2String(DOF));
-            bleWrite(list2String(currentAng));
-          }
+            if (deviceConnected) {
+              bleWrite(range2String(DOF));
+              bleWrite(list2String(currentAng));
+            }
 #endif
+          }
           break;
         }
       case T_MELODY:
@@ -493,7 +500,7 @@ void reaction() {
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
               } else if (token == T_READ) {
-                PTF("Got ");
+                PT('=');
                 pinMode(newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
                   PTL(analogRead(newCmd[i + 1]));

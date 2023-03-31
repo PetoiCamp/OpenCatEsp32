@@ -185,7 +185,7 @@ bool newBoard = false;
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'  //I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
-#define T_JOINTS 'j'                    //print the joint angles
+#define T_JOINTS 'j'                    //A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
 #define T_LISTED_BIN 'L'              //a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
