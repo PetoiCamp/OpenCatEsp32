@@ -4,6 +4,7 @@ OpenCat code running on BiBoard, an ESP32 controller.
 
 [User manual](https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard)
 
+[Purchase link](https://www.petoi.com/products/biboard-esp32-development-board-for-quadruped-robot)
 
 ## Configuration:
 
