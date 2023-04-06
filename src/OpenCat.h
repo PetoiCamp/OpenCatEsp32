@@ -391,11 +391,11 @@ int slope = 1;
 #ifdef IR_PIN
 #include "infrared.h"
 #endif
-#include "espServo.h"
 #ifdef NEOPIXEL_PIN
 #include "led.h"
 #endif
-
+#include "espServo.h"
+#include "motion.h"
 #include "randomMind.h"
 
 #ifdef VOICE
@@ -422,7 +422,6 @@ int slope = 1;
 #endif
 
 #include "io.h"
-#include "motion.h"
 #include "skill.h"
 #include "reaction.h"
 #include "qualityAssurance.h"

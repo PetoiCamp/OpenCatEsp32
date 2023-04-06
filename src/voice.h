@@ -1,3 +1,10 @@
+// Petoi Voice Command Module
+// use the software serial port on the NyBoard to read the module. connect the module to the grove socket with pin 6 and 7.
+// or use the serial 2 port on the BiBoard to read the module. connect the module to the pin Tx2 and Rx2.
+// if you wire the module up with the USB programmer directly, connect the module's Tx to the programmer's Rx, and Rx to Tx.
+// Rongzhong Li
+// Petoi LLC
+// Jan 12, 2023
 #define SERIAL2_BAUD_RATE 9600
 #define MAX_CUSTOMIZED_CMD 10
 
@@ -15,14 +22,14 @@
 // 下列行为是程序中预设的，您可以用技能创作坊设计新技能并导入到 InstinctX.h
 // 支持其他的串口指令，比如活动关节和旋律
 
-// #define VOICE_MODULE_SAMPLE 
+// #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
   "kpu1",                                                                  //single-handed pushups
   "m0 80 0 -80 0 0",                                                       //wave head
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  //twinkle star
-  "kmw",                                                                    //moonwalk
+  "kmw",                                                                   //moonwalk
   "khi",
   "ktrF",
   "kvtF",
@@ -43,12 +50,13 @@ void voiceSetup() {
 
 void read_voice() {
   if (token == 'X' && newCmd[0] == 'A') {  // send some control command directly to the module
-                                           //XAa: turn on the voice response
-                                           //XAb: mute the voice response
-                                           //XAc: start learning
-                                           //XAd: stop learning
-                                           //XAe: switch English
-                                           //XAf: switch Chinese
+                                           // XAa: switch English
+                                           // XAb: switch Chinese
+                                           // XAc: turn on the sound response
+                                           // XAd: turn off the sound response
+                                           // XAe: start learning
+                                           // XAf: stop learning
+                                           // XAg: clear the learning data
     byte c = 0;
     while (newCmd[c++] != '~')
       ;
