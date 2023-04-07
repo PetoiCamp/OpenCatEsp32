@@ -60,7 +60,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         cmdLen = 0;
         token = rxValue[0];
         lowerToken = tolower(token);
-        terminator = (token < 'a') ? '~' : '\n';
+        terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';
         serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
@@ -79,7 +79,7 @@ void readBle() {
     }
     // PTH("* BLE", millis() - lastSerialTime);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-    newCmd[cmdLen] = token < 'a' ? '~' : '\0';
+    newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
     // PTL(cmdLen);

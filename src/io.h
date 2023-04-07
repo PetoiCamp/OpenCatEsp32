@@ -136,7 +136,7 @@ void read_serial() {
     lowerToken = tolower(token);
     newCmdIdx = 2;
     delay(1);                                 //leave enough time for serial read
-    terminator = (token < 'a') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
+    terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
                                               //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
     serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
     lastSerialTime = millis();
@@ -165,7 +165,7 @@ void read_serial() {
                                                                                                     //so it needs a timeout for the no line ending case
     // PTH("* " + source, long(millis() - lastSerialTime));
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
-    newCmd[cmdLen] = token < 'a' ? '~' : '\0';
+    newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     newCmdIdx = 2;
     // PTL(cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
