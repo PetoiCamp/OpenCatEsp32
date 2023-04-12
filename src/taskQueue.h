@@ -51,7 +51,7 @@ public:
     cmdLen = t->paraLength;
     taskInterval = t->dly;
     arrayNCPY(newCmd, t->parameters, cmdLen);
-    newCmd[cmdLen] = (tkn >= 'A' && tkn <= 'Z') ? '~' : '\0';
+    newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     taskTimer = millis();
     newCmdIdx = 5;
   }
@@ -60,7 +60,7 @@ public:
       if (this->size() > 0) {
         loadTaskInfo(this->front());
         this->pop_front();
-        PTH("Use pop ", newCmd);
+        PTL("Use pop ");
       }
     }
   }

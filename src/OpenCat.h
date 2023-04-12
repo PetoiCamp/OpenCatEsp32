@@ -207,7 +207,7 @@ bool newBoard = false;
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 #define T_RANDOM_MIND 'z'  //toggle random behaviors
-// #define T_TUNER '}'
+#define T_TUNER '}'
 
 #define T_READ 'R'        //read pin     R
 #define T_WRITE 'W'       //write pin                      W
@@ -225,7 +225,6 @@ int frame = 0;
 int tStep = 1;
 long loopTimer;
 byte fps = 0;
-int **par = new int *[7];
 
 char token;
 char lastToken;
