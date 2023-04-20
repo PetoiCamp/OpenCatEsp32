@@ -4,6 +4,7 @@ void dealWithExceptions() {
     switch (exceptions) {
       case -1:
         {
+          PTL("EXCEPTION 1");
           strcpy(newCmd, "lnd");
           loadBySkillName(newCmd);
           shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
@@ -15,6 +16,7 @@ void dealWithExceptions() {
         }
       case -2:
         {
+          PTL("EXCEPTION 2");
           soundFallOver();
           //  for (int m = 0; m < 2; m++)
           //    meow(30 - m * 12, 42 - m * 12, 20);
@@ -27,6 +29,7 @@ void dealWithExceptions() {
         }
       case -3:
         {
+          PTL("EXCEPTION 3");
           if (  //skill->period == 1 &&
             strncmp(lastCmd, "vt", 2)) {
             char xSymbol[] = { '^', 'v' };
@@ -60,6 +63,7 @@ void dealWithExceptions() {
         }
       case -4:
         {
+          PTL("EXCEPTION 4");
           char *currentGait = skill->skillName;  //it may not be gait
           char gaitDirection = currentGait[strlen(currentGait) - 1];
           float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
@@ -105,8 +109,8 @@ void dealWithExceptions() {
       }
     }
   }
-  if (tQueue->cleared() && runDelay <= delayException)
-    runDelay = delayPrevious;
+  // if (tQueue->cleared() && runDelay <= delayException)
+  //   runDelay = delayPrevious;
 #endif
 }
 
@@ -165,6 +169,7 @@ bool lowBattery() {
 
 void reaction() {
   if (newCmdIdx) {
+    PTH("delay0", runDelay);
     // PTLF("-----");
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
@@ -195,6 +200,12 @@ void reaction() {
     }
 
     switch (token) {
+      case T_QUERY:
+        {
+          PTLF(MODEL);
+          PTLF(SOFTWARE_VERSION);
+          break;
+        }
       case T_GYRO_FINENESS:
       case T_GYRO_BALANCE:
       case T_PRINT_GYRO:

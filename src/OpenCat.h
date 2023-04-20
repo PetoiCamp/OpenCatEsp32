@@ -64,7 +64,7 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B230320"  //BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_230415"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'               //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    //toggle Bluetooth Low Energy (BLE）
@@ -134,6 +134,7 @@ enum ServoModel_t {
 
 //Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
 #ifdef NYBBLE
+#define MODEL "Nybble"
 #define HEAD
 #define TAIL
 #define X_LEG
@@ -142,6 +143,7 @@ enum ServoModel_t {
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
+#define MODEL "Bittle"
 #define HEAD
 #define LL_LEG
 #define REGULAR P1S
@@ -149,6 +151,7 @@ enum ServoModel_t {
 #include "InstinctBittleESP.h"
 
 #elif defined CUB
+#define MODEL "Cub"
 #ifdef BiBoard2
 #define HEAD
 #define TAIL
@@ -207,12 +210,16 @@ bool newBoard = false;
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 #define T_RANDOM_MIND 'z'  //toggle random behaviors
-#define T_TUNER '}'
 
 #define T_READ 'R'        //read pin     R
 #define T_WRITE 'W'       //write pin                      W
 #define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
 #define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
+
+#define T_QUERY '?'
+
+#define T_TUNER '}'
+int8_t **par = new int8_t *[12];
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -431,14 +438,6 @@ void initRobot() {
   PTL('k');
   PTLF("Flush the serial buffer...");
   PTLF("\n* Start *");
-#ifdef BITTLE
-  PTLF("Bittle");
-#elif defined NYBBLE
-  PTLF("Nybble");
-#elif defined CUB
-  PTLF("Cub");
-#endif
-  PTLF(SOFTWARE_VERSION);
 
   if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
     playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);

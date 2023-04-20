@@ -16,7 +16,7 @@ int8_t frontUpY = 20;
 int8_t backUpY = 30;
 int8_t frontDownY = 12;
 int8_t backDownY = 30;
-int8_t **par = new int8_t *[12];
+
 
 #define MU_CAMERA
 // #define SENTRY1_CAMERA
