@@ -169,7 +169,6 @@ bool lowBattery() {
 
 void reaction() {
   if (newCmdIdx) {
-    PTH("delay0", runDelay);
     // PTLF("-----");
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
