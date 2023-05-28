@@ -12,8 +12,8 @@ public:
     parameters = new char[paraLength + 1];
     arrayNCPY(parameters, p, paraLength);
     parameters[paraLength] = (tkn >= 'A' && tkn <= 'Z') ? '~' : '\0';
-    PTL("create task ");
-    info();
+    // PTL("create task ");
+    // info();
   };
   ~Task() {
     // if (paraLength)
@@ -32,7 +32,7 @@ public:
     lastTask = NULL;
   };
   template<typename T> void addTask(char t, T* p, int d = 0) {
-    PTH("add ", p);
+    // PTH("add ", p);
     this->push_back(new Task(t, p, d));
   }
   template<typename T> void addTaskToFront(char t, T* p, int d = 0) {
@@ -60,7 +60,7 @@ public:
       if (this->size() > 0) {
         loadTaskInfo(this->front());
         this->pop_front();
-        PTL("Use pop ");
+        // PTL("Use pop ");
       }
     }
   }

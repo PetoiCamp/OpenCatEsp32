@@ -293,10 +293,10 @@ bool read_IMU() {
 
     for (byte i = 0; i < 3; i++) {  //no need to flip yaw
       ypr[i] *= degPerRad;
-
 #ifdef BiBoard
       ypr[i] = -ypr[i];
-      *xyzReal[i] = -*xyzReal[i];
+      if (i != 2)
+        *xyzReal[i] = -*xyzReal[i];
 #endif
     }
     if (printGyro)
@@ -312,9 +312,9 @@ bool read_IMU() {
     //        | x-
     // if (AWZ < -8500 && AWZ > -8600)
     //   exceptions = -1;  //dropping
-    // else 
-    if (ARZ > 0 && fabs(ypr[2]) > 85)
-      exceptions = -2;  // flipped
+    // else
+    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  exceptions = aaReal.z < 0;
+      exceptions = -2;                 // flipped
     // else if ((abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
     //   exceptions = -3;
     // else if (  //keepDirectionQ &&
@@ -452,6 +452,11 @@ void imuSetup() {
 
   delay(10);
   read_IMU();
+  // for (byte t = 0; t < 100; t++) {
+  //   read_IMU();
+  //   print6Axis();
+  //   delay(2);
+  // }
   exceptions = aaReal.z < 0;
   previous_ypr[0] = ypr[0];
 }

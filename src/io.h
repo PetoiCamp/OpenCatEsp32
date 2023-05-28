@@ -135,9 +135,9 @@ void read_serial() {
     token = serialPort->read();
     lowerToken = tolower(token);
     newCmdIdx = 2;
-    delay(1);                                 //leave enough time for serial read
+    delay(1);                                                  //leave enough time for serial read
     terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
-                                              //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+                                                               //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
     serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
     lastSerialTime = millis();
     do {
@@ -194,7 +194,6 @@ void readSignal() {
     idleTimer = millis() + IDLE_LONG * 1000;
   else if (token != T_CALIBRATE && current - idleTimer > 0) {
 
-
 #ifdef CAMERA
     read_camera();
 #endif
@@ -217,8 +216,10 @@ void readSignal() {
     // other -> 5
     // randomMind -> 100
 
-    if (autoSwitch && newCmdIdx == 0)
-      randomMind();  //make the robot do random demos
+    if (autoSwitch) {
+      randomMind();             //make the robot do random demos
+      powerSaver(POWER_SAVER);  //make the robot rest after a certain period, the unit is seconds
+    }
   }
 }
 

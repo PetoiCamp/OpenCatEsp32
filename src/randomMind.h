@@ -1,11 +1,11 @@
-#define POWER_SAVER 120  //make the robot rest after a certain period, unit is seconds
+#define POWER_SAVER 60  //make the robot rest after a certain period, unit is seconds
 #define IDLE_SHORT 5
 #define IDLE_LONG 15
 #define EVERY_X_SECONDS 10
 int idleThreshold = IDLE_SHORT;
-#define RANDOM_MIND false//true  //let the robot do random stuffs. use token 'z' to activate/deactivate
+#define RANDOM_MIND false  //true  //let the robot do random stuffs. use token 'z' to activate/deactivate
 int randomInterval = 5000;
-const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh",  //"u",
+const char *randomMindList[] = { "iRand", "ksit", "kscrh", "ksnf", "kx",  //"u",
 #ifdef CUB
                                  "kfd", "krt",
 #else
@@ -13,12 +13,11 @@ const char *randomMindList[] = { "iRand", "i", "ksit", "kscrh", "ksnf", "kcmh", 
 #endif
                                  NULL };
 byte choiceWeight[] = {
-  15,
-  30,
-  20,
-  3,
+  10,
+  10,
   5,
-  3,  // 5,
+  5,
+  10,  // 5,
 #ifdef CUB
   1,
   1,
@@ -50,7 +49,7 @@ void allRandom() {
   cmdLen *= 2;
   newCmd[cmdLen] = '~';
 }
-
+String forbiddenSkills[] = { "ff", "bf", "rc", "rl", "jmp", "bk", "pd", "hlw", "calib", "dropped", "lifted", "ts", "ang", "zero", "zz", "lnd", "lpov" };
 void randomMind() {
   if (token != T_CALIBRATE && token != T_REST && idleTimer && (millis() - idleTimer) > idleThreshold * 1000) {  //in idle state
     if (millis() - randTimer > randomInterval) {                                                                //every randomInterval(ms) throw a dice
@@ -64,8 +63,10 @@ void randomMind() {
       if (randomChoice == 0)
         allRandom();
       else {
-        token = randomMindList[randomChoice][0];
-        strcpy(newCmd, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
+        tQueue->addTask('i', "");
+        tQueue->addTask(randomMindList[randomChoice][0], randomMindList[randomChoice] + 1);
+        // token = randomMindList[randomChoice][0];
+        // strcpy(newCmd, randomMindList[randomChoice] + 1);  // this is duable only because newCmd+1 is after newCmd!
       }
       newCmdIdx = 100;
       transformSpeed = 0.2;
@@ -80,6 +81,7 @@ void powerSaver(int idleThreshold = 10) {  //unit is second
       token = T_REST;
       newCmdIdx = 4;
       idleTimer = 0;
+      PTLF("Power saver");
       //      shutEsp32Servo = true;
     }
   }

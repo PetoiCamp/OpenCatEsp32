@@ -103,7 +103,7 @@ void dealWithExceptions() {
     read_IMU();  //flush the IMU to avoid static readings and infinite loop
 
     if (tQueue->lastTask == NULL) {
-      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && skill->period > 0 && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
+      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
         PTH("save last task ", lastCmd);
         tQueue->lastTask = new Task('k', lastCmd);
       }
@@ -183,7 +183,8 @@ void reaction() {
         && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN
         && token != T_TILT && token != T_READ && token != T_WRITE)
       beep(15 + newCmdIdx, 5);  //ToDo: check the muted sound when newCmdIdx = -1
-    if (hardServoQ && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
+    if (hardServoQ && (lowerToken == T_SKILL)) {
+      // || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {//will cause abnormal rotation
 #ifdef T_SERVO_MICROSECOND
       setServoP(P_SOFT);
       hardServoQ = false;
@@ -455,7 +456,7 @@ void reaction() {
                 PT('\t');
               }
 #endif
-            if ((token == T_INDEXED_SIMULTANEOUS_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
+            if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
               // printToken(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
               skill->convertTargetToPosture(targetFrame);
@@ -605,12 +606,15 @@ void reaction() {
         }
     }
 
-    if (token == T_SKILL && newCmd[0] != '\0' && strcmp(newCmd, "rc")) {
-      strcpy(lastCmd, newCmd);
+    if (token == T_SKILL && newCmd[0] != '\0') {
+      if (skill->period > 0)
+        strcpy(lastCmd, newCmd);
+      else
+        strcpy(lastCmd, "up");
     }
 
-    if (token != T_SKILL) {  //it will change the token and affect strcpy(lastCmd, newCmd)
-      printToken();          //postures, gaits and other tokens can confirm completion by sending the token back
+    if (token != T_SKILL || skill->period > 0) {  //it will change the token and affect strcpy(lastCmd, newCmd)
+      printToken();                               //postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL
           && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_SLOPE
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))

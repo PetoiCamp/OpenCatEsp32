@@ -508,7 +508,7 @@ void initRobot() {
   strcpy(newCmd, "rest");
   loadBySkillName(newCmd);
 #ifdef GYRO_PIN
-  read_IMU();                                   //ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   token = (exceptions) ? T_CALIBRATE : T_REST;  //put the robot's side on the table to enter calibration posture for attaching legs
   newCmdIdx = 2;
 #endif

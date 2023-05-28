@@ -189,7 +189,7 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
 // //    printList(currentAng);
 // //    PTL();
 //     int steps = int(round(maxDiff / speedRatio )); //default speed is 1 degree per step
-//     //int steps = (offset!=0)?10:20;// interpolation points
+//     //int steps = (offset!=0) ? 10:20;// interpolation points
 
 //     for (int s = 0; s < steps; s++) {
 //       for (int j = offset; j < DOF; j++) {

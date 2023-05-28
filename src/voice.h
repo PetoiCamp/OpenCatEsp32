@@ -65,8 +65,9 @@ void read_voice() {
     // Serial.println(newCmd);
     Serial2.print('X');
     Serial2.println(newCmd);
-    while (Serial2.available() && Serial2.read())
-      ;
+    while (Serial2.available())
+      PT(Serial2.read());
+    PTL();
     resetCmd();
   }
 
