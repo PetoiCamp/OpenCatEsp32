@@ -157,7 +157,7 @@ int8_t yprTilt[3];
 #define AWY aaWorld.y
 #define AWZ aaWorld.z
 int thresX, thresY, thresZ;
-#define IMU_SKIP 3
+#define IMU_SKIP 1
 #define IMU_SKIP_MORE 23  //use prime number to avoid repeatly skipping the same joint
 byte imuSkip = IMU_SKIP;
 

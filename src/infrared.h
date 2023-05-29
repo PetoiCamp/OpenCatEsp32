@@ -15,15 +15,15 @@ decode_results results;
 //abbreviation //gait/posture/function names
 #define K00 "d"  //rest and shutdown all servos
 #define K01 "F"  //forward
-#define K02 "g"  //turn off gyro feedback to boost speed
+#define K02 "^"  //turn off gyro feedback to boost speed
 
 #define K10 "L"   //left
 #define K11 "up"  //neutral stand up posture
 #define K12 "R"   //right
 
-#define K20 ","  //pause motion and shut off all servos
+#define K20 "p"  //pause motion and shut off all servos
 #define K21 "B"  //backward
-#define K22 "."  //calibration mode with IMU turned off
+#define K22 "c"  //calibration mode with IMU turned off
 
 #define K30 "vt"  //stepping
 #define K31 "cr"  //crawl

@@ -64,7 +64,7 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_230421"  //BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_230529"  //BiBoard + YYMMDD
 #define BIRTHMARK 'x'                //Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    //toggle Bluetooth Low Energy (BLE）
@@ -216,6 +216,7 @@ bool newBoard = false;
 #define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
 #define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
 
+#define T_TURBO '^'
 #define T_QUERY '?'
 
 #define T_TUNER '}'
@@ -249,6 +250,7 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
+bool turboQ = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
 bool printGyro = false;
@@ -273,8 +275,8 @@ bool safeRest = true;
 
 int delayLong = 20;
 int delayMid = 8;
-int delayException = 4;
-int delayShort = 2;
+int delayException = 5;
+int delayShort = 3;
 int delayStep = 1;
 int delayPrevious;
 int runDelay = delayMid;
