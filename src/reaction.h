@@ -220,7 +220,8 @@ void reaction() {
 #ifdef GYRO_PIN
           else if (token == T_GYRO_FINENESS) {
             fineAdjust = !fineAdjust;
-            imuSkip = fineAdjust ? IMU_SKIP : IMU_SKIP_MORE;
+            // imuSkip = fineAdjust ? IMU_SKIP : IMU_SKIP_MORE;
+            runDelay = fineAdjust ? delayMid : delayShort;
             token = fineAdjust ? 'G' : 'g';  //G for activated gyro
           } else if (token == T_GYRO_BALANCE) {
             gyroBalanceQ = !gyroBalanceQ;
@@ -245,12 +246,6 @@ void reaction() {
             token = T_SKILL;
           else
             shutServos();
-          break;
-        }
-      case T_TURBO:
-        {
-          turboQ = !turboQ;
-          runDelay = turboQ ? delayShort : delayMid;
           break;
         }
       case T_ACCELERATE:
@@ -622,7 +617,7 @@ void reaction() {
     if (token != T_SKILL || skill->period > 0) {  //it will change the token and affect strcpy(lastCmd, newCmd)
       printToken();                               //postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL
-          && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_TURBO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_SLOPE
+          && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_SLOPE
               || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
         token = T_SKILL;
     }

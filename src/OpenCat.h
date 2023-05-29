@@ -216,7 +216,6 @@ bool newBoard = false;
 #define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
 #define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
 
-#define T_TURBO '^'
 #define T_QUERY '?'
 
 #define T_TUNER '}'
@@ -250,7 +249,6 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
-bool turboQ = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
 bool printGyro = false;
@@ -268,7 +266,6 @@ bool imuUpdated;
 int exceptions = 0;
 byte transformSpeed = 2;
 float protectiveShift;  //reduce the wearing of the potentiometer
-
 
 bool initialBoot = true;
 bool safeRest = true;

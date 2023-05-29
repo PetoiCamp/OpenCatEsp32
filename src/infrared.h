@@ -15,7 +15,7 @@ decode_results results;
 //abbreviation //gait/posture/function names
 #define K00 "d"  //rest and shutdown all servos
 #define K01 "F"  //forward
-#define K02 "^"  //turn off gyro feedback to boost speed
+#define K02 "g"  //turn off gyro feedback to boost speed
 
 #define K10 "L"   //left
 #define K11 "up"  //neutral stand up posture
