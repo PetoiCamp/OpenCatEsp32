@@ -183,6 +183,8 @@ bool newBoard = false;
 #define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
 #define T_REST 'd'
+#define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback.
+                                        //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
 #define T_GYRO_FINENESS 'g'             //adjust the finess of gyroscope adjustment to accelerate motion
 #define T_GYRO_BALANCE 'G'              //toggle on/off the gyro adjustment
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \

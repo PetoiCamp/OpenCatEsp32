@@ -198,6 +198,9 @@ void reaction() {
       tStep = 1;
       printToken('p');
     }
+    if (token != T_SERVO_FEEDBACK) {
+      measureServoPin = -1;
+    }
 
     switch (token) {
       case T_QUERY:
@@ -342,6 +345,9 @@ void reaction() {
 #ifdef T_SERVO_MICROSECOND
       case T_SERVO_MICROSECOND:  //send pulse with unit of microsecond to a servo
 #endif
+#ifdef T_SERVO_FEEDBACK
+      case T_SERVO_FEEDBACK:
+#endif
       case T_TILT:  //tilt the robot, format: t axis angle. 0:yaw, 1:pitch, 2:roll
       case T_MEOW:  //meow
       case T_BEEP:  //beep(tone, duration): tone 0 is pause, duration range is 0~255
@@ -427,6 +433,11 @@ void reaction() {
 #else
                 pwm.writeMicroseconds(PWM_pin[target[0]], target[1]);
 #endif
+              }
+#endif
+#ifdef T_SERVO_FEEDBACK
+              else if (token == T_SERVO_FEEDBACK) {
+                measureServoPin = (inLen == 1) ? target[0] : 16;
               }
 #endif
 #ifdef GYRO_PIN
@@ -660,5 +671,6 @@ void reaction() {
       tQueue->lastTask = NULL;
       PTL(newCmd);
     }
-  }
+  } else if (token == T_SERVO_FEEDBACK)
+    servoFeedback(measureServoPin);
 }

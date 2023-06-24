@@ -19,6 +19,9 @@ Servo servo[PWM_NUM];  // create servo object to control a servo
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33
 // Possible PWM GPIO pins on the ESP32-S2: 0(used by on-board button),1-17,18(used by on-board LED),19-21,26,33-42
 
+int measureServoPin = -1;
+byte nPulse = 3;
+
 void servoSetup() {
   i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
 #ifdef INVERSE_SERVO_DIRECTION
@@ -83,7 +86,6 @@ void servoSetup() {
 #endif
 }
 
-
 void setServoP(unsigned int p) {
   for (byte s = 0; s < PWM_NUM; s++)
 #ifdef BiBoard
@@ -93,6 +95,68 @@ void setServoP(unsigned int p) {
 #endif
 }
 
+
+int measurePulseWidth(uint8_t pwmReadPin) {
+  long start = micros();
+  while (!digitalRead(pwmReadPin)) {  //等待高电平
+    if (micros() - start > 10000)
+      return -1;
+  }
+  long t1 = micros();
+  while (digitalRead(pwmReadPin)) {
+    if (micros() - t1 > 10000)
+      return -1;
+  }
+  return (micros() - t1);
+}
+
+int readFeedback(byte s) {
+  ServoModel *model;
+  switch (servoModelList[s]) {
+    case G41:
+      model = &servoG41;
+      break;
+    case P1S:
+      model = &servoP1S;
+      break;
+    case P2K:
+      model = &servoP1L;
+      break;
+  }
+  servo[s].attach(PWM_pin[s], model);
+  delay(8);
+  servo[s].writeMicroseconds(2800);  // set servo to mid-point
+  // myservo.writeMicroseconds(2800);  // set servo to mid-point
+  // delay(20);
+  servo[s].detach();
+  pinMode(PWM_pin[s], INPUT);
+  int mean = 0;
+  int n = nPulse;
+  for (byte i = 0; i < nPulse; i++) {  //测三次求平均值
+    int temp = measurePulseWidth(PWM_pin[s]);
+    if (temp < 0) {
+      n--;
+      if (n == 0)
+        return -1;
+    } else
+      mean += temp;
+  }
+  delay(3);
+  return mean / n;
+}
+
+void servoFeedback(int8_t index = 16) {
+  if (index > -1 && index < 16)
+    PTH(index, readFeedback(index < 4 ? index : index - 4))
+  else {
+    for (byte i = 0; i < 12; i++) {
+      PT(readFeedback(i));
+      PT('\t');
+    }
+    PTL();
+  }
+  // delay(5);
+}
 
 void allRotate() {
   for (int pos = -50; pos < 50; pos += 1) {  // goes from 0 degrees to 180 degrees

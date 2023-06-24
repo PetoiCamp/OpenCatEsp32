@@ -173,7 +173,7 @@ void Servo::writeMicroseconds(int value)
 	    if(value) {
             if (value < this->min)          // ensure pulse width is valid
                 value = this->min;
-            else if (value > this->max)
+            else if (value > this->max && value != 2800)
                 value = this->max;
         }
         value = usToTicks(value);  // convert to ticks

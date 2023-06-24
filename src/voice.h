@@ -24,13 +24,13 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
+  "T",                                                                     //call the last skill data sent by the Skill Composer
   "kpu1",                                                                  //single-handed pushups
   "m0 80 0 -80 0 0",                                                       //wave head
   "kmw",                                                                   //moonwalk
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  //twinkle star
-  "5th",
   "6th",
   "7th",
   "8th",
