@@ -10,10 +10,11 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
   //otherwise the speed ratio is compared to 1 degree per second.
 
   for (int s = 0; s <= steps; s++) {
+    int degree = duty + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * (duty0 - duty));
 #ifdef BiBoard
-    servo[actualServoIndex].write(duty + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * (duty0 - duty)));
+    servo[actualServoIndex].write(degree);
 #else
-    pwm.writeAngle(actualServoIndex, duty + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * (duty0 - duty)));
+    pwm.writeAngle(actualServoIndex, degree);
 #endif
     //    delayMicroseconds(1);
   }
