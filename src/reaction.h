@@ -183,8 +183,7 @@ void reaction() {
         && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN
         && token != T_TILT && token != T_READ && token != T_WRITE)
       beep(15 + newCmdIdx, 5);  //ToDo: check the muted sound when newCmdIdx = -1
-    if (hardServoQ && (lowerToken == T_SKILL)) {
-      // || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {//will cause abnormal rotation
+    if (hardServoQ && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
       setServoP(P_SOFT);
       hardServoQ = false;
