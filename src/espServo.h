@@ -30,7 +30,7 @@ void servoSetup() {
 #endif
   //------------------angleRange  frequency  minPulse  maxPulse;
   ServoModel *model;
-#ifdef BiBoard
+#ifdef ESP_PWM
   PTL("Setup ESP32 PWM servo driver...");
   // Allow allocation of all timers
   ESP32PWM::allocateTimer(0);
@@ -89,7 +89,7 @@ void servoSetup() {
 void shutServos() {
   ServoModel *model;
   for (byte s = 0; s < PWM_NUM; s++) {  //PWM_NUM
-#ifdef BiBoard
+#ifdef ESP_PWM
     /* the following method can shut down the servos.
        however, because a single Timer is divided to generate four PWMs, there's random noise when the PWM transits to zero.
        It will cause the servo to jump before shutdown.
@@ -123,7 +123,7 @@ void shutServos() {
 
 void setServoP(unsigned int p) {
   for (byte s = 0; s < PWM_NUM; s++)
-#ifdef BiBoard
+#ifdef ESP_PWM
     servo[s].writeMicroseconds(p);
 #else
     pwm.writeMicroseconds(s, p);
@@ -197,7 +197,7 @@ void allRotate() {
   for (int pos = -50; pos < 50; pos += 1) {  // goes from 0 degrees to 180 degrees
     // in steps of 1 degree
     for (int s = 0; s < PWM_NUM; s++) {
-#ifdef BiBoard
+#ifdef ESP_PWM
       servo[s].write(pos);  // tell servo to go to position in variable 'pos'
 #else                       //BiBoard2
       pwm.writeAngle(s, pos);
@@ -209,7 +209,7 @@ void allRotate() {
   for (int pos = 50; pos > -50; pos -= 1) {  // goes from 0 degrees to 180 degrees
     // in steps of 1 degree
     for (int s = 0; s < PWM_NUM; s++) {
-#ifdef BiBoard
+#ifdef ESP_PWM
       servo[s].write(pos);  // tell servo to go to position in variable 'pos'
 #else                       //BiBoard2
       pwm.writeAngle(s, pos);  //may go out of range. check!
@@ -223,7 +223,7 @@ void allRotate() {
 #ifdef GYRO_PIN
 void allRotateWithIMU() {
   for (int s = 0; s < PWM_NUM; s++) {
-#ifdef BiBoard
+#ifdef ESP_PWM
     servo[s].write(90 + ypr[1] + ypr[2]);  // tell servo to go to position in variable 'pos'
 #else                                      //BiBoard2
     pwm.writeAngle(s, 90 + ypr[1] + ypr[2]);
