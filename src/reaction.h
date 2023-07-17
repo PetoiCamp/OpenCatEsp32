@@ -196,7 +196,7 @@ void reaction() {
       printToken('p');
     }
 #ifdef ESP_PWM
-    if (token != T_SERVO_FEEDBACK && lastToken == T_SERVO_FEEDBACK) {
+    if (token != T_SERVO_FEEDBACK && measureServoPin != -1) {
       attachAllESPServos();
       measureServoPin = -1;
     }

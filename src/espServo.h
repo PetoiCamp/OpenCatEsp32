@@ -183,7 +183,7 @@ float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index 
   }
   delay(10);
   if (n > 1) {
-    PTT(n, ": ")
+    // PTT(n, ": ")
     return mean / (n - 1);
   } else
     return -1;
