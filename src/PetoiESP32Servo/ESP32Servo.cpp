@@ -171,7 +171,7 @@ void Servo::writeMicroseconds(int value)
     if (this->attached())   // ensure channel is valid
     {
 	    if(value) {
-            if (value < this->min)          // ensure pulse width is valid
+            if (value < this->min && value != 0)          // ensure pulse width is valid
                 value = this->min;
             else if (value > this->max && value != 2800)
                 value = this->max;

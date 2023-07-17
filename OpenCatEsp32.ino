@@ -8,7 +8,7 @@
 //#define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
-//Send 'R' token to reset the birthmark in the EEPROM so that the robot will restart to reset
+//Send '!' token to reset the birthmark in the EEPROM so that the robot will restart to reset
 //#define AUTO_INIT  //activate it to automatically reset joint and imu calibration without prompts
 
 //you can also activate the following modes (they will diable the gyro to save programming space)

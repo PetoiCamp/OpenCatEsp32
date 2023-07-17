@@ -124,10 +124,10 @@ int readFeedback(byte s) {
       break;
   }
   servo[s].attach(PWM_pin[s], model);
-  delay(8);
+  delay(10);
   servo[s].writeMicroseconds(2800);  // set servo to mid-point
-  // myservo.writeMicroseconds(2800);  // set servo to mid-point
-  // delay(20);
+                                     // myservo.writeMicroseconds(2800);  // set servo to mid-point
+                                     // delay(20);
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
   int mean = 0;
@@ -141,7 +141,7 @@ int readFeedback(byte s) {
     } else
       mean += temp;
   }
-  delay(3);
+  delay(10);
   return mean / n;
 }
 

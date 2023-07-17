@@ -4,3 +4,4 @@
 *.cfg
 *.svd
 debug_custom.json
+src/.vscode/c_cpp_properties.json
