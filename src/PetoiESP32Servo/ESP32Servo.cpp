@@ -92,7 +92,6 @@ int Servo::attach(int pin, int range, int frequency, int minPulse, int maxPulse)
         if (pwm.hasPwm(pin))
         {
 #endif
-
             // OK to proceed; first check for new/reuse
             if (this->pinNumber < 0) // we are attaching to a new or previously detached pin; we need to initialize/reinitialize
             {
@@ -134,7 +133,8 @@ int Servo::attach(int pin, int range, int frequency, int minPulse, int maxPulse)
         // Set up this channel
         // if you want anything other than default timer width, you must call setTimerWidth() before attach
         pwm.attachPin(this->pinNumber, this->frequency, this->timer_width );   // GPIO pin assigned to channel
-        //Serial.println("Attaching servo : "+String(pin)+" on PWM "+String(pwm.getChannel()));
+//        Serial.print(this->pinNumber);
+//        Serial.println("Attaching servo : "+String(pin)+" on PWM "+String(pwm.getChannel()));
         
         return 1;
 }
@@ -203,8 +203,8 @@ int Servo::readMicroseconds()
     return (pulsewidthUsec);
 }
 
-int Servo::pulseToAngle(int pulse){
-    return map(pulse,this->min, this->max, 0, angleRange);
+float Servo::pulseToAngle(float pulse){
+    return map(pulse,this->min, this->max, 0, angleRange*10)/10.0;
 }
 
 bool Servo::attached()

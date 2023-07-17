@@ -150,9 +150,10 @@ int measurePulseWidth(uint8_t pwmReadPin) {
   return (micros() - t1);
 }
 
-int readFeedback(byte s) {
+float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index that may shift by 4
   ServoModel *model;
-  switch (servoModelList[s]) {
+  byte modelIndex = s < 4 ? s : s + 4;
+  switch (servoModelList[modelIndex]) {
     case G41:
       model = &servoG41;
       break;
@@ -164,12 +165,12 @@ int readFeedback(byte s) {
       break;
   }
   servo[s].attach(PWM_pin[s], model);
-  delay(10);
+  delay(12);
   servo[s].writeMicroseconds(2800);  // set servo to mid-point
                                      // myservo.writeMicroseconds(2800);  // set servo to mid-point
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
-  int mean = 0;
+  float mean = 0;
   int n = nPulse;
   for (byte i = 0; i < nPulse; i++) {  //测三次求平均值
     int temp = measurePulseWidth(PWM_pin[s]);
@@ -177,30 +178,38 @@ int readFeedback(byte s) {
       n--;
       if (n == 0)
         return -1;
-    } else
+    } else if (i > 0)
       mean += temp;
   }
   delay(10);
-  return mean / n;
+  if (n > 1) {
+    PTT(n, ": ")
+    return mean / (n - 1);
+  } else
+    return -1;
 }
 
 void servoFeedback(int8_t index = 16) {
-  if (index > -1 && index < 16)
-    PTH(index, readFeedback(index < 4 ? index : index - 4))
-  else {
+  if (index > -1 && index < 16) {
+    byte i = index < 4 ? index : index - 4;
+    int feedback = readFeedback(i);
+    if (feedback > -1) {
+      PTT(index, '\t')
+      PTD((servo[i].pulseToAngle(feedback) - calibratedZeroPosition[index]) / rotationDirection[index], 1);
+      PTL();
+    }
+  } else {
     for (byte i = 0; i < 12; i++) {
       byte jointIdx = i < 4 ? i : i + 4;
       int feedback = readFeedback(i);
       if (feedback > -1) {  //duty[i] = calibratedZeroPosition[i] + angle * rotationDirection[i];
                             //angle = (duty[i] - calibratedZeroPosition[i])/rotationDirection[i];
-        // PT(feedback);
-        PT((servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx]);
+        PTD((servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx], 1);
         PT('\t');
       }
     }
     PTL();
   }
-  delay(5);
 }
 
 void allRotate() {

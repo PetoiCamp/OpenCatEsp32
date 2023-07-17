@@ -1,9 +1,15 @@
 //abbreviations
 #define PT(s) Serial.print(s)                      // abbreviate print commands
+#define PTD(s,format) Serial.print(s,format)
 #define PT_FMT(s, format) Serial.print(s, format)  // abbreviate print commands
 #define PTL(s) Serial.println(s)
 #define PTF(s) Serial.print(F(s))  //trade flash memory for dynamic memory with F() function
 #define PTLF(s) Serial.println(F(s))
+#define PTT(s, delimeter) \
+  { \
+    Serial.print(s); \
+    Serial.print(delimeter); \
+  }
 #define PTH(head, value) \
   { \
     Serial.print(head); \
@@ -158,7 +164,7 @@ void resetCmd() {
   // printCmd();
   lastToken = token;
   newCmdIdx = 0;
-  if (token != T_SKILL && token != T_CALIBRATE &&  token != T_SERVO_FEEDBACK)
+  if (token != T_SKILL && token != T_CALIBRATE && token != T_SERVO_FEEDBACK)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
