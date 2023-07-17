@@ -5,7 +5,7 @@
 //#define CUB
 
 #define BiBoard  //ESP32 Board with 12 channels of built-in PWM for joints
-// #define BiBoard_V0_1
+//#define BiBoard_V0_1
 //#define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 

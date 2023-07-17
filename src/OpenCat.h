@@ -84,9 +84,9 @@ const uint8_t PWM_pin[PWM_NUM] = {
     32, 18, 13, 12 // knee
 };
 #if defined NYBBLE || defined BITTLE
-#define SERVO_FREQ 240
+#define SERVO_FREQ 250
 #else // CUB
-#define SERVO_FREQ 240
+#define SERVO_FREQ 250
 #endif
 
 #else // BiBoard2

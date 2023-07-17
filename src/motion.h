@@ -221,10 +221,6 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
 // }
 
 
-
-
-
-
 // balancing parameters
 #define ROLL_LEVEL_TOLERANCE 5  //the body is still considered as level, no angle adjustment
 #define PITCH_LEVEL_TOLERANCE 3

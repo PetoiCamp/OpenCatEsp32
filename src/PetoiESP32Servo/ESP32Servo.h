@@ -168,6 +168,7 @@ public:
 		frequency = hertz;
 		setTimerWidth(this->timer_width);
 	}
+    int pulseToAngle(int pulse);
 private:
 	int usToTicks(int usec);
 	int ticksToUs(int ticks);

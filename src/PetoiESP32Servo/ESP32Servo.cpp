@@ -203,6 +203,10 @@ int Servo::readMicroseconds()
     return (pulsewidthUsec);
 }
 
+int Servo::pulseToAngle(int pulse){
+    return map(pulse,this->min, this->max, 0, angleRange);
+}
+
 bool Servo::attached()
 {
     return (pwm.attached());
