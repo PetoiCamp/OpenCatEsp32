@@ -1,12 +1,12 @@
 //modify the model and board definitions
 //***********************
 #define BITTLE  //Petoi 9 DOF robot dog: 1 on head + 8 on leg
-//#define NYBBLE  //Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
-//#define CUB
+// #define NYBBLE  //Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
+// #define CUB
 
 #define BiBoard  //ESP32 Board with 12 channels of built-in PWM for joints
-//#define BiBoard_V0_1
-//#define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
+// #define BiBoard_V0_1
+// #define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
 //Send '!' token to reset the birthmark in the EEPROM so that the robot will restart to reset
@@ -15,7 +15,7 @@
 //you can also activate the following modes (they will diable the gyro to save programming space)
 //allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
 // #define ULTRASONIC    //for Nybble's ultrasonic sensor. it WON‘T work with ESP32-based BiBoard directly because "AVR's 'SREG' was not declared in this scope"
-#define VOICE  //Petoi Grove voice module
+// #define VOICE  //Petoi Grove voice module
 // #define PIR           //for PIR (Passive Infrared) sensor
 // #define DOUBLE_TOUCH  //for double touch sensor
 // #define DOUBLE_LIGHT  //for double light sensor

@@ -38,6 +38,7 @@ String customizedCmdList[] = {
   "10th"  //define up to 10 customized commands.
 };
 int listLength = 0;
+bool enableVoiceQ = true;
 
 void voiceSetup() {
   PTLF("Init voice");
@@ -68,6 +69,10 @@ void read_voice() {
     while (Serial2.available())
       PT(Serial2.read());
     PTL();
+    if (!strcmp(newCmd, "Ac"))
+      enableVoiceQ = true;
+    else if (!strcmp(newCmd, "Ad"))
+      enableVoiceQ = false;
     resetCmd();
   }
 
@@ -98,11 +103,13 @@ void read_voice() {
         shift = 4;
 #endif
       }
-      const char *cmd = raw.c_str() + shift;
-      tQueue->addTask(token, shift > 0 ? cmd : "", 2000);
-      char end = cmd[strlen(cmd) - 1];
-      if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
-        tQueue->addTask('k', "up");
+      if (enableVoiceQ) {
+        const char *cmd = raw.c_str() + shift;
+        tQueue->addTask(token, shift > 0 ? cmd : "", 2000);
+        char end = cmd[strlen(cmd) - 1];
+        if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
+          tQueue->addTask('k', "up");
+        }
       }
     } else {
       switch (tolower(index)) {
@@ -118,11 +125,13 @@ void read_voice() {
           }
         case 'c':
           {
+            enableVoiceQ = true;
             PTLF("Turn on the audio response");
             break;
           }
         case 'd':
           {
+            enableVoiceQ = false;
             PTLF("Turn off the audio response");
             break;
           }

@@ -139,8 +139,8 @@ enum ServoModel_t
 #define HEAD
 #define TAIL
 #define X_LEG
-#define REGULAR G41
-#define KNEE G41
+#define REGULAR P1S//G41
+#define KNEE P1S//G41
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
