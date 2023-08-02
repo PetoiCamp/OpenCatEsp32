@@ -1,4 +1,5 @@
 // Petoi Voice Command Module
+// Doc: https://docs.petoi.com/extensible-modules/voice-command-module
 // use the software serial port on the NyBoard to read the module. connect the module to the grove socket with pin 6 and 7.
 // or use the serial 2 port on the BiBoard to read the module. connect the module to the pin Tx2 and Rx2.
 // if you wire the module up with the USB programmer directly, connect the module's Tx to the programmer's Rx, and Rx to Tx.
@@ -69,9 +70,11 @@ void read_voice() {
     while (Serial2.available())
       PT(Serial2.read());
     PTL();
-    if (!strcmp(newCmd, "Ac"))
+    if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+                                // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
       enableVoiceQ = true;
-    else if (!strcmp(newCmd, "Ad"))
+    else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+                                     // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
       enableVoiceQ = false;
     resetCmd();
   }
@@ -113,23 +116,23 @@ void read_voice() {
       }
     } else {
       switch (tolower(index)) {
-        case 'a':
+        case 'a':  //say "Bing-bing" to switch English /说“冰冰”切换英文
           {
             PTLF("Switch English");
             break;
           }
-        case 'b':
+        case 'b':  //say "Di-di" to switch Chinese /说“滴滴”切换中文
           {
             PTLF("Switch Chinese");
             break;
           }
-        case 'c':
+        case 'c':  //say "play sound" to enable voice reactions / 说“打开音效”激活语音动作
           {
             enableVoiceQ = true;
             PTLF("Turn on the audio response");
             break;
           }
-        case 'd':
+        case 'd':  //say "be quiet" to disable voice reactions / 说“安静点”禁用语音动作
           {
             enableVoiceQ = false;
             PTLF("Turn off the audio response");
