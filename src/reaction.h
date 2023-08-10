@@ -629,7 +629,7 @@ void reaction() {
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToken();                               // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_JOINTS || lowerToken == T_RANDOM_MIND || lowerToken == T_SLOPE || lowerToken == T_ACCELERATE || lowerToken == T_DECELERATE || token == T_PAUSE || token == T_TILT || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC))
+      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();
