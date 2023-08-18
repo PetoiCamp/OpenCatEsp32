@@ -136,7 +136,7 @@ bool lowBattery() {
       PT("Low power: ");
       PT(voltage / vFactor);
       PTL("V");
-      if (eeprom(BOOTUP_SOUND_STATE))
+      if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
         playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
       //    strip.show();
       int8_t bStep = 1;

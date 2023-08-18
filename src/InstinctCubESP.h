@@ -1245,6 +1245,9 @@ const int8_t sit[] PROGMEM = {
 const int8_t str[] PROGMEM = { 
 1, 0, 20, 1,
     0,  30,   0,   0,  -5,  -5,   0,   0, -75, -75,  30,  30,  60,  60,   0,   0,};
+const int8_t up[] PROGMEM = { 
+1, 0, 0, 1,
+    0,   0,   0,   0, -15, -15, -15, -15,  35,  35,  35,  35,  30,  30,  30,  30,};
 const int8_t zero[] PROGMEM = { 
 1, 0, 0, 1,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,};
@@ -1356,11 +1359,11 @@ const int8_t stp[] PROGMEM = {
     0,   0,   0,   0,   0,   0,   0,   0,  65, -10,  70, 125,  45,  30, -45,  90,	 8, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  65, -10,  70,  60,  45,  30, -45, -45,	 8, 0, 0, 0,
 };
-  const char* skillNameWithType[]={"bdFI","bkI","bkLI","bkRI","crFI","crLI","crRI","mhFI","mhLI","mhRI","trFI","trLI","trRI","vtFI","wkFI","wkLI","wkRI","balanceI","buttUpI","calibI","droppedI","liftedI","restI","sitI","strI","zeroN","bfI","ckI","fdI","hiI","pdI","peeI","puI","rcI","rtI","stpI",};
+  const char* skillNameWithType[]={"bdFI","bkI","bkLI","bkRI","crFI","crLI","crRI","mhFI","mhLI","mhRI","trFI","trLI","trRI","vtFI","wkFI","wkLI","wkRI","balanceI","buttUpI","calibI","droppedI","liftedI","restI","sitI","strI","upI","zeroN","bfI","ckI","fdI","hiI","pdI","peeI","puI","rcI","rtI","stpI",};
 #if !defined(MAIN_SKETCH) || !defined(I2C_EEPROM)
 		//if it's not the main sketch to save data or there's no external EEPROM, 
 		//the list should always contain all information.
-  const int8_t* progmemPointer[] = {bdF, bk, bkL, bkR, crF, crL, crR, mhF, mhL, mhR, trF, trL, trR, vtF, wkF, wkL, wkR, balance, buttUp, calib, dropped, lifted, rest, sit, str, zero, bf, ck, fd, hi, pd, pee, pu, rc, rt, stp, };
+  const int8_t* progmemPointer[] = {bdF, bk, bkL, bkR, crF, crL, crR, mhF, mhL, mhR, trF, trL, trR, vtF, wkF, wkL, wkR, balance, buttUp, calib, dropped, lifted, rest, sit, str,up, zero, bf, ck, fd, hi, pd, pee, pu, rc, rt, stp, };
 #else	//only need to know the pointers to newbilities, because the intuitions have been saved onto external EEPROM,
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };
