@@ -4,8 +4,8 @@
 // #define NYBBLE  //Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 // #define CUB
 
-// #define BiBoard  //ESP32 Board with 12 channels of built-in PWM for joints
-#define BiBoard_V0_2
+#define BiBoard  //ESP32 Board with 12 channels of built-in PWM for joints
+// #define BiBoard_V0_2
 // #define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
