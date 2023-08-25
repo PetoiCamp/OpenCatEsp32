@@ -158,6 +158,7 @@ public:
         loopCycle[i] = (int8_t)newCmd[baseHeader++];
     }
     inplaceShift();
+    periodGlobal = period;
     // int len = abs(period) * frameSize;
     // dutyAngles = new int8_t[len];
     // for (int k = 0; k < abs(period); k++) {

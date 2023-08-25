@@ -29,7 +29,6 @@ byte choiceWeight[] = {
 
 int randomMindListLength;
 int randomBase = 0;
-long idleTimer;
 long randTimer;
 
 void allRandom() {

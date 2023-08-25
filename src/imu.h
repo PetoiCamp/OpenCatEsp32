@@ -396,9 +396,7 @@ void imuSetup() {
     if (newBoard) {
 #ifndef AUTO_INIT
       PTL("- Calibrate the Inertial Measurement Unit (IMU)? (Y/n): ");
-      while (!Serial.available())
-        ;
-      char choice = Serial.read();
+      char choice = getUserInputChar();
       PTL(choice);
       if (choice == 'Y' || choice == 'y') {
 #else

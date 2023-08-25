@@ -17,6 +17,17 @@
     Serial.println(value); \
   }
 
+char getUserInputChar() {  //take only the first character, allow "no line ending", "newline", "carriage return", and "both NL & CR"
+  while (!Serial.available())
+    ;
+  char result = Serial.read();
+  delay(1);                     //wait for the remainder to arrive
+  while (Serial.available()) {  //flush the '\r' or '\n' if any
+    Serial.read();
+  }
+  return result;
+}
+
 //template <typename T> int8_t sign(T val) {
 //  return (T(0) < val) - (val < T(0));
 //}

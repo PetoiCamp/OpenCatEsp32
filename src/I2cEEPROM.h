@@ -277,9 +277,7 @@ void i2cEepromSetup() {
 #endif
 #ifndef AUTO_INIT
     PTL("- Reset the joints' calibration offsets? (Y/n): ");
-    while (!Serial.available())
-      ;
-    char choice = Serial.read();
+    char choice = getUserInputChar();
     PTL(choice);
     if (choice == 'Y' || choice == 'y') {
 #else

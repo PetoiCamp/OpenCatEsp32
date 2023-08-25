@@ -46,7 +46,7 @@
     DAC_Out         GPIO25              25                  Fixed - PAM8302
     IMU_Int         GPIO26              26                  Fixed - MPU6050 Interrupt
 
-    System default, nothing to declaration!
+    System default, nothing to declare!
 */
 
 /* BiBoard2
@@ -64,14 +64,14 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_230818"  // BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_230825"  // BiBoard + YYMMDD
 #define BIRTHMARK 'x'                // Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SPP    // toggle Bluetooth Serial Port Profile (BT_SPP)
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 
-#if defined BiBoard || defined BiBoard_V0_1
+#if defined BiBoard || defined BiBoard_V0_2
 #define ESP_PWM
 #define PWM_NUM 12
 #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
@@ -151,7 +151,7 @@ enum ServoModel_t {
 #include "InstinctBittleESP.h"
 
 #elif defined CUB
-#define MODEL "Cub"
+#define MODEL "DoF16"
 #ifdef BiBoard2
 #define HEAD
 #define TAIL
@@ -229,6 +229,8 @@ float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
 
 // control related variables
+#define IDLE_TIME 3000
+long idleTimer = 0;
 #define CHECK_BATTERY_PERIOD 10000  // every 10 seconds. 60 mins -> 3600 seconds
 int uptime = -1;
 int frame = 0;
@@ -243,6 +245,7 @@ char lowerToken;
 char *lastCmd = new char[CMD_LEN + 1];  // the last char must be '\0' for safe so CMD_LEN+1 elements are required
 int cmdLen = 0;
 byte newCmdIdx = 0;
+int8_t periodGlobal = 0;
 #define BUFF_LEN 2507  // 1524 =125*20+7=2507
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
@@ -424,6 +427,8 @@ int slope = 1;
 #endif
 #ifdef DOUBLE_LIGHT
 #include "doubleLight.h"
+#elif defined DOUBLE_INFRARED_DISTANCE
+#include "doubleInfraredDistance.h"
 #endif
 
 #include "io.h"
@@ -490,8 +495,12 @@ void initRobot() {
 #ifdef GESTURE
   gestureSetup();
 #endif
-#ifdef DOUBLE_LIGHT
-  doubleLightSetup();
+#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE
+#ifdef DOUBLE_INFRARED_DISTANCE
+  doubleInfraredDistanceSetup();
+#endif
+  loadBySkillName("sit");  //required by double light
+  delay(500);              //use your palm to cover the two light sensors for calibration
 #endif
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.

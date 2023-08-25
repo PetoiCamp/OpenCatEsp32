@@ -1,4 +1,5 @@
 #include "soc/gpio_sig_map.h"
+
 void read_sound() {
 }
 
@@ -191,7 +192,13 @@ void readSignal() {
 
   long current = millis();
   if (newCmdIdx)
-    idleTimer = millis() + IDLE_LONG * 1000;
+    idleTimer = millis() +
+#ifdef DOUBLE_INFRARED_DISTANCE
+                0
+#else
+                IDLE_TIME
+#endif
+      ;
   else if (token != T_CALIBRATE && current - idleTimer > 0) {
 
 #ifdef CAMERA
