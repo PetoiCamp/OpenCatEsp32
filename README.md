@@ -1,10 +1,9 @@
 # OpenCatESP32
 
-OpenCat code running on BiBoard, an ESP32 controller. 
+OpenCat code running on [BiBoard, a high-performance ESP32 quadruped robot development board](https://www.petoi.com/products/biboard-esp32-development-board-for-quadruped-robot). The board is mainly designed for developers and engineers working on multi-degree-of-freedom (MDOF) Multi-legged robots with up to 12 servos. 
 
 [User manual](https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard)
 
-[Purchase link](https://www.petoi.com/products/biboard-esp32-development-board-for-quadruped-robot)
 
 ## Configuration:
 
