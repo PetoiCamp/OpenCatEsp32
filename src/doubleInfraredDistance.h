@@ -23,7 +23,6 @@ Petoi LLC
 #define SENSOR2 35
 #define READING_COUNT 30
 #define SENSOR_DISPLACEMENT 3.7
-#define MAX_READING 1024
 
 #ifdef NyBoard_V1_0
 #define NEOPIXEL_PIN 10  //the code for NeoPixels have to be shrinked to fit in the board
@@ -130,10 +129,10 @@ void doubleInfraredDistanceSetup() {
 }
 
 void readDistancePins() {
-  rawL = analogRead(SENSOR1) - 24;
-  rawR = analogRead(SENSOR2) - 24;
-  dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(MAX_READING - rawL);
-  dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(MAX_READING - rawR);
+  rawL = analogRead(SENSOR1) /rate;
+  rawR = analogRead(SENSOR2) /rate;
+  dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(1024 - rawL);
+  dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(1024 - rawR);
   meanD = (dL + dR) / 2;
   maxD = max(dL, dR);
   minD = min(dL, dR);
@@ -153,8 +152,8 @@ void readDistancePins() {
 
 void read_doubleInfraredDistance() {
   readDistancePins();
-  if (makeSound && minD > longThres / 2 && maxD < longThres && periodGlobal == 1)
-    beep(35 - meanD, meanD / 4);
+  // if (makeSound && minD > longThres / 2 && maxD < longThres && periodGlobal == 1)
+  //   beep(35 - meanD, meanD / 4);
 #ifdef NEOPIXEL_PIN
   strip.clear();
   for (int i = 0; i < min(8 - sqrt(dL) * 1.4, strip.numPixels()); i++) {                  // For each pixel in strip..

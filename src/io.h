@@ -216,6 +216,9 @@ void readSignal() {
 #ifdef DOUBLE_LIGHT
     read_doubleLight();
 #endif
+#ifdef DOUBLE_INFRARED_DISTANCE
+    // read_doubleInfraredDistance();//has some bugs
+#endif
 #ifdef TOUCH0
     read_touch();
 #endif

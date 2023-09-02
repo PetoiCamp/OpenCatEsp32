@@ -1,6 +1,6 @@
 // modify the model and board definitions
 //***********************
-#define BITTLE // Petoi 9 DOF robot dog: 1 on head + 8 on leg
+#define BITTLE  // Petoi 9 DOF robot dog: 1 on head + 8 on leg
 // #define NYBBLE  //Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 // #define CUB
 
@@ -15,10 +15,11 @@
 // you can also activate the following modes (they will diable the gyro to save programming space)
 // allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
 //  #define ULTRASONIC    //for Nybble's ultrasonic sensor. it WON‘T work with ESP32-based BiBoard directly because "AVR's 'SREG' was not declared in this scope"
-#define VOICE // Petoi Grove voice module
+#define VOICE  // Petoi Grove voice module
 // #define PIR           //for PIR (Passive Infrared) sensor
 // #define DOUBLE_TOUCH  //for double touch sensor
 // #define DOUBLE_LIGHT  //for double light sensor
+// #define DOUBLE_INFRARED_DISTANCE  //for double distance sensor
 // #define GESTURE       //for Gesture module
 // #define CAMERA        //for Mu Vision camera
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
@@ -32,19 +33,17 @@
 // The tracking demo works the best with a yellow tennis ball or some other round objects. Demo: https://www.youtube.com/watch?v=CxGI-MzCGWM
 #include "src/OpenCat.h"
 
-void setup()
-{
+void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200); // USB serial
+  Serial.begin(115200);  // USB serial
   Serial.setTimeout(SERIAL_TIMEOUT);
   //  Serial1.begin(115200); //second serial port
   while (Serial.available() && Serial.read())
-    ; // empty buffer
+    ;  // empty buffer
   initRobot();
 }
 
-void loop()
-{
+void loop() {
 #ifdef VOLTAGE
   lowBattery();
 #endif
@@ -57,13 +56,10 @@ void loop()
   //  //— read environment sensors (low level)
   readEnvironment();
   //  //— special behaviors based on sensor events
-  dealWithExceptions(); // low battery, fall over, lifted, etc.
-  if (!tQueue->cleared())
-  {
+  dealWithExceptions();  // low battery, fall over, lifted, etc.
+  if (!tQueue->cleared()) {
     tQueue->popTask();
-  }
-  else
-  {
+  } else {
     readSignal();
     //  readHuman();
   }

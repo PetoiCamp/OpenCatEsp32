@@ -64,7 +64,7 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_230825"  // BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_230902"  // BiBoard + YYMMDD
 #define BIRTHMARK 'x'                // Send 'R' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
@@ -116,6 +116,10 @@ const uint8_t PWM_pin[PWM_NUM] = {
 
 #define SERVO_FREQ 240
 #endif
+
+#define MAX_READING 4096.0
+#define BASE_RANGE 1024.0
+double rate = 1.0 * MAX_READING / BASE_RANGE;
 
 #define DOF 16
 #if defined NYBBLE || defined BITTLE
@@ -495,13 +499,7 @@ void initRobot() {
 #ifdef GESTURE
   gestureSetup();
 #endif
-#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE
-#ifdef DOUBLE_INFRARED_DISTANCE
-  doubleInfraredDistanceSetup();
-#endif
-  loadBySkillName("sit");  //required by double light
-  delay(500);              //use your palm to cover the two light sensors for calibration
-#endif
+
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
   //    strcpy(newCmd, "calib");
@@ -516,18 +514,26 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  // soft boot for servos
   delay(500);
+
+  tQueue = new TaskQueue();
 #if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE
-  strcpy(newCmd, "sit");
-#else
-  strcpy(newCmd, "rest");
+  loadBySkillName("sit");  //required by double light
+  delay(500);              //use your palm to cover the two light sensors for calibration
+#ifdef DOUBLE_LIGHT
+  doubleLightSetup();
 #endif
-  loadBySkillName(newCmd);
+#ifdef DOUBLE_INFRARED_DISTANCE
+  doubleInfraredDistanceSetup();
+#endif
+#else
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  token = (exceptions) ? T_CALIBRATE : ' ';  // put the robot's side on the table to enter calibration posture for attaching legs
+
+  token = (exceptions) ? T_CALIBRATE : T_REST;  // put the robot's side on the table to enter calibration posture for attaching legs
   newCmdIdx = 2;
 #endif
-  tQueue = new TaskQueue();
+#endif
+
 
   PTL("Ready!");
   idleTimer = millis();

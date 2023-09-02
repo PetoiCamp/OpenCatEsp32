@@ -13,8 +13,7 @@
 #define ADVANCED_PID  //use some compensation to make the robot adapt to different lighting conditions
 
 //-------
-#define MAX_READING 4096.0
-#define BASE_RANGE 1024.0
+
 #define ANALOG1 34
 #define ANALOG2 35
 
@@ -27,9 +26,9 @@
 #define CLIP_PANNING 60.0
 #define MIN_DIFFERENCE 5.0           // if the difference between two sensors is smaller than MIN_DIFFERENCE, we consider the light source is removed
 #define THRESHOLD_DARK_BRIGHT 120.0  //if the reading is lower than THRESHOLD_DARK_BRIGHT, it's considered as dark condition
-#define MAX_DIFF 150.0               //constrain the error in PID to avoid jumping     
+#define MAX_DIFF 150.0               //constrain the error in PID to avoid jumping
 
-double rate = 1.0 * MAX_READING / BASE_RANGE;
+
 
 #ifdef PID
 double mean_array_d(double array[], int start, int end, double scar) {
@@ -216,12 +215,12 @@ void compute_pid()  // get the output;
   if (0 < error < 10 && (diffANALOG1 + diffANALOG2) < 20 && (diffANALOG1 + diffANALOG2) > 5) {
     ANALOG1_current = result[0] * analogRead(ANALOG1) / rate + result[1];
     ANALOG2_current = analogRead(ANALOG2) / rate;
-    error * 20 * sqrt((ANALOG1_mean + ANALOG2_mean) / (ANALOG1_current + ANALOG2_current));
+    error * 20 * sqrt((ANALOG1_mean + ANALOG2_mean) / min(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean)/2));
   }
-  if (0 < error < 10 && (diffANALOG1 + diffANALOG2) < -5) {
+  if (0 < error < 10 && diffANALOG1 < -3 && diffANALOG2 < -3) {  //low light
     ANALOG1_current = result[0] * analogRead(ANALOG1) / rate + result[1];
     ANALOG2_current = analogRead(ANALOG2) / rate;
-    error *= 5 * sqrt((ANALOG1_mean + ANALOG2_mean) / (ANALOG1_current + ANALOG2_current));
+    error *= 3 * sqrt((ANALOG1_mean + ANALOG2_mean) / max(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean)/2));
   }
 #else
   if (abs(error) > 500) {
@@ -337,6 +336,8 @@ void read_doubleLight()  //  when using the Photoresistors, add this function to
   //the following code is used for debugging
 
   Serial.print(analogRead(ANALOG1));
+  Serial.print('\t');
+  Serial.print(analogRead(ANALOG2));
   Serial.print('\t');
 
   Serial.print(result[0]);
