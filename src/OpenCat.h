@@ -64,14 +64,14 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_230902"  // BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_231106"  // BiBoard + YYMMDD
 #define BIRTHMARK 'x'                // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SPP    // toggle Bluetooth Serial Port Profile (BT_SPP)
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 
-#if defined BiBoard || defined BiBoard_V0_2
+#if defined BiBoard_V0_1 || defined BiBoard_V0_2
 #define ESP_PWM
 #define PWM_NUM 12
 #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
