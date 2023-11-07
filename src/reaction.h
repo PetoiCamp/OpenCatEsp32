@@ -189,11 +189,11 @@ void reaction() {
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
       gyroBalanceQ = true;
-      printToken('G');
+      printToAllPorts('G');
     }
     if (token != T_PAUSE && !tStep) {
       tStep = 1;
-      printToken('p');
+      printToAllPorts('p');
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && measureServoPin != -1) {
@@ -205,8 +205,8 @@ void reaction() {
     switch (token) {
       case T_QUERY:
         {
-          PTLF(MODEL);
-          PTLF(SOFTWARE_VERSION);
+          printToAllPorts(MODEL);
+          printToAllPorts(SOFTWARE_VERSION);
           break;
         }
       case T_GYRO_FINENESS:
@@ -270,13 +270,21 @@ void reaction() {
           shutServos();
           gyroBalanceQ = false;
           manualHeadQ = false;
-          printToken('g');
+          printToAllPorts('g');
           break;
         }
       case T_JOINTS:
         {  // show the list of current joint anles
           //          printRange(DOF);
           //          printList(currentAng);
+          printToAllPorts('=');
+          if (cmdLen)
+            printToAllPorts(currentAng[atoi(newCmd)]);
+          else {
+            printToAllPorts(range2String(DOF));
+            printToAllPorts(list2String(currentAng));
+          }
+          /*
           PT('=');
           if (cmdLen)
             PTL(currentAng[atoi(newCmd)]);
@@ -288,7 +296,15 @@ void reaction() {
               bleWrite(list2String(currentAng));
             }
 #endif
-          }
+#ifdef BT_SPP
+            if (BTconnected) {
+              SerialBT.println(range2String(DOF));
+              SerialBT.println(list2String(currentAng));
+            }
+#endif
+}
+*/
+
           break;
         }
       case T_MELODY:
@@ -413,6 +429,7 @@ void reaction() {
 #endif
                 //              printRange(DOF);
                 //              printList(servoCalib);
+                /*
                 printTable(servoCalib);
 #ifdef BT_BLE
                 if (deviceConnected) {
@@ -420,8 +437,31 @@ void reaction() {
                   bleWrite(list2String(servoCalib));
                 }
 #endif
+#ifdef BT_SPP
+                if (BTconnected) {
+                  SerialBT.println(range2String(DOF));
+                  SerialBT.println(list2String(servoCalib));
+                }
+#endif
                 PT(token);
                 printList(target, 2);
+#ifdef BT_BLE
+                if (deviceConnected) {
+                  bleWrite(range2String(2));
+                  bleWrite(list2String(target));
+                }
+#endif
+#ifdef BT_SPP
+                if (BTconnected) {
+                  SerialBT.println(range2String(2));
+                  SerialBT.println(list2String(target));
+                }
+#endif
+*/
+                printToAllPorts(range2String(DOF));
+                printToAllPorts(list2String(servoCalib));
+                printToAllPorts(token);
+                // printToAllPorts(list2String(target, 2));
               } else if (token == T_INDEXED_SEQUENTIAL_ASC) {
                 transform(targetFrame, 1, 1);
                 delay(10);
@@ -471,7 +511,7 @@ void reaction() {
             }
 #endif
             if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
-              // printToken(token);
+              // printToAllPorts(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -525,16 +565,16 @@ void reaction() {
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
               } else if (token == T_READ) {
-                PT('=');
+                printToAllPorts('=');
                 pinMode(newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
-                  PTL(analogRead(newCmd[i + 1]));
+                  printToAllPorts(analogRead(newCmd[i + 1]));
                 else if (newCmd[i] == TYPE_DIGITAL)
-                  PTL(digitalRead(newCmd[i + 1]));
+                  printToAllPorts(digitalRead(newCmd[i + 1]));
               }
             }
             if (nonHeadJointQ || lastToken != T_SKILL) {
-              // printToken(token);
+              // printToAllPorts(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_BIN) it will be useless
               skill->convertTargetToPosture(targetFrame);
             }
@@ -560,7 +600,7 @@ void reaction() {
         {
           if (cmdLen < 2) {  // toggle on/off the bootup melody
             bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-            PTL(soundState ? "Unmute" : "Muted");
+            printToAllPorts(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
           } else {
             for (byte b = 0; b < cmdLen / 2; b++) {
@@ -575,7 +615,7 @@ void reaction() {
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
-          printToken(token);
+          printToAllPorts(token);
           token = T_SKILL;
           strcpy(newCmd, "tmp");
           break;
@@ -590,7 +630,7 @@ void reaction() {
           // newCmdIdx = 0;
           strcpy(newCmd, "tmp");
           if (skill->period > 0)
-            printToken();
+            printToAllPorts(token);
           token = T_SKILL;
           break;
         }
@@ -603,7 +643,7 @@ void reaction() {
             // but need more logics for non skill cmd in between
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             if (skill->period > 0)
-              printToken();
+              printToAllPorts(token);
             // skill->info();
           }
           break;
@@ -615,7 +655,7 @@ void reaction() {
         }
       default:
         {
-          PTLF("Undefined token!");
+          printToAllPorts("Undefined token!");
           break;
         }
     }
@@ -628,7 +668,7 @@ void reaction() {
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
-      printToken();                               // postures, gaits and other tokens can confirm completion by sending the token back
+      printToAllPorts(token);                        // postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
@@ -647,7 +687,7 @@ void reaction() {
       if (!strcmp(skill->skillName, "fd")) {  // need to optimize logic to combine "rest" and "fold"
         shutServos();
         gyroBalanceQ = false;
-        printToken('g');
+        printToAllPorts('g');
         idleTimer = 0;
         token = '\0';
       } else {
@@ -659,7 +699,7 @@ void reaction() {
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
-      printToken();  // behavior can confirm completion by sending the token back
+      printToAllPorts(token);  // behavior can confirm completion by sending the token back
     }
     // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')

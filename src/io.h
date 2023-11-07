@@ -107,16 +107,16 @@ void blueSspSetup() {
 
 #endif
 
-void printToken(char t = token) {
+template<typename T> void printToAllPorts(T text) {
 #ifdef BT_BLE
   if (deviceConnected)
-    bleWrite(String(t));
+    bleWrite(String(text));
 #endif
 #ifdef BT_SPP
   if (BTconnected)
-    SerialBT.println(t);
+    SerialBT.println(text);
 #endif
-  PTL(t);
+  PTL(text);
 }
 
 void read_serial() {
@@ -151,7 +151,7 @@ void read_serial() {
             PTF("OVF");
             beep(5, 100, 50, 5);
             do { serialPort->read(); } while (serialPort->available());
-            printToken(token);
+            printToAllPorts(token);
             token = T_SKILL;
             strcpy(newCmd, "up");
             cmdLen = 2;

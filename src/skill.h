@@ -58,7 +58,7 @@ public:
           // || readName[nameLen - 1] == 'L' && !strncmp(readName, key, nameLen - 1)
           || readName[nameLen - 1] != 'F' && strcmp(readName, "bk") && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
       ) {
-        PTL(readName);
+        printToAllPorts(readName);
         return s;
       }
     }
@@ -261,7 +261,7 @@ public:
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
-        //  PT("step "); PTL(c);
+        printToAllPorts("Progress: " + String(c) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 
@@ -272,7 +272,7 @@ public:
 
           float currentYpr = ypr[abs(triggerAxis)];
           float previousYpr = currentYpr;
-          //            long triggerTimer = millis();
+          long triggerTimer = millis();
           while (1) {
             read_IMU();
             print6Axis();
@@ -280,8 +280,10 @@ public:
             PT(currentYpr);
             PTF("\t");
             PTL(triggerAngle);
-            if ((180 - fabs(currentYpr) > 2)                                                                                           //skip the angle when the reading jumps from 180 to -180
-                && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  //the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
+            if (
+              ((180 - fabs(currentYpr) > 2)                                                                                           //skip the angle when the reading jumps from 180 to -180
+               && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  //the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
+              || millis() - triggerTimer > 10000)                                                                                     // if the robot stucks by the trigger for more than 10 seconds, it will break.
               break;
             previousYpr = currentYpr;
           }
@@ -290,12 +292,13 @@ public:
         delay(abs(dutyAngles[DOF + 1 + c * frameSize] * 50));
 
         if (repeat != 0 && c != 0 && c == loopCycle[1]) {
+          printToAllPorts("Loop remaining: " + String(repeat));
           c = loopCycle[0] - 1;
           if (repeat > 0)  //if repeat <0, infinite loop. only reset button will break the loop
             repeat--;
         }
       }
-      printToken();
+      printToAllPorts(token);
     } else {  //postures and gaits
 #ifdef GYRO_PIN
       if (imuUpdated && gyroBalanceQ && !(frame % imuSkip)) {
