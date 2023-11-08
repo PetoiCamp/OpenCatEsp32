@@ -64,7 +64,7 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_231107"  // BiBoard + YYMMDD
+#define SOFTWARE_VERSION "B_231108"  // BiBoard + YYMMDD
 #define BIRTHMARK 'x'                // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）

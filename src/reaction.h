@@ -284,27 +284,6 @@ void reaction() {
             printToAllPorts(range2String(DOF));
             printToAllPorts(list2String(currentAng));
           }
-          /*
-          PT('=');
-          if (cmdLen)
-            PTL(currentAng[atoi(newCmd)]);
-          else {
-            printTable(currentAng);
-#ifdef BT_BLE
-            if (deviceConnected) {
-              bleWrite(range2String(DOF));
-              bleWrite(list2String(currentAng));
-            }
-#endif
-#ifdef BT_SPP
-            if (BTconnected) {
-              SerialBT.println(range2String(DOF));
-              SerialBT.println(list2String(currentAng));
-            }
-#endif
-}
-*/
-
           break;
         }
       case T_MELODY:
@@ -427,37 +406,6 @@ void reaction() {
 #else
                 pwm.writeAngle(actualServoIndex, duty);
 #endif
-                //              printRange(DOF);
-                //              printList(servoCalib);
-                /*
-                printTable(servoCalib);
-#ifdef BT_BLE
-                if (deviceConnected) {
-                  bleWrite(range2String(DOF));
-                  bleWrite(list2String(servoCalib));
-                }
-#endif
-#ifdef BT_SPP
-                if (BTconnected) {
-                  SerialBT.println(range2String(DOF));
-                  SerialBT.println(list2String(servoCalib));
-                }
-#endif
-                PT(token);
-                printList(target, 2);
-#ifdef BT_BLE
-                if (deviceConnected) {
-                  bleWrite(range2String(2));
-                  bleWrite(list2String(target));
-                }
-#endif
-#ifdef BT_SPP
-                if (BTconnected) {
-                  SerialBT.println(range2String(2));
-                  SerialBT.println(list2String(target));
-                }
-#endif
-*/
                 printToAllPorts(range2String(DOF));
                 printToAllPorts(list2String(servoCalib));
                 printToAllPorts(token);
