@@ -206,7 +206,7 @@ void reaction() {
       case T_QUERY:
         {
           printToAllPorts(MODEL);
-          printToAllPorts(SOFTWARE_VERSION);
+          printToAllPorts(SoftwareVersion);
           break;
         }
       case T_GYRO_FINENESS:

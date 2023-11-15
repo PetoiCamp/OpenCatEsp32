@@ -64,8 +64,17 @@
 */
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
-#define SOFTWARE_VERSION "B_231108"  // BiBoard + YYMMDD
-#define BIRTHMARK 'x'                // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
+#ifdef BiBoard_V0_1
+#define BOARD "B01"
+#elif defined BiBoard_V0_2
+#define BOARD "B02"
+#else
+#define BOARD "B"
+#endif
+#define DATE "231115"  // YYMMDD
+String SoftwareVersion = "";
+
+#define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SPP    // toggle Bluetooth Serial Port Profile (BT_SPP)
@@ -446,11 +455,13 @@ int slope = 1;
 void initRobot() {
   beep(20);
   Wire.begin();
+  SoftwareVersion = SoftwareVersion + BOARD + "_" + DATE;
   PTL('k');
   PTLF("Flush the serial buffer...");
-  PTLF("\n* Start *");
-  PTLF(MODEL);
-  PTLF(SOFTWARE_VERSION);
+  PTL("\n* Start *");
+  printToAllPorts(MODEL);
+  PTF("Software version: ");
+  printToAllPorts(SoftwareVersion);
   if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
     playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 
