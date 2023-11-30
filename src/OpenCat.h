@@ -503,7 +503,12 @@ void initRobot() {
 
 #ifdef VOICE
   voiceSetup();
+#if VOICE_ENGLISH
+  PTLF("Enter the English mode");
+  Serial2.println("XAa");
 #endif
+#endif
+
 #ifdef CAMERA
   cameraSetup();
 #endif
@@ -544,7 +549,6 @@ void initRobot() {
   newCmdIdx = 2;
 #endif
 #endif
-
 
   PTL("Ready!");
   idleTimer = millis();

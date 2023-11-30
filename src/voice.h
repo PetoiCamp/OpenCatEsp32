@@ -84,6 +84,7 @@ void read_voice() {
     PTL(raw);
     byte index = (byte)raw[2];  //interpret the 3rd byte as integer
     int shift = -1;
+    newCmdIdx = 7;
     if (index > 10 && index < 61) {
       if (index < 21) {  //11 ~ 20 are customized commands, and their indexes should be shifted by 11
         index -= 11;
