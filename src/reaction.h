@@ -318,12 +318,20 @@ void reaction() {
         {
           PTLF("save offset");
           saveCalib(servoCalib);
+#ifdef VOICE
+          if (newCmdIdx == 2)
+            Serial2.println("XAc");
+#endif
           break;
         }
       case T_ABORT:
         {
           PTLF("aborted");
           i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
+#ifdef VOICE
+          if (newCmdIdx == 2)
+            Serial2.println("XAc");
+#endif
           break;
         }
       case T_RESET:
@@ -386,6 +394,10 @@ void reaction() {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
                   hardServoQ = true;
+#endif
+#ifdef VOICE
+                  if (newCmdIdx == 2)
+                    Serial2.println("XAd");
 #endif
                   strcpy(newCmd, "calib");
                   loadBySkillName(newCmd);
