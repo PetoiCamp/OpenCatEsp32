@@ -115,6 +115,7 @@ void read_voice() {
         }
       }
     } else {
+      token = '\0';
       switch (tolower(index)) {
         case 'a':  //say "Bing-bing" to switch English /说“冰冰”切换英文
           {
