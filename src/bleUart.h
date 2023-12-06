@@ -56,6 +56,8 @@ class MyCallbacks : public BLECharacteristicCallbacks {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
       int buffLen = rxValue.length();
+      // Serial.print("From BLE:");
+      // Serial.println(rxValue.c_str());
       if (bleMessageShift) {
         cmdLen = 0;
         token = rxValue[0];

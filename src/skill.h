@@ -261,7 +261,7 @@ public:
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
-        printToAllPorts("Progress: " + String(c) + "/" + abs(period));
+        printToAllPorts("Progress: " + String(c+1) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 
