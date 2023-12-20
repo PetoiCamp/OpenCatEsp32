@@ -437,7 +437,15 @@ void reaction() {
 #endif
 #ifdef T_SERVO_FEEDBACK
               else if (token == T_SERVO_FEEDBACK) {
-                measureServoPin = (inLen == 1) ? target[0] : 16;
+                // measureServoPin = (inLen == 1) ? target[0] : 16;
+                if (inLen == 0)
+                  measureServoPin = 16;
+                else if (inLen == 1 && target[0] > 2500 && target[0] < 4000) {
+                  feedbackSignal = target[0];
+                  PTF("Change feedback signal to ");
+                  PTL(feedbackSignal);
+                } else
+                  measureServoPin = target[0];
               }
 #endif
 #ifdef GYRO_PIN
@@ -628,7 +636,7 @@ void reaction() {
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
-      printToAllPorts(token);                        // postures, gaits and other tokens can confirm completion by sending the token back
+      printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }

@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "231206"  // YYMMDD
+#define DATE "231220"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -503,7 +503,7 @@ void initRobot() {
 
 #ifdef VOICE
   voiceSetup();
-#if VOICE_ENGLISH
+#ifdef VOICE_ENGLISH
   PTLF("Enter the English mode");
   Serial2.println("XAa");
 #endif

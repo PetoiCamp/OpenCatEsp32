@@ -11,6 +11,8 @@ ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
 #define P_BASE 3000 + 3 * P_STEP  // 3000~3320
 #define P_HARD (P_BASE + P_STEP * 2)
 #define P_SOFT (P_BASE - P_STEP * 2)
+#define FEEDBACK_SIGNAL 3500
+int feedbackSignal = FEEDBACK_SIGNAL;
 
 Servo servo[PWM_NUM];  // create servo object to control a servo
 // 16 servo objects can be created on the ESP32
@@ -166,8 +168,8 @@ float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index 
   }
   servo[s].attach(PWM_pin[s], model);
   delay(12);
-  servo[s].writeMicroseconds(2800);  // set servo to mid-point
-                                     // myservo.writeMicroseconds(2800);  // set servo to mid-point
+  servo[s].writeMicroseconds(feedbackSignal);  // set servo to mid-point
+                                                // myservo.writeMicroseconds(feedbackSignal);  // set servo to mid-point
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
