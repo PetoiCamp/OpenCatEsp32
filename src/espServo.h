@@ -13,6 +13,8 @@ ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
 #define P_SOFT (P_BASE - P_STEP * 2)
 #define FEEDBACK_SIGNAL 3500
 int feedbackSignal = FEEDBACK_SIGNAL;
+int waitTimeForResponse = 10000;
+int maxPulseWidth = 2600;
 
 Servo servo[PWM_NUM];  // create servo object to control a servo
 // 16 servo objects can be created on the ESP32
@@ -141,12 +143,12 @@ void setServoP(unsigned int p) {
 int measurePulseWidth(uint8_t pwmReadPin) {
   long start = micros();
   while (!digitalRead(pwmReadPin)) {  //等待高电平
-    if (micros() - start > 10000)
+    if (micros() - start > waitTimeForResponse)
       return -1;
   }
   long t1 = micros();
   while (digitalRead(pwmReadPin)) {
-    if (micros() - t1 > 10000)
+    if (micros() - t1 > maxPulseWidth)
       return -1;
   }
   return (micros() - t1);
@@ -167,9 +169,9 @@ float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index 
       break;
   }
   servo[s].attach(PWM_pin[s], model);
-  delay(12);
+  delay(12);                                   //it takes time to attach
   servo[s].writeMicroseconds(feedbackSignal);  // set servo to mid-point
-                                                // myservo.writeMicroseconds(feedbackSignal);  // set servo to mid-point
+                                               // myservo.writeMicroseconds(feedbackSignal);  // set servo to mid-point
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
@@ -183,7 +185,6 @@ float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index 
     } else if (i > 0)
       mean += temp;
   }
-  delay(10);
   if (n > 1) {
     // PTT(n, ": ")
     return mean / (n - 1);
