@@ -456,7 +456,17 @@ void reaction() {
               else if (token == T_MEOW) {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
-                if (target[0] > 0 && target[1] > 0)
+                if (inLen == 0) {  // toggle on/off the bootup melody
+                  bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
+                  printToAllPorts(soundState ? "Unmute" : "Muted");
+                  i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+                } else if (inLen == 1) {     //change the buzzer's volume
+                  buzzerVolume = target[0];  //to fit the actual amplifier range of BiBoard
+                  PTF("Changing volume to ");
+                  PT(target[0]);
+                  PTL("/10");
+                  i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, target[0]);
+                } else if (target[0] > 0 && target[1] > 0)
                   beep(target[0], 1000 / target[1]);
               }
 #ifdef T_TUNER

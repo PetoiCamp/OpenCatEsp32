@@ -207,14 +207,13 @@ bool newBoard = false;
 #define T_JOINTS 'j'                    // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
+#define T_SLOPE 'l'                   // inverse the slope of the adjustment function
 #define T_LISTED_BIN 'L'              // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
 #define T_INDEXED_SEQUENTIAL_ASC 'm'  // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
 #define T_INDEXED_SEQUENTIAL_BIN 'M'  // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
-#define T_SLOPE 'l'  // inverse the slope of the adjustment function
-#define T_RESET '!'
 #define T_SAVE 's'
 #define T_TILT 't'
 #define T_TEMP 'T'  // call the last skill data received from the serial port
@@ -223,8 +222,6 @@ bool newBoard = false;
 #define T_VERBOSELY_PRINT_GYRO 'V'  // toggle verbosely print Gyro data
 #define T_SERVO_MICROSECOND 'w'     // PWM width modulation
 #define T_XLEG 'x'
-#define T_ACCELERATE '.'
-#define T_DECELERATE ','
 #define T_RANDOM_MIND 'z'  // toggle random behaviors
 
 #define T_READ 'R'        // read pin     R
@@ -232,8 +229,10 @@ bool newBoard = false;
 #define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
 #define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
 
+#define T_RESET '!'
 #define T_QUERY '?'
-
+#define T_ACCELERATE '.'
+#define T_DECELERATE ','
 #define T_TUNER '}'
 int8_t **par = new int8_t *[12];
 
@@ -288,6 +287,7 @@ float protectiveShift;  // reduce the wearing of the potentiometer
 
 bool initialBoot = true;
 bool safeRest = true;
+byte buzzerVolume;
 
 int delayLong = 20;
 int delayMid = 8;
@@ -464,7 +464,10 @@ void initRobot() {
   printToAllPorts(SoftwareVersion);
   if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
     playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
-
+  buzzerVolume = i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME);
+  PTF("Buzzer volume: ");
+  PT(buzzerVolume);
+  PTL("/10");
   i2cDetect();
   i2cEepromSetup();
 #ifdef GYRO_PIN

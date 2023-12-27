@@ -44,6 +44,7 @@ bool EEPROMOverflow = false;
 #define EEPROM_CALIB 20               // 16 bytes
 #define EEPROM_BLE_NAME 36            // 10 bytes
 #define EEPROM_BOOTUP_SOUND_STATE 46  // 1 byte
+#define EEPROM_BUZZER_VOLUME 47       // 1 byte
 #define EEPROM_RESERVED 50
 #define SERIAL_BUFF 100
 
