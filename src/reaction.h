@@ -465,9 +465,9 @@ void reaction() {
                     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
                     playMelody(volumeTest, sizeof(volumeTest) / 2);
                   }
-                } else if (inLen == 1) {                      //change the buzzer's volume
-                  buzzerVolume = max(0, min(10, target[0]));  //in scale of 0~10
-                  if (soundState ^ (buzzerVolume > 0)) printToAllPorts(buzzerVolume ? "Unmute" : "Muted");//only print if the soundState changes
+                } else if (inLen == 1) {                                                                    //change the buzzer's volume
+                  buzzerVolume = max(0, min(10, target[0]));                                                //in scale of 0~10
+                  if (soundState ^ (buzzerVolume > 0)) printToAllPorts(buzzerVolume ? "Unmute" : "Muted");  //only print if the soundState changes
                   soundState = buzzerVolume;
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
                   i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
@@ -586,7 +586,7 @@ void reaction() {
         }
       case T_BEEP_BIN:
         {
-          if (cmdLen < 2) {  // toggle on/off the bootup melody
+          if (cmdLen == 0) {  // toggle on/off the bootup melody
             soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
             printToAllPorts(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);

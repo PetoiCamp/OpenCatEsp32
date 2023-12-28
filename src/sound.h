@@ -77,7 +77,6 @@ void beep(float note, float duration = 50, int pause = 0, byte repeat = 1) {
   }
 }
 
-
 template<typename T> int8_t sign(T val) {
   return (T(0) < val) - (val < T(0));
 }
@@ -89,7 +88,8 @@ void meow(int startF = 1, int endF = 25, float duration = 5) {
     beep(amp, duration / 5);
   }
 }
-void playTone(uint16_t tone1, uint16_t duration) {
+
+void continuousTone(uint16_t tone1, uint16_t duration) {
   if (tone1 < 50 || tone1 > 15000) return;  // these do not play on a piezo
   for (long i = 0; i < duration * 1000L; i += tone1 * 2) {
     digitalWrite(BUZZER, HIGH);
@@ -101,7 +101,7 @@ void playTone(uint16_t tone1, uint16_t duration) {
 
 void chirp(int startF = 180, int endF = 200, int duration = 10) {  // Bird chirp
   for (uint8_t i = startF; i < endF; i++) {
-    playTone(i, duration);
+    continuousTone(i, duration);
   }
 }
 void soundFallOver() {
@@ -111,11 +111,7 @@ void soundFallOver() {
 void playMelody(byte m[], int len) {
   if (soundState) {
     for (int i = 0; i < len; i++) {
-      if (!m[i])
-        delay(1000 / m[len + i]);
-      else {
-        tone(BUZZER, 1046.50 * pow(1.05946, m[i]), 1000 / m[len + i], buzzerVolume / amplifierFactor);
-      }
+      beep(m[i], 1000 / m[len + i]);
     }
   }
 }
