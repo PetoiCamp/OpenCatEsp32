@@ -472,7 +472,7 @@ void reaction() {
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
                   i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
                   PTF("Changing volume to ");
-                  PT(target[0]);
+                  PT(buzzerVolume);
                   PTL("/10");
                   playMelody(volumeTest, sizeof(volumeTest) / 2);
                 } else if (target[1] > 0) {

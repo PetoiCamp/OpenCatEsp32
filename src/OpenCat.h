@@ -467,7 +467,7 @@ void initRobot() {
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-  buzzerVolume = i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME);
+  buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
   PTF("Buzzer volume: ");
   PT(buzzerVolume);
   PTL("/10");
