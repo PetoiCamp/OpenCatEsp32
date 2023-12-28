@@ -8,7 +8,7 @@
 
 #include "ESP32Tone.h"
 
-void tone(int APin,unsigned int frequency){
+void tone(int APin,unsigned int frequency, double volumeRatio = 0.5){
 	ESP32PWM* chan = pwmFactory(APin);
 	if (chan == NULL) {
 		chan = new ESP32PWM();
@@ -17,14 +17,15 @@ void tone(int APin,unsigned int frequency){
 		chan->attachPin(APin,frequency, 10); // This adds the PWM instance to the factory list
 		//Serial.println("Attaching tone : "+String(APin)+" on PWM "+String(chan->getChannel()));
 	}
-	chan->writeTone(frequency);// update the time base of the PWM
+	chan->writeTone(frequency, volumeRatio);// update the time base of the PWM
 }
 
-void tone(int pin, unsigned int frequency, unsigned long duration){
-	tone(pin,frequency);
+void tone(int pin, unsigned int frequency, unsigned long duration, double volumeRatio){
+	tone(pin,frequency, volumeRatio);
 	delay(duration);
 	noTone(pin);
 }
+
 
 void noTone(int pin){
 	ESP32PWM* chan = pwmFactory(pin);

@@ -8,9 +8,9 @@
 #ifndef LIBRARIES_ESP32SERVO_SRC_ESP32TONE_H_
 #define LIBRARIES_ESP32SERVO_SRC_ESP32TONE_H_
 #include "ESP32PWM.h"
-void tone(int pin,unsigned int frequency);
+void tone(int pin,unsigned int frequency, double volumeRatio);
 
-void tone(int pin, unsigned int frequency, unsigned long duration);
+void tone(int pin, unsigned int frequency, unsigned long duration, double volumeRatio);
 
 void noTone(int pin);
 

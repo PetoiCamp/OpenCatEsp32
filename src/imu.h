@@ -415,10 +415,10 @@ void imuSetup() {
         i2c_eeprom_write_int16(EEPROM_IMU + 6, mpu.getXGyroOffset());
         i2c_eeprom_write_int16(EEPROM_IMU + 8, mpu.getYGyroOffset());
         i2c_eeprom_write_int16(EEPROM_IMU + 10, mpu.getZGyroOffset());
+        beep(18, 50, 50, 6);
 #ifndef AUTO_INIT
       }
 #endif
-      beep(18, 50, 50, 6);
       mpu.PrintActiveOffsets();
     }
     // turn on the DMP, now that it's ready

@@ -457,17 +457,27 @@ void reaction() {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
                 if (inLen == 0) {  // toggle on/off the bootup melody
-                  bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
+                  soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
                   printToAllPorts(soundState ? "Unmute" : "Muted");
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
-                } else if (inLen == 1) {     //change the buzzer's volume
-                  buzzerVolume = target[0];  //to fit the actual amplifier range of BiBoard
+                  if (soundState && !buzzerVolume) {  // if i want to unmute but the volume was set to 0
+                    buzzerVolume = 5;                 // set the volume to 5/10
+                    i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
+                    playMelody(volumeTest, sizeof(volumeTest) / 2);
+                  }
+                } else if (inLen == 1) {                      //change the buzzer's volume
+                  buzzerVolume = max(0, min(10, target[0]));  //in scale of 0~10
+                  if (soundState ^ (buzzerVolume > 0)) printToAllPorts(buzzerVolume ? "Unmute" : "Muted");//only print if the soundState changes
+                  soundState = buzzerVolume;
+                  i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+                  i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
                   PTF("Changing volume to ");
                   PT(target[0]);
                   PTL("/10");
-                  i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, target[0]);
-                } else if (target[0] > 0 && target[1] > 0)
+                  playMelody(volumeTest, sizeof(volumeTest) / 2);
+                } else if (target[1] > 0) {
                   beep(target[0], 1000 / target[1]);
+                }
               }
 #ifdef T_TUNER
               else if (token == T_TUNER) {
@@ -577,12 +587,12 @@ void reaction() {
       case T_BEEP_BIN:
         {
           if (cmdLen < 2) {  // toggle on/off the bootup melody
-            bool soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
+            soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
             printToAllPorts(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
           } else {
             for (byte b = 0; b < cmdLen / 2; b++) {
-              if ((int8_t)newCmd[2 * b] > 0 && (int8_t)newCmd[2 * b + 1] > 0)
+              if ((int8_t)newCmd[2 * b + 1] > 0)
                 beep((int8_t)newCmd[2 * b], 1000 / (int8_t)newCmd[2 * b + 1]);
             }
           }

@@ -191,7 +191,7 @@ void ESP32PWM::adjustFrequency(double freq, double dutyScaled) {
 		}
 	}
 }
-double ESP32PWM::writeTone(double freq) {
+double ESP32PWM::writeTone(double freq, double volumeRatio = 0.5) {
 	for (int i = 0; i < timerCount[getTimer()]; i++) {
 		int pwm = timerAndIndexToChannel(getTimer(), i);
 		if (ChannelUsed[pwm] != NULL) {
@@ -199,7 +199,8 @@ double ESP32PWM::writeTone(double freq) {
 				ChannelUsed[pwm]->adjustFrequencyLocal(freq,
 						ChannelUsed[pwm]->getDutyScaled());
 			}
-			write(1 << (resolutionBits-1)); // writeScaled(0.5);
+//			write(1 << (resolutionBits-1));
+            writeScaled(volumeRatio);
 		}
 	}
 

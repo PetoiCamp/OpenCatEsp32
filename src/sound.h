@@ -60,16 +60,20 @@ byte melodyIRpass[] = {
   17, 15, 12, 10, 8, 12, 10, 8, 5, 3,
   6, 16, 8, 8, 2, 6, 16, 8, 8, 2
 };
-
+byte volumeTest[] = {
+  12, 14, 16,
+  4, 4, 4
+};
 void beep(float note, float duration = 50, int pause = 0, byte repeat = 1) {
-  for (byte r = 0; r < repeat; r++) {
-    if (note)
-      tone(BUZZER, BASE_PITCH * pow(1.05946, note));  //tone(pin, frequency, duration) the duration doesn't work
-    else
-      delay(duration);
-    delay(duration);
-    noTone(BUZZER);
-    delay(pause);
+  if (soundState) {
+    for (byte r = 0; r < repeat; r++) {
+      if (note > 0) {
+        tone(BUZZER, BASE_PITCH * pow(1.05946, note), duration, buzzerVolume / amplifierFactor);
+      } else {
+        delay(duration);
+      }
+      delay(pause);
+    }
   }
 }
 
@@ -105,12 +109,14 @@ void soundFallOver() {
     chirp();
 }
 void playMelody(byte m[], int len) {
-  for (int i = 0; i < len; i++) {
-    if (!m[i])
-      delay(1000 / m[len + i]);
-    else
-      tone(BUZZER, 1046.50 * pow(1.05946, m[i]),  // C
-           1000 / m[len + i]);
+  if (soundState) {
+    for (int i = 0; i < len; i++) {
+      if (!m[i])
+        delay(1000 / m[len + i]);
+      else {
+        tone(BUZZER, 1046.50 * pow(1.05946, m[i]), 1000 / m[len + i], buzzerVolume / amplifierFactor);
+      }
+    }
   }
 }
 

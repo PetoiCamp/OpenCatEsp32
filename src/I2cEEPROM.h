@@ -268,10 +268,16 @@ int dataLen(int8_t p) {
 }
 void i2cEepromSetup() {
   newBoard = newBoardQ(EEPROM_BIRTHMARK_ADDRESS);
-
   if (newBoard) {
     PTLF("Set up the new board...");
+    i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
+    i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, 5);
+    soundState = 1;
+    buzzerVolume = 5;
+    PTF("Unmute and set volume to 5/10");
+#ifndef AUTO_INIT
     playMelody(melodyInit, sizeof(melodyInit) / 2);
+#endif
     PTF("- Name the new robot as: ");
 #ifdef BT_BLE
     genBleID();
@@ -289,7 +295,8 @@ void i2cEepromSetup() {
 #ifndef AUTO_INIT
     }
 #endif
-  }
+  } else
+    playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 }
 void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
   int len = dataLen(newCmd[0]) + 1;

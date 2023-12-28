@@ -187,10 +187,12 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'      // abort the calibration values
-#define T_BEEP 'b'       // b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4
+#define T_ABORT 'a'      //abort the calibration values
+#define T_BEEP 'b'       //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+                         //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
+                         //a single 'b' will toggle all sound on/off
 #define T_BEEP_BIN 'B'   //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
-                         //a single B will toggle the melody on/off
+                         //a single 'B' will toggle all sound on/off
 #define T_CALIBRATE 'c'  //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
 #define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor \
@@ -287,7 +289,9 @@ float protectiveShift;  // reduce the wearing of the potentiometer
 
 bool initialBoot = true;
 bool safeRest = true;
+bool soundState;
 byte buzzerVolume;
+float amplifierFactor = 100.0;  //to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
 int delayMid = 8;
@@ -462,8 +466,7 @@ void initRobot() {
   printToAllPorts(MODEL);
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
-  if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
-    playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
+  soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME);
   PTF("Buzzer volume: ");
   PT(buzzerVolume);

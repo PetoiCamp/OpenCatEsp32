@@ -62,7 +62,7 @@ public:
 	// Write a duty cycle to the PWM using a unit vector from 0.0-1.0
 	void writeScaled(double duty);
 	//Adjust frequency
-	double writeTone(double freq);
+	double writeTone(double freq, double volumeRatio);
 	double writeNote(note_t note, uint8_t octave);
 	void adjustFrequency(double freq, double dutyScaled=-1);
 
