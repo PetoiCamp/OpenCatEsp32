@@ -113,7 +113,7 @@ void QA() {
     i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
 #ifndef AUTO_INIT
     PTL("Run factory quality assurance program? (Y/n)");
-    char choice = getUserInputChar();
+    char choice = getUserInputChar(5);  //auto skip in 5 seconds
     PTL(choice);
     if (choice != 'Y' && choice != 'y')
       return;

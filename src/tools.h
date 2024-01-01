@@ -1,6 +1,6 @@
 //abbreviations
-#define PT(s) Serial.print(s)                      // abbreviate print commands
-#define PTD(s,format) Serial.print(s,format)
+#define PT(s) Serial.print(s)  // abbreviate print commands
+#define PTD(s, format) Serial.print(s, format)
 #define PT_FMT(s, format) Serial.print(s, format)  // abbreviate print commands
 #define PTL(s) Serial.println(s)
 #define PTF(s) Serial.print(F(s))  //trade flash memory for dynamic memory with F() function
@@ -17,9 +17,25 @@
     Serial.println(value); \
   }
 
-char getUserInputChar() {  //take only the first character, allow "no line ending", "newline", "carriage return", and "both NL & CR"
-  while (!Serial.available())
-    ;
+char getUserInputChar(int waitTimeout = 0) {  //take only the first character, allow "no line ending", "newline", "carriage return", and "both NL & CR"
+  long start = millis();
+  if (waitTimeout) {
+    PTF("(Auto skip in ");
+    PT(waitTimeout);
+    PTLF(" seconds)");
+  }
+  int timeLeft = waitTimeout;
+  while (!Serial.available()) {
+    long current = millis();
+    if (waitTimeout) {
+      if ((current - start) / 1000 > waitTimeout)
+        return 'n';
+      if (waitTimeout - timeLeft < (current - start) / 1000) {
+        PT(timeLeft--);
+        PT("...");
+      }
+    }
+  }
   char result = Serial.read();
   delay(1);                     //wait for the remainder to arrive
   while (Serial.available()) {  //flush the '\r' or '\n' if any
