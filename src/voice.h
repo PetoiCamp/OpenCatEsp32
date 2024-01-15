@@ -76,7 +76,7 @@ void read_voice() {
     else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
       // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
       enableVoiceQ = false;
-    bleWrite("X");  //the blue read runs on a separate core.
+    printToAllPorts('X');  //the blue read runs on a separate core.
     //if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
     resetCmd();
   }
@@ -86,7 +86,6 @@ void read_voice() {
     PTL(raw);
     byte index = (byte)raw[2];  //interpret the 3rd byte as integer
     int shift = -1;
-    newCmdIdx = 7;
     if (index > 10 && index < 61) {
       if (index < 21) {  //11 ~ 20 are customized commands, and their indexes should be shifted by 11
         index -= 11;
@@ -118,8 +117,6 @@ void read_voice() {
         }
       }
     } else {
-      token = '\0';
-      newCmdIdx = 0;
       switch (tolower(index)) {
         case 'a':  //say "Bing-bing" to switch English /说“冰冰”切换英文
           {

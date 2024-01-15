@@ -444,9 +444,7 @@ int slope = 1;
 #include "motion.h"
 #include "randomMind.h"
 
-#ifdef VOICE
-#include "voice.h"
-#endif
+#include "io.h"
 
 #ifdef CAMERA
 #include "camera.h"
@@ -469,13 +467,20 @@ int slope = 1;
 #include "doubleInfraredDistance.h"
 #endif
 
-#include "io.h"
+
+#ifdef VOICE
+#include "voice.h"
+#endif
 #include "skill.h"
 #ifdef NEOPIXEL_PIN
 #include "led.h"
 #endif
+#include "sense.h"
 #include "reaction.h"
 #include "qualityAssurance.h"
+
+
+
 
 void initRobot() {
   beep(20);
