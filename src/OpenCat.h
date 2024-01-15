@@ -348,9 +348,10 @@ int8_t rotationDirection[] = { 1, -1, 1, 1,
                                1, -1, 1, -1,
                                1, -1, -1, 1,
                                -1, 1, 1, -1 };
+#ifdef BITTLE
 int angleLimit[][2] = {
   { -120, 120 },
-  { -30, 80 },
+  { -85, 85 },
   { -120, 120 },
   { -120, 120 },
   { -90, 60 },
@@ -366,6 +367,26 @@ int angleLimit[][2] = {
   { -70, 200 },
   { -80, 200 },
 };
+#else
+int angleLimit[][2] = {
+  { -120, 120 },
+  { -85, 85 },
+  { -120, 120 },
+  { -120, 120 },
+  { -90, 60 },
+  { -90, 60 },
+  { -90, 90 },
+  { -90, 90 },
+  { -200, 80 },
+  { -200, 80 },
+  { -80, 200 },
+  { -80, 200 },
+  { -80, 80 },
+  { -80, 80 },
+  { -70, 80 },
+  { -80, 80 },
+};
+#endif
 #endif
 
 #ifdef X_LEG
@@ -483,6 +504,8 @@ void initRobot() {
   blueSspSetup();
 #endif
   servoSetup();
+  lastCmd[0] = '\0';
+  newCmd[0] = '\0';
   skill = new Skill();
   skillList = new SkillList();
   for (byte i = 0; i < randomMindListLength; i++) {
@@ -507,14 +530,6 @@ void initRobot() {
   QA();
   i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
 
-#ifdef VOICE
-  voiceSetup();
-#ifdef VOICE_ENGLISH
-  PTLF("Enter the English mode");
-  Serial2.println("XAa");
-#endif
-#endif
-
 #ifdef CAMERA
   cameraSetup();
 #endif
@@ -538,6 +553,15 @@ void initRobot() {
   delay(500);
 
   tQueue = new TaskQueue();
+
+#ifdef VOICE
+  voiceSetup();
+#ifdef VOICE_ENGLISH
+  PTLF("Enter the English mode");
+  Serial2.println("XAa");
+#endif
+#endif
+
 #if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE
   loadBySkillName("sit");  //required by double light
   delay(500);              //use your palm to cover the two light sensors for calibration
@@ -559,6 +583,4 @@ void initRobot() {
   PTL("Ready!");
   idleTimer = millis();
   beep(24, 50);
-  lastCmd[0] = '\0';
-  newCmd[0] = '\0';
 }
