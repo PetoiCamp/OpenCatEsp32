@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "231228"  // YYMMDD
+#define DATE "240118"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -443,7 +443,6 @@ int slope = 1;
 #include "espServo.h"
 #include "motion.h"
 #include "randomMind.h"
-
 #include "io.h"
 
 #ifdef CAMERA
@@ -466,8 +465,6 @@ int slope = 1;
 #elif defined DOUBLE_INFRARED_DISTANCE
 #include "doubleInfraredDistance.h"
 #endif
-
-
 #ifdef VOICE
 #include "voice.h"
 #endif
