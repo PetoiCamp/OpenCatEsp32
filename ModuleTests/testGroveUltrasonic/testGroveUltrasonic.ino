@@ -1,9 +1,10 @@
 //
 // For the Grove Ultrasonic Sensor provided with the Sensor Pack for Petoi Bittle.
+// The library is adjusted for BiBoard V0(ESP32) and only drives the ultrasonic module for testing purpose.
 //
 
 // Pins
-#define RANGER 6 // Ranger pin is used to trigger (OUT) and detect echo (IN)
+#define RANGER 16 // Ranger pin is used to trigger (OUT) and detect echo (IN)
 
 // Physical constants
 #define LONGEST_DISTANCE_CM (200l) // 200 cm = 2 meters
