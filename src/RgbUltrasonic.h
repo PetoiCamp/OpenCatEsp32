@@ -4,7 +4,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <Arduino.h>
 // #include "RGBLed.h"
-#include <Adafruit_NeoPixel.h>
+#include "Adafruit_NeoPixel/Adafruit_NeoPixel.h"
 #define UL_LIMIT_MIN 5
 #define UL_LIMIT_MID 10
 #define UL_LIMIT_MAX 400

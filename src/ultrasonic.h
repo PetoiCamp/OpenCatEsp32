@@ -2,9 +2,9 @@
 //modified by Rongzhong Li for better demonstration.
 //Feb.16, 2021
 
-#include "rgbUltrasonic/RgbUltrasonic.h"
+#include "RgbUltrasonic.h"
 
-RgbUltrasonic mRUS04(6, 7);  //(signal, RGB)
+RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB)
 //The RGB LED ultrasonic module should be plugged in the fourth grove socket with D6, D7
 
 int interval = 3;
@@ -13,25 +13,30 @@ long colors[] = { RGB_RED, RGB_PURPLE, RGB_GREEN, RGB_BLUE, RGB_YELLOW, RGB_WHIT
 long ultraTimer;
 int ultraInterval = 1000;
 int distance;
+void rgbUltrasonicSetup() {
+  ultrasonic.SetupLED();
+  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_BLUE, E_EFFECT_BREATHING);
+}
+
 void read_ultrasonic() {
   if (millis() - ultraTimer > ultraInterval) {  //|| token == 'k' && millis() - ultraTimer > 3000) {
     ultraTimer = millis();
     ultraInterval = 0;
     randomInterval = 1000;
-    distance = mRUS04.GetUltrasonicDistance();
+    distance = ultrasonic.GetUltrasonicDistance();
     if (distance == 640) {
       return;
     }
 
     if (distance > 60) {
       if (!manualEyeColorQ)
-        mRUS04.SetRgbEffect(E_RGB_ALL, RGB_WHITE, E_EFFECT_BREATHING);
+        ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_WHITE, E_EFFECT_BREATHING);
       ultraInterval = 1000;
       //      autoSwitch = true;
       randomInterval = 1000;
     } else if (distance > 40) {
       if (!manualEyeColorQ)
-        mRUS04.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
+        ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
     } else if (distance < 2) {
       token = T_SKILL;
       strcpy(newCmd, "bk");
@@ -40,7 +45,7 @@ void read_ultrasonic() {
       randomInterval = 5000;
     } else if (distance < 4) {
       if (!manualEyeColorQ)
-        mRUS04.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
+        ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
       meow(rand() % 3 + 1, distance * 2);
       token = T_INDEXED_SIMULTANEOUS_BIN;
       int allRand[] = { 0, currentAng[0] + rand() % 20 - 10, 1, currentAng[1] + rand() % 20 - 10, 2, currentAng[2] + rand() % 80 - 40 };
@@ -51,7 +56,7 @@ void read_ultrasonic() {
       newCmdIdx = 6;
     } else if (distance < 6) {
       if (!manualEyeColorQ)
-        mRUS04.SetRgbColor(E_RGB_ALL, RGB_RED);
+        ultrasonic.SetRgbColor(E_RGB_ALL, RGB_RED);
       token = 'k';
       strcpy(newCmd, "sit");
       newCmdIdx = 6;
@@ -60,7 +65,7 @@ void read_ultrasonic() {
     else {  //6~40
       distance -= 6;
       if (!manualEyeColorQ)
-        mRUS04.SetRgbColor(E_RGB_ALL, colors[max(min(distance / 7, 5), 0)]);
+        ultrasonic.SetRgbColor(E_RGB_ALL, colors[max(min(distance / 7, 5), 0)]);
       token = T_LISTED_BIN;
       int mid[] = {
         0,

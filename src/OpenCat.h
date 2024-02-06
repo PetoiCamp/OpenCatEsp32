@@ -448,6 +448,9 @@ int slope = 1;
 #ifdef CAMERA
 #include "camera.h"
 #endif
+#ifdef VOICE
+#include "voice.h"
+#endif
 #ifdef ULTRASONIC
 #include "ultrasonic.h"
 #endif
@@ -464,9 +467,6 @@ int slope = 1;
 #include "doubleLight.h"
 #elif defined DOUBLE_INFRARED_DISTANCE
 #include "doubleInfraredDistance.h"
-#endif
-#ifdef VOICE
-#include "voice.h"
 #endif
 #include "skill.h"
 #ifdef NEOPIXEL_PIN
@@ -534,6 +534,9 @@ void initRobot() {
 
 #ifdef CAMERA
   cameraSetup();
+#endif
+#ifdef ULTRASONIC
+  rgbUltrasonicSetup();
 #endif
 #ifdef GESTURE
   gestureSetup();
