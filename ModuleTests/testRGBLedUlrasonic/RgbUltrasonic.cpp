@@ -8,6 +8,16 @@ RgbUltrasonic::RgbUltrasonic(byte signal_pin, byte rgb_pin) {
   lastMeasurementTime = millis();
   measurementInterval = 20;
   // mRgb = new RGBLed(RgbPin, 6);
+
+  Serial.println("set up ultrasonic sensor");
+  delay(2000);
+}
+
+void RgbUltrasonic::SetupLED() {
+  mRgb = new Adafruit_NeoPixel(6, RgbPin, NEO_GRB + NEO_KHZ800);
+  mRgb->begin();            // INITIALIZE NeoPixel strip object (REQUIRED)
+  mRgb->show();             // Turn OFF all pixels ASAP
+  mRgb->setBrightness(50);  // Set BRIGHTNESS to about 1/5 (max = 255)
 }
 
 float RgbUltrasonic::GetUltrasonicDistance(void) {  //in cm
@@ -29,21 +39,22 @@ float RgbUltrasonic::GetUltrasonicDistance(void) {  //in cm
   return FrontDistance;
 }
 
-// void RgbUltrasonic::SetRgbColor(E_RGB_INDEX index, long Color)
-// {
-//     if (index == E_RGB_ALL) {
-//         mRgb->setColor(0, Color);
-//     } else if (index == E_RGB_RIGHT) {
-//         mRgb->setColor(1, Color);
-//         mRgb->setColor(2, Color);
-//         mRgb->setColor(3, Color);
-//     } else if (index == E_RGB_LEFT) {
-//         mRgb->setColor(4, Color);
-//         mRgb->setColor(5, Color);
-//         mRgb->setColor(6, Color);
-//     }
-//     mRgb->show();
-// }
+void RgbUltrasonic::SetRgbColor(E_RGB_INDEX index, long Color) {
+  if (index == E_RGB_ALL)
+    for (byte i = 0; i < 6; i++)
+      mRgb->setPixelColor(i, Color);
+  else if (index == E_RGB_RIGHT) {
+    mRgb->setPixelColor(0, Color);
+    mRgb->setPixelColor(1, Color);
+    mRgb->setPixelColor(2, Color);
+
+  } else if (index == E_RGB_LEFT) {
+    mRgb->setPixelColor(3, Color);
+    mRgb->setPixelColor(4, Color);
+    mRgb->setPixelColor(5, Color);
+  }
+  mRgb->show();
+}
 
 // void RgbUltrasonic::SetRgbEffect(E_RGB_INDEX index, long Color, uint8_t effect)
 // {

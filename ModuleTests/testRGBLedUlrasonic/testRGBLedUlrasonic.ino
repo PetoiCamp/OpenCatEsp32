@@ -4,9 +4,8 @@
 
 #include "RgbUltrasonic.h"
 
-RgbUltrasonic mRUS04(16, 17);  //(signal, RGB)
+RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB)
 //The RGBLED module should be plugged in teh fourth grove socket with D6, D7
-
 #define BUZZER 5  // the PWM pin the ACTIVE buzzer is attached to
 void beep(int note, float duration = 10, int pause = 0, byte repeat = 1) {
   if (note == 0) {
@@ -29,50 +28,54 @@ void beep(int note, float duration = 10, int pause = 0, byte repeat = 1) {
   }
 }
 
+// Fill strip pixels one after another with a color. Strip is NOT cleared
+// first; anything there will be covered pixel by pixel. Pass in color
+// (as a single 'packed' 32-bit value, which you can get by calling
+// strip.Color(red, green, blue) as shown in the loop() function above),
+// and a delay time (in milliseconds) between pixels.
+
 int interval = 3;
-int de = 50;
 void setup() {
   Serial.begin(115200);
   pinMode(BUZZER, OUTPUT);
+  ultrasonic.SetupLED();
+  // colorWipe(mRgb.Color(255, 0, 0), 50);          // Red
+  // theaterChase(mRgb.Color(127, 127, 127), 50);  // White, half brightness
 }
 void loop() {
-  float distance = mRUS04.GetUltrasonicDistance();
+  float distance = ultrasonic.GetUltrasonicDistance();
   Serial.print(distance);
   Serial.print(" cm");
   Serial.println();
   // if (distance > 50) {
-  //   mRUS04.SetRgbEffect(E_RGB_ALL, RGB_WHITE, E_EFFECT_BREATHING);
+  //   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_WHITE, E_EFFECT_BREATHING);
   // }
-  // else {
-  //   beep(50 - distance / interval * 2 , 20 + distance / 2, 5 + distance );
-  //   Serial.print(50 - distance / interval * 2 );
-  //   Serial.print("\t" );
-  //   Serial.print(20 +  distance / 2 );
-  //   Serial.print("\t");
-  //   Serial.println(5 + distance );
-  //   if (distance < 2) {
-  //     mRUS04.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
-  //   }
-  //   else if (distance < 10 + interval) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_RED);
-  //   }
-  //   else if (distance < 10 + interval * 3) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_BLUE);
-  //   }
-  //   else if (distance < 10 + interval * 5) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_GREEN);
-  //   }
-  //   else if (distance < 10 + interval * 7) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_YELLOW);
-  //   }
-  //   else if (distance < 10 + interval * 9) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_PURPLE);
-  //   }
-  //   else if (distance < 10 + interval * 11) {
-  //     mRUS04.SetRgbColor(E_RGB_ALL, RGB_WHITE);
-  //   }
-  //   else {
-  //     mRUS04.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
-  //   }
-  // }
+  // else
+  {
+    beep(50 - distance / interval * 2, 20 + distance / 2, 5 + distance);
+    Serial.print(50 - distance / interval * 2);
+    Serial.print("\t");
+    Serial.print(20 + distance / 2);
+    Serial.print("\t");
+    Serial.println(5 + distance);
+    if (distance < 4) {
+      //   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
+      // }
+      // else if (distance < 10 + interval) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_RED);
+    } else if (distance < 10 + interval * 3) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_BLUE);
+    } else if (distance < 10 + interval * 5) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_GREEN);
+    } else if (distance < 10 + interval * 7) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_YELLOW);
+    } else if (distance < 10 + interval * 9) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_PURPLE);
+    } else if (distance < 10 + interval * 11) {
+      ultrasonic.SetRgbColor(E_RGB_ALL, RGB_WHITE);
+    }
+    // else {
+    //   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
+    // }
+  }
 }

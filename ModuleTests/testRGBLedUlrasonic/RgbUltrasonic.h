@@ -4,6 +4,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <Arduino.h>
 // #include "RGBLed.h"
+#include <Adafruit_NeoPixel.h>
 #define UL_LIMIT_MIN 5
 #define UL_LIMIT_MID 10
 #define UL_LIMIT_MAX 400
@@ -38,13 +39,14 @@ class RgbUltrasonic {
 private:
   byte SignalPin, RgbPin;
 public:
-  // RGBLed *mRgb;
+  Adafruit_NeoPixel *mRgb;
   float FrontDistance;
   RgbUltrasonic(byte signal_pin, byte rgb_pin);
   float GetUltrasonicDistance(void);
   int measurementInterval;
   long lastMeasurementTime;
-  // void SetRgbColor(E_RGB_INDEX index, long Color);
+  void SetupLED();
+  void SetRgbColor(E_RGB_INDEX index, long Color);
   // void SetRgbEffect(E_RGB_INDEX index, long Color, uint8_t effect);
 };
 #endif
