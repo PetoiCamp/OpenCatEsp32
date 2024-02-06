@@ -39,16 +39,15 @@ void read_ultrasonic() {
         ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
     } else if (distance < 2) {
       token = T_SKILL;
-      strcpy(newCmd, "bk");
-      newCmdIdx = 6;
-      ultraInterval = 2000;
+      tQueue->addTask('k', "bk", 1500);
       randomInterval = 5000;
     } else if (distance < 4) {
       if (!manualEyeColorQ)
         ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
       meow(rand() % 3 + 1, distance * 2);
       token = T_INDEXED_SIMULTANEOUS_BIN;
-      int allRand[] = { 0, currentAng[0] + rand() % 20 - 10, 1, currentAng[1] + rand() % 20 - 10, 2, currentAng[2] + rand() % 80 - 40 };
+      int amplitude = 5;
+      int allRand[] = { 0, currentAng[0] + rand() % 20 - 10, 1, currentAng[1] + rand() % (2 * amplitude) - amplitude, 2, currentAng[2] + rand() % (amplitude * 4) - amplitude * 2 };
       cmdLen = 6;
       for (byte i = 0; i < cmdLen; i++)
         newCmd[i] = allRand[i];
@@ -57,9 +56,7 @@ void read_ultrasonic() {
     } else if (distance < 6) {
       if (!manualEyeColorQ)
         ultrasonic.SetRgbColor(E_RGB_ALL, RGB_RED);
-      token = 'k';
-      strcpy(newCmd, "sit");
-      newCmdIdx = 6;
+      tQueue->addTask('k', "sit", 2000);
     }
 
     else {  //6~40

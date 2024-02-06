@@ -84,7 +84,7 @@ void readSignal() {
     read_camera();
 #endif
 #ifdef ULTRASONIC
-    // read_ultrasonic();
+    read_ultrasonic();
 #endif
 #ifdef GESTURE
     read_gesture();
