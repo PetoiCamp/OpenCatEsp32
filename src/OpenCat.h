@@ -451,9 +451,9 @@ int slope = 1;
 #ifdef VOICE
 #include "voice.h"
 #endif
-#ifdef ULTRASONIC
+// #ifdef ULTRASONIC
 #include "ultrasonic.h"
-#endif
+// #endif
 #ifdef GESTURE
 #include "gesture.h"
 #endif
@@ -535,9 +535,9 @@ void initRobot() {
 #ifdef CAMERA
   cameraSetup();
 #endif
-#ifdef ULTRASONIC
+// #ifdef ULTRASONIC
   rgbUltrasonicSetup();
-#endif
+// #endif
 #ifdef GESTURE
   gestureSetup();
 #endif

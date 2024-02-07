@@ -291,7 +291,7 @@ void reaction() {
           playMelody(melody1, sizeof(melody1) / 2);
           break;
         }
-#ifdef ULTRASONIC
+// #ifdef ULTRASONIC
       case T_COLOR:
         {
           if (cmdLen < 2)  // a single 'C' will turn off the manual color mode
@@ -303,7 +303,7 @@ void reaction() {
           }
           break;
         }
-#endif
+// #endif
       case ';':
         {
           setServoP(P_SOFT);
