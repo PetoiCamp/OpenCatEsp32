@@ -77,17 +77,24 @@ public:
   }
   void SetRgbColor(E_RGB_INDEX index, long Color) {
     if (index == E_RGB_ALL)
-      for (byte i = 0; i < 6; i++)
+      for (byte i = 0; i < 6; i++) {
+        mRgb->setPixelColor(i, 0);
+        mRgb->show(); //the light has to be refreshed
         mRgb->setPixelColor(i, Color);
+      }
     else if (index == E_RGB_RIGHT) {
-      mRgb->setPixelColor(0, Color);
-      mRgb->setPixelColor(1, Color);
-      mRgb->setPixelColor(2, Color);
+      for (byte i = 0; i < 3; i++) {
+        mRgb->setPixelColor(i, 0);
+        mRgb->show();
+        mRgb->setPixelColor(i, Color);
+      }
 
     } else if (index == E_RGB_LEFT) {
-      mRgb->setPixelColor(3, Color);
-      mRgb->setPixelColor(4, Color);
-      mRgb->setPixelColor(5, Color);
+      for (byte i = 3; i < 6; i++) {
+        mRgb->setPixelColor(i, 0);
+        mRgb->show();
+        mRgb->setPixelColor(i, Color);
+      }
     }
     mRgb->show();
   }
@@ -106,7 +113,7 @@ public:
         }
         for (byte i = 255; i >= 5; i--) {
           //                SetRgbColor(index, (i<<16)|(i<<8)|i);
-          long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));
+          long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));  //avoid the light completely turning off
           SetRgbColor(index, color);
           delay((i < 18) ? 18 : (256 / i));
         }
@@ -141,15 +148,14 @@ public:
         mRgb->setPixelColor(5, 0);
         mRgb->show();
         delay(100);
-        mRgb->setPixelColor(1, Color);
-        mRgb->setPixelColor(4, Color);
-        mRgb->show();
+        SetRgbColor(E_RGB_ALL, Color);
         break;
       case E_EFFECT_FLASH:
         for (byte i = 0; i < 3; i++) {
           SetRgbColor(E_RGB_ALL, 0);
-          delay(20);
+          delay(100);
           SetRgbColor(E_RGB_ALL, Color);
+          delay(100);
         }
         break;
       default:
