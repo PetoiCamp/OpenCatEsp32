@@ -15,7 +15,7 @@ int ultraInterval = 1000;
 int distance;
 void rgbUltrasonicSetup() {
   ultrasonic.SetupLED();
-  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_BLUE, E_EFFECT_BREATHING);
+  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
 }
 
 void read_ultrasonic() {
