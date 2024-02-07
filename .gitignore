@@ -1,8 +1,7 @@
-.vscode/*
+.vscode
 *.docx
 *.rar
 *.DS_Store
 *.cfg
 *.svd
 debug_custom.json
-src/.vscode/*
