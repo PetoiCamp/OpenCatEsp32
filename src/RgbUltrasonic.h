@@ -105,17 +105,17 @@ public:
         for (byte c = 0; c < 3; c++) {
           rgb[c] = Color >> (2 - c) * 8 & 0x0000FF;
         }
-        for (byte i = 5; i < 255; i++) {
+        for (byte i = 5; i < 255; i+=5) {
           //                SetRgbColor(index, (i<<16)|(i<<8)|i);
           long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));
           SetRgbColor(index, color);
-          delay((i < 18) ? 18 : (256 / i));
+          delay((i < 20) ? 10 : (256 / i));
         }
-        for (byte i = 255; i >= 5; i--) {
+        for (byte i = 255; i >= 5; i-=5) {
           //                SetRgbColor(index, (i<<16)|(i<<8)|i);
           long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));  //avoid the light completely turning off
           SetRgbColor(index, color);
-          delay((i < 18) ? 18 : (256 / i));
+          delay((i < 20) ? 10 : (256 / i));
         }
         // for (long i = 50; i >= 5; i--) {
         //   SetRgbColor(index, (i << 16) | (i << 8) | i);
