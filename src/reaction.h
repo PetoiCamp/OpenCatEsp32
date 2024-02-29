@@ -579,6 +579,25 @@ void reaction() {
           }
           break;
         }
+      case EXTENSION:
+        {
+          switch (newCmd[0]) {
+#ifdef VOICE
+            case EXTENSION_VOICE:
+              {
+                set_voice();
+                break;
+              }
+#endif
+            case EXTENSION_ULTRASONIC:
+              {
+                PT('=');
+                PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                break;
+              }
+          }
+          break;
+        }
       case T_LISTED_BIN:  // list of all 16 joint: angle0, angle2,... angle15 (binary encoding)
         {
           transform((int8_t *)newCmd, 1, transformSpeed);  // need to add angleDataRatio if the angles are large

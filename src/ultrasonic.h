@@ -20,7 +20,7 @@ void rgbUltrasonicSetup() {
   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
 }
 
-void read_ultrasonic() {
+void readRGBultrasonic() {
   if (millis() - ultraTimer > ultraInterval) {  //|| token == 'k' && millis() - ultraTimer > 3000) {
     ultraTimer = millis();
     ultraInterval = 0;
@@ -97,4 +97,25 @@ void read_ultrasonic() {
       randomInterval = 5000;
     }
   }
+}
+
+float readUltrasonic(int trigger, int echo = -1) {  //give two parameters for the traditional ultrasonic sensor
+                                                    //give one parameter for the one pin ultrasonic sensor that shares the trigger and echo pins
+  if (echo == -1)
+    echo = trigger;
+  int longestDistance = 200;  // 200 cm = 2 meters
+  float farTime = longestDistance * 2 / 0.034;
+  pinMode(trigger, OUTPUT);
+
+  digitalWrite(trigger, LOW);
+  delayMicroseconds(2);
+  // Sets the trigPin on HIGH state for 10 micro seconds
+  digitalWrite(trigger, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigger, LOW);
+  pinMode(echo, INPUT);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  long duration = pulseIn(echo, HIGH, farTime);
+  // Calculating the distance
+  return duration * 0.034 / 2;  // 10^-6 * 34000 cm/s
 }

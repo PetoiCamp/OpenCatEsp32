@@ -50,15 +50,14 @@ void voiceSetup() {
   PTL(listLength);
 }
 
-void read_voice() {
-  if (token == 'X' && newCmd[0] == 'A') {  // send some control command directly to the module
-                                           // XAa: switch English
-                                           // XAb: switch Chinese
-                                           // XAc: turn on the sound response
-                                           // XAd: turn off the sound response
-                                           // XAe: start learning
-                                           // XAf: stop learning
-                                           // XAg: clear the learning data
+void set_voice(){  // send some control command directly to the module
+                   // XAa: switch English
+                   // XAb: switch Chinese
+                   // XAc: turn on the sound response
+                   // XAd: turn off the sound response
+                   // XAe: start learning
+                   // XAf: stop learning
+                   // XAg: clear the learning data
     byte c = 0;
     while (newCmd[c++] != '~')
       ;
@@ -79,8 +78,8 @@ void read_voice() {
     printToAllPorts('X');  //the blue read runs on a separate core.
     //if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
     resetCmd();
-  }
-
+}
+void read_voice() {
   if (Serial2.available()) {
     String raw = Serial2.readStringUntil('\n');
     PTL(raw);
