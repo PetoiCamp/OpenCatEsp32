@@ -196,7 +196,7 @@ void reaction() {
       printToAllPorts('p');
     }
 #ifdef ESP_PWM
-    if (token != T_SERVO_FEEDBACK && measureServoPin != -1) {
+    if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
       attachAllESPServos();
       measureServoPin = -1;
     }
@@ -291,7 +291,7 @@ void reaction() {
           playMelody(melody1, sizeof(melody1) / 2);
           break;
         }
-// #ifdef ULTRASONIC
+        // #ifdef ULTRASONIC
       case T_COLOR:
         {
           if (cmdLen < 2)  // a single 'C' will turn off the manual color mode
@@ -303,7 +303,7 @@ void reaction() {
           }
           break;
         }
-// #endif
+        // #endif
       case ';':
         {
           setServoP(P_SOFT);
@@ -350,10 +350,11 @@ void reaction() {
 #endif
 #ifdef T_SERVO_FEEDBACK
       case T_SERVO_FEEDBACK:
+      case T_SERVO_FOLLOW:
 #endif
-      case T_TILT:  //tilt the robot, format: t axis angle. 0:yaw, 1:pitch, 2:roll
-      case T_MEOW:  //meow
-      case T_BEEP:  //beep(tone, duration): tone 0 is pause, duration range is 0~255
+      case T_TILT:  // tilt the robot, format: t axis angle. 0:yaw, 1:pitch, 2:roll
+      case T_MEOW:  // meow
+      case T_BEEP:  // beep(tone, duration): tone 0 is pause, duration range is 0~255
 #ifdef T_TUNER
       case T_TUNER:
 #endif
@@ -446,6 +447,8 @@ void reaction() {
                   PTL(feedbackSignal);
                 } else
                   measureServoPin = target[0];
+              } else if (token == T_SERVO_FOLLOW) {
+                measureServoPin = 16;
               }
 #endif
 #ifdef GYRO_PIN
@@ -465,9 +468,10 @@ void reaction() {
                     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
                     playMelody(volumeTest, sizeof(volumeTest) / 2);
                   }
-                } else if (inLen == 1) {                                                                    //change the buzzer's volume
-                  buzzerVolume = max(0, min(10, target[0]));                                                //in scale of 0~10
-                  if (soundState ^ (buzzerVolume > 0)) printToAllPorts(buzzerVolume ? "Unmute" : "Muted");  //only print if the soundState changes
+                } else if (inLen == 1) {                      // change the buzzer's volume
+                  buzzerVolume = max(0, min(10, target[0]));  // in scale of 0~10
+                  if (soundState ^ (buzzerVolume > 0))
+                    printToAllPorts(buzzerVolume ? "Unmute" : "Muted");  // only print if the soundState changes
                   soundState = buzzerVolume;
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
                   i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
@@ -720,4 +724,11 @@ void reaction() {
     }
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
+  else if (token == T_SERVO_FOLLOW) {
+    servoFollow();
+    // delay(10);
+    // attachAllESPServos();
+    // delay(10);
+    // transform((int8_t *)newCmd, 1, transformSpeed);
+  }
 }

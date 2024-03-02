@@ -15,6 +15,7 @@ ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
 int feedbackSignal = FEEDBACK_SIGNAL;
 int waitTimeForResponse = 10000;
 int maxPulseWidth = 2600;
+bool movedJoint[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Servo servo[PWM_NUM];  // create servo object to control a servo
 // 16 servo objects can be created on the ESP32
@@ -142,7 +143,7 @@ void setServoP(unsigned int p) {
 
 int measurePulseWidth(uint8_t pwmReadPin) {
   long start = micros();
-  while (!digitalRead(pwmReadPin)) {  //等待高电平
+  while (!digitalRead(pwmReadPin)) {  // 等待高电平
     if (micros() - start > waitTimeForResponse)
       return -1;
   }
@@ -154,7 +155,8 @@ int measurePulseWidth(uint8_t pwmReadPin) {
   return (micros() - t1);
 }
 
-float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index that may shift by 4
+float readFeedback(byte s)  // returns the pulse width in microseconds
+{                           // s is not the joint index, but the pwm pin index that may shift by 4
   ServoModel *model;
   byte modelIndex = s < 4 ? s : s + 4;
   switch (servoModelList[modelIndex]) {
@@ -169,14 +171,14 @@ float readFeedback(byte s) {  //s is not the joint index, but the pwm pin index 
       break;
   }
   servo[s].attach(PWM_pin[s], model);
-  delay(12);                                   //it takes time to attach
+  delay(12);                                   // it takes time to attach
   servo[s].writeMicroseconds(feedbackSignal);  // set servo to mid-point
                                                // myservo.writeMicroseconds(feedbackSignal);  // set servo to mid-point
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
   int n = nPulse;
-  for (byte i = 0; i < nPulse; i++) {  //测三次求平均值
+  for (byte i = 0; i < nPulse; i++) {  // 测三次求平均值
     int temp = measurePulseWidth(PWM_pin[s]);
     if (temp < 0) {
       n--;
@@ -197,22 +199,59 @@ void servoFeedback(int8_t index = 16) {
     byte i = index < 4 ? index : index - 4;
     int feedback = readFeedback(i);
     if (feedback > -1) {
+      float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[index]) / rotationDirection[index];
       PTT(index, '\t')
-      PTD((servo[i].pulseToAngle(feedback) - calibratedZeroPosition[index]) / rotationDirection[index], 1);
+      PTD(convertedAngle, 1);
       PTL();
+      currentAng[index] = round(convertedAngle);
     }
   } else {
+    int readAngles[16];
     for (byte i = 0; i < 12; i++) {
       byte jointIdx = i < 4 ? i : i + 4;
+      movedJoint[jointIdx] = 0;
       int feedback = readFeedback(i);
-      if (feedback > -1) {  //duty[i] = calibratedZeroPosition[i] + angle * rotationDirection[i];
-                            //angle = (duty[i] - calibratedZeroPosition[i])/rotationDirection[i];
-        PTD((servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx], 1);
+      if (feedback > -1) {  // duty[i] = calibratedZeroPosition[i] + angle * rotationDirection[i];
+        // angle = (duty[i] - calibratedZeroPosition[i])/rotationDirection[i];
+        float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx];
+        PTD(convertedAngle, 1);
         PT('\t');
+        readAngles[jointIdx] = round(convertedAngle);
+        if (abs(currentAng[jointIdx] - readAngles[jointIdx]) > 1) {
+          movedJoint[jointIdx] = 1;
+        }
+        currentAng[jointIdx] = readAngles[jointIdx];
       }
     }
     PTL();
   }
+  PT("fd");
+  printList(movedJoint);
+}
+void servoFollow() {
+  servoFeedback();
+  PT("fl");
+  printList(movedJoint);
+  for (byte i = 0; i < 12; i++) {
+    byte jointIdx = i < 4 ? i : i + 4;
+    if (movedJoint[jointIdx]) {
+      PTH("moved ", jointIdx);
+      for (byte j = 0; j < 4; j++)
+        if (j != jointIdx % 4){
+          PT((jointIdx / 4) * 4 + j);
+          PT('\t');
+          newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx];
+          }
+        else{
+          PT('(');
+          newCmd[jointIdx] = currentAng[jointIdx];
+          PT(')');
+        }
+    }
+  }
+  PTL();
+  PT("target ");
+  printList((int8_t *)newCmd);
 }
 
 void allRotate() {
@@ -221,7 +260,7 @@ void allRotate() {
     for (int s = 0; s < PWM_NUM; s++) {
 #ifdef ESP_PWM
       servo[s].write(pos);  // tell servo to go to position in variable 'pos'
-#else                       //BiBoard2
+#else                       // BiBoard2
       pwm.writeAngle(s, pos);
 #endif
       delay(1);  // waits 15ms for the servo to reach the position
@@ -233,8 +272,8 @@ void allRotate() {
     for (int s = 0; s < PWM_NUM; s++) {
 #ifdef ESP_PWM
       servo[s].write(pos);  // tell servo to go to position in variable 'pos'
-#else                       //BiBoard2
-      pwm.writeAngle(s, pos);  //may go out of range. check!
+#else                       // BiBoard2
+      pwm.writeAngle(s, pos);  // may go out of range. check!
 #endif
       delay(1);  // waits 15ms for the servo to reach the position
       Serial.println(pos);

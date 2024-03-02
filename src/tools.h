@@ -191,7 +191,7 @@ void resetCmd() {
   // printCmd();
   lastToken = token;
   newCmdIdx = 0;
-  if (token != T_SKILL && token != T_CALIBRATE && token != T_SERVO_FEEDBACK)
+  if (token != T_SKILL && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
