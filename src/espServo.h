@@ -15,22 +15,23 @@ ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
 int feedbackSignal = FEEDBACK_SIGNAL;
 int waitTimeForResponse = 10000;
 int maxPulseWidth = 2600;
-bool movedJoint[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Servo servo[PWM_NUM];  // create servo object to control a servo
                        // 16 servo objects can be created on the ESP32
 ServoModel *modelObj[PWM_NUM];
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33
 // Possible PWM GPIO pins on the ESP32-S2: 0(used by on-board button),1-17,18(used by on-board LED),19-21,26,33-42
-
+int8_t movedJoint[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int8_t movedCountDown = 3; // allow the driving servo to pause in the middle rather than attaching its PWM instantly
+bool servoAttached[PWM_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 int measureServoPin = -1;
 byte nPulse = 3;
 
 void attachAllESPServos() {
   PTLF("Calibrated Zero Position");
-
   for (int c = 0; c < PWM_NUM; c++) {
     byte s = c;  // attachOrder[c];
+    PTH("atached", servo[s].attached());
     int joint;
     if (WALKING_DOF == 8)
       joint = (s > 3) ? s + 4 : s;
@@ -52,13 +53,20 @@ void attachAllESPServos() {
     calibratedZeroPosition[joint] = zeroPosition[joint] + float(servoCalib[joint]) * rotationDirection[joint];
     PT(calibratedZeroPosition[joint]);
     PT('\t');
+    PTH("atached", servo[s].attached());
   }
   PTL();
 }
 void reAttachAllServos() {
-  for (int s = 0; s < PWM_NUM; s++)
-    servo[s].attach(PWM_pin[s], modelObj[s]);
-  // delay(12);
+  for (int c = 0; c < PWM_NUM; c++)
+    if (!servo[c].attached()) {
+      byte s = c < 4 ? c : c + 4;
+      if (!movedJoint[s]) {
+        PTH("Re-attach PWM ", c);
+        servo[c].attach(PWM_pin[c], modelObj[c]);
+        delay(12);
+      }
+    }
 }
 
 void servoSetup() {
@@ -166,6 +174,7 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
   delay(12);  // it takes time to attach
   servo[s].writeMicroseconds(feedbackSignal);
   servo[s].detach();
+  servoAttached[s] = false;
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
   int n = nPulse;
@@ -186,53 +195,59 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
 }
 
 void servoFeedback(int8_t index = 16) {
-  if (index > -1 && index < 16) {
-    byte i = index < 4 ? index : index - 4;
+  int readAngles[16];
+  byte begin = 0, end = 15;
+  if (index > -1 && index < 16)
+    begin = end = index;  //
+  for (byte jointIdx = begin; jointIdx <= end; jointIdx++) {
+    if (jointIdx == 4)  //skip the shoulder roll joints
+      jointIdx += 4;
+    byte i = jointIdx < 4 ? jointIdx : jointIdx - 4;
     int feedback = readFeedback(i);
     if (feedback > -1) {
-      float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[index]) / rotationDirection[index];
-      PTT(index, '\t')
+      float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx];
+      if (begin == end)
+        PTT(jointIdx, '\t')
       PTD(convertedAngle, 1);
-      PTL();
-      currentAng[index] = round(convertedAngle);
+      if (begin != end)
+        PT('\t');
+      readAngles[jointIdx] = round(convertedAngle);
+      if (fabs(currentAng[jointIdx] - convertedAngle) > 1) {  //allow smaller tolarance for driving joint
+                                                              //allow larger tolerance for driven joint
+        movedJoint[jointIdx] = movedCountDown;
+      } else if (movedJoint[jointIdx])
+        movedJoint[jointIdx]--;
+      currentAng[jointIdx] = readAngles[jointIdx];
     }
-  } else {
-    int readAngles[16];
-    for (byte i = 0; i < 12; i++) {
-      byte jointIdx = i < 4 ? i : i + 4;
-      movedJoint[jointIdx] = 0;
-      int feedback = readFeedback(i);
-      if (feedback > -1) {  // duty[i] = calibratedZeroPosition[i] + angle * rotationDirection[i];
-        // angle = (duty[i] - calibratedZeroPosition[i])/rotationDirection[i];
-        float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx];
-        // PTD(convertedAngle, 1);
-        // PT('\t');
-        readAngles[jointIdx] = round(convertedAngle);
-        if (abs(currentAng[jointIdx] - readAngles[jointIdx]) > 1) {
-          movedJoint[jointIdx] = 1;
-        }
-        currentAng[jointIdx] = readAngles[jointIdx];
-      }
-    }
-    // PTL();
   }
+  PTL();
 }
 bool servoFollow() {
-  bool moved = false;
-  servoFeedback(measureServoPin);
+  bool checkAll = true, moved = false;
+  byte movedJointList[DOF];
+  byte movedJointCount = 0;
+  for (byte i = 0; i < PWM_NUM; i++) {  //decide if to check all servos.
+    byte jointIdx = i < 4 ? i : i + 4;
+    if (movedJoint[jointIdx]) {  //only the previouslly moved joints will be checked. if it's not moved, its state will be reset to false.
+      servoFeedback(jointIdx);
+      checkAll = false;
+      movedJointList[movedJointCount++] = jointIdx;
+    }
+  }
+  if (checkAll) {  //if no joint has been moved, all joints will be checked
+    servoFeedback(16);
+  }
   for (byte jointIdx = 0; jointIdx < 16; jointIdx++)
     newCmd[jointIdx] = currentAng[jointIdx];
-  for (byte i = 0; i < 12; i++) {
-    byte jointIdx = i < 4 ? i : i + 4;
-    if (movedJoint[jointIdx]) {
-      for (byte j = 0; j < 4; j++)
-        if (j != jointIdx % 4) {
-          newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx];
-        } else {
-          newCmd[jointIdx] = currentAng[jointIdx];
-        }
-      moved = true;
-    }
+  for (byte i = 0; i < movedJointCount; i++) {
+    byte jointIdx = movedJointList[i];
+    for (byte j = 0; j < 4; j++)
+      if (j != jointIdx % 4) {
+        newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx];
+      } else {
+        newCmd[jointIdx] = currentAng[jointIdx];
+      }
+    moved = true;
   }
   return moved;
 }

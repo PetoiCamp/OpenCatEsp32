@@ -187,7 +187,7 @@ void reaction() {
       hardServoQ = false;
 #endif
     }
-    if ((lastToken == T_CALIBRATE || lastToken == T_REST || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
+    if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
       gyroBalanceQ = true;
       printToAllPorts('G');
     }
@@ -199,6 +199,8 @@ void reaction() {
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
       reAttachAllServos();
       measureServoPin = -1;
+      for (byte i = 0; i < DOF; i++)
+        movedJoint[i] = 0;
     }
 #endif
 
@@ -438,6 +440,7 @@ void reaction() {
 #endif
 #ifdef T_SERVO_FEEDBACK
               else if (token == T_SERVO_FEEDBACK) {
+                gyroBalanceQ = false;
                 // measureServoPin = (inLen == 1) ? target[0] : 16;
                 if (inLen == 0)
                   measureServoPin = 16;
@@ -448,6 +451,7 @@ void reaction() {
                 } else
                   measureServoPin = target[0];
               } else if (token == T_SERVO_FOLLOW) {
+                gyroBalanceQ = false;
                 measureServoPin = 16;
               }
 #endif
@@ -725,9 +729,9 @@ void reaction() {
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {
-    if (servoFollow()) {//don't move the joints if no manual movement is detected
+    if (servoFollow()) {  //don't move the joints if no manual movement is detected
       reAttachAllServos();
-      transform((int8_t *)newCmd, 1, 0);
+      transform((int8_t *)newCmd, 1, 2);
     }
   }
 }
