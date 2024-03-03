@@ -18,8 +18,8 @@ int maxPulseWidth = 2600;
 bool movedJoint[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Servo servo[PWM_NUM];  // create servo object to control a servo
-// 16 servo objects can be created on the ESP32
-
+                       // 16 servo objects can be created on the ESP32
+ServoModel *modelObj[PWM_NUM];
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33
 // Possible PWM GPIO pins on the ESP32-S2: 0(used by on-board button),1-17,18(used by on-board LED),19-21,26,33-42
 
@@ -28,7 +28,7 @@ byte nPulse = 3;
 
 void attachAllESPServos() {
   PTLF("Calibrated Zero Position");
-  ServoModel *model;
+
   for (int c = 0; c < PWM_NUM; c++) {
     byte s = c;  // attachOrder[c];
     int joint;
@@ -38,22 +38,27 @@ void attachAllESPServos() {
       joint = s + 4;
     switch (servoModelList[joint]) {
       case G41:
-        model = &servoG41;
+        modelObj[s] = &servoG41;
         break;
       case P1S:
-        model = &servoP1S;
+        modelObj[s] = &servoP1S;
         break;
       case P2K:
-        model = &servoP1L;
+        modelObj[s] = &servoP1L;
         break;
     }
-    servo[s].attach(PWM_pin[s], model);
-    zeroPosition[joint] = model->getAngleRange() / 2 + float(middleShift[joint]) * rotationDirection[joint];
+    servo[s].attach(PWM_pin[s], modelObj[s]);
+    zeroPosition[joint] = modelObj[s]->getAngleRange() / 2 + float(middleShift[joint]) * rotationDirection[joint];
     calibratedZeroPosition[joint] = zeroPosition[joint] + float(servoCalib[joint]) * rotationDirection[joint];
     PT(calibratedZeroPosition[joint]);
     PT('\t');
   }
   PTL();
+}
+void reAttachAllServos() {
+  for (int s = 0; s < PWM_NUM; s++)
+    servo[s].attach(PWM_pin[s], modelObj[s]);
+  // delay(12);
 }
 
 void servoSetup() {
@@ -157,23 +162,9 @@ int measurePulseWidth(uint8_t pwmReadPin) {
 
 float readFeedback(byte s)  // returns the pulse width in microseconds
 {                           // s is not the joint index, but the pwm pin index that may shift by 4
-  ServoModel *model;
-  byte modelIndex = s < 4 ? s : s + 4;
-  switch (servoModelList[modelIndex]) {
-    case G41:
-      model = &servoG41;
-      break;
-    case P1S:
-      model = &servoP1S;
-      break;
-    case P2K:
-      model = &servoP1L;
-      break;
-  }
-  servo[s].attach(PWM_pin[s], model);
-  delay(12);                                   // it takes time to attach
-  servo[s].writeMicroseconds(feedbackSignal);  // set servo to mid-point
-                                               // myservo.writeMicroseconds(feedbackSignal);  // set servo to mid-point
+  servo[s].attach(PWM_pin[s], modelObj[s]);
+  delay(12);  // it takes time to attach
+  servo[s].writeMicroseconds(feedbackSignal);
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
@@ -225,33 +216,26 @@ void servoFeedback(int8_t index = 16) {
     }
     PTL();
   }
-  PT("fd");
-  printList(movedJoint);
 }
-void servoFollow() {
-  servoFeedback();
-  PT("fl");
-  printList(movedJoint);
+bool servoFollow() {
+  bool moved = false;
+  servoFeedback(measureServoPin);
+  for (byte jointIdx = 0; jointIdx < 16; jointIdx++)
+    newCmd[jointIdx] = currentAng[jointIdx];
   for (byte i = 0; i < 12; i++) {
     byte jointIdx = i < 4 ? i : i + 4;
     if (movedJoint[jointIdx]) {
-      PTH("moved ", jointIdx);
       for (byte j = 0; j < 4; j++)
-        if (j != jointIdx % 4){
-          PT((jointIdx / 4) * 4 + j);
-          PT('\t');
+        if (j != jointIdx % 4) {
           newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx];
-          }
-        else{
-          PT('(');
+        } else {
           newCmd[jointIdx] = currentAng[jointIdx];
-          PT(')');
         }
+      moved = true;
     }
   }
   PTL();
-  PT("target ");
-  printList((int8_t *)newCmd);
+  return moved;
 }
 
 void allRotate() {

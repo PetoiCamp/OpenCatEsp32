@@ -197,7 +197,7 @@ void reaction() {
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
-      attachAllESPServos();
+      reAttachAllServos();
       measureServoPin = -1;
     }
 #endif
@@ -725,10 +725,9 @@ void reaction() {
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {
-    servoFollow();
-    // delay(10);
-    // attachAllESPServos();
-    // delay(10);
-    // transform((int8_t *)newCmd, 1, transformSpeed);
+    if (servoFollow()) {//don't move the joints if no manual movement is detected
+      reAttachAllServos();
+      transform((int8_t *)newCmd, 1, 0);
+    }
   }
 }

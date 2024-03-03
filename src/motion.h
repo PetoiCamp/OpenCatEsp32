@@ -151,6 +151,8 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef ESP_PWM
+        if(movedJoint[i])// don't drive the servo if it's being moved by hand in the follow function. 
+          continue;
         if (manualHeadQ && i < HEAD_GROUP_LEN && token == T_SKILL)  // the head motion will be handled by skill.perform()
           continue;
         if (WALKING_DOF == 8 && i > 3 && i < 8)
