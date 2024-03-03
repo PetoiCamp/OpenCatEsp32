@@ -205,8 +205,8 @@ void servoFeedback(int8_t index = 16) {
       if (feedback > -1) {  // duty[i] = calibratedZeroPosition[i] + angle * rotationDirection[i];
         // angle = (duty[i] - calibratedZeroPosition[i])/rotationDirection[i];
         float convertedAngle = (servo[i].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx];
-        PTD(convertedAngle, 1);
-        PT('\t');
+        // PTD(convertedAngle, 1);
+        // PT('\t');
         readAngles[jointIdx] = round(convertedAngle);
         if (abs(currentAng[jointIdx] - readAngles[jointIdx]) > 1) {
           movedJoint[jointIdx] = 1;
@@ -214,7 +214,7 @@ void servoFeedback(int8_t index = 16) {
         currentAng[jointIdx] = readAngles[jointIdx];
       }
     }
-    PTL();
+    // PTL();
   }
 }
 bool servoFollow() {
@@ -234,7 +234,6 @@ bool servoFollow() {
       moved = true;
     }
   }
-  PTL();
   return moved;
 }
 

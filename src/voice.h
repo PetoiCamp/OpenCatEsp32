@@ -25,18 +25,18 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-  "T",                                                                     //call the last skill data sent by the Skill Composer
-  "kpu1",                                                                  //single-handed pushups
-  "m0 80 0 -80 0 0",                                                       //wave head
-  "kmw",                                                                   //moonwalk
+  "T",                                                                     // call the last skill data sent by the Skill Composer
+  "kpu1",                                                                  // single-handed pushups
+  "m0 80 0 -80 0 0",                                                       // wave head
+  "kmw",                                                                   // moonwalk
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
-  14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  //twinkle star
+  14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
   "6th",
   "7th",
   "8th",
   "9th",
-  "10th"  //define up to 10 customized commands.
+  "10th"  // define up to 10 customized commands.
 };
 int listLength = 0;
 bool enableVoiceQ = true;
@@ -50,43 +50,43 @@ void voiceSetup() {
   PTL(listLength);
 }
 
-void set_voice(){  // send some control command directly to the module
-                   // XAa: switch English
-                   // XAb: switch Chinese
-                   // XAc: turn on the sound response
-                   // XAd: turn off the sound response
-                   // XAe: start learning
-                   // XAf: stop learning
-                   // XAg: clear the learning data
-    byte c = 0;
-    while (newCmd[c++] != '~')
-      ;
-    newCmd[c - 1] = '\0';
-    // Serial.print('X');
-    // Serial.println(newCmd);
-    Serial2.print('X');
-    Serial2.println(newCmd);
-    while (Serial2.available())
-      PT(Serial2.read());
-    PTL();
-    if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
-      // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
-      enableVoiceQ = true;
-    else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
-      // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
-      enableVoiceQ = false;
-    printToAllPorts('X');  //the blue read runs on a separate core.
-    //if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
-    resetCmd();
+void set_voice() {  // send some control command directly to the module
+  // XAa: switch English
+  // XAb: switch Chinese
+  // XAc: turn on the sound response
+  // XAd: turn off the sound response
+  // XAe: start learning
+  // XAf: stop learning
+  // XAg: clear the learning data
+  byte c = 0;
+  while (newCmd[c++] != '~')
+    ;
+  newCmd[c - 1] = '\0';
+  // Serial.print('X');
+  // Serial.println(newCmd);
+  Serial2.print('X');
+  Serial2.println(newCmd);
+  while (Serial2.available())
+    PT(Serial2.read());
+  PTL();
+  if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+    // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
+    enableVoiceQ = true;
+  else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+    // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
+    enableVoiceQ = false;
+  printToAllPorts('X');  // the blue read runs on a separate core.
+  // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
+  resetCmd();
 }
 void read_voice() {
   if (Serial2.available()) {
     String raw = Serial2.readStringUntil('\n');
     PTL(raw);
-    byte index = (byte)raw[2];  //interpret the 3rd byte as integer
+    byte index = (byte)raw[2];  // interpret the 3rd byte as integer
     int shift = -1;
     if (index > 10 && index < 61) {
-      if (index < 21) {  //11 ~ 20 are customized commands, and their indexes should be shifted by 11
+      if (index < 21) {  // 11 ~ 20 are customized commands, and their indexes should be shifted by 11
         index -= 11;
         PT(index);
         PT(' ');
@@ -97,8 +97,8 @@ void read_voice() {
         } else {
           PTLF("Undefined!");
         }
-      } else if (index < 61) {  //21 ~ 60 are preset commands, and their indexes should be shifted by 21.
-                                //But we don't need to use their indexes.
+      } else if (index < 61) {  // 21 ~ 60 are preset commands, and their indexes should be shifted by 21.
+                                // But we don't need to use their indexes.
 #ifdef VOICE_MODULE_SAMPLE
         token = T_SKILL;
         shift = 3;
@@ -110,30 +110,32 @@ void read_voice() {
       if (enableVoiceQ) {
         const char *cmd = raw.c_str() + shift;
         tQueue->addTask(token, shift > 0 ? cmd : "", 2000);
-        char end = cmd[strlen(cmd) - 1];
-        if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
-          tQueue->addTask('k', "up");
+        if (strlen(cmd) > 0) {
+          char end = cmd[strlen(cmd) - 1];
+          if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
+            tQueue->addTask('k', "up");
+          }
         }
       }
     } else {
       switch (tolower(index)) {
-        case 'a':  //say "Bing-bing" to switch English /说“冰冰”切换英文
+        case 'a':  // say "Bing-bing" to switch English /说“冰冰”切换英文
           {
             PTLF("Switch English");
             break;
           }
-        case 'b':  //say "Di-di" to switch Chinese /说“滴滴”切换中文
+        case 'b':  // say "Di-di" to switch Chinese /说“滴滴”切换中文
           {
             PTLF("Switch Chinese");
             break;
           }
-        case 'c':  //say "play sound" to enable voice reactions / 说“打开音效”激活语音动作
+        case 'c':  // say "play sound" to enable voice reactions / 说“打开音效”激活语音动作
           {
             enableVoiceQ = true;
             PTLF("Turn on the audio response");
             break;
           }
-        case 'd':  //say "be quiet" to disable voice reactions / 说“安静点”禁用语音动作
+        case 'd':  // say "be quiet" to disable voice reactions / 说“安静点”禁用语音动作
           {
             enableVoiceQ = false;
             PTLF("Turn off the audio response");
