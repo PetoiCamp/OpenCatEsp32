@@ -22,8 +22,7 @@ ServoModel *modelObj[PWM_NUM];
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33
 // Possible PWM GPIO pins on the ESP32-S2: 0(used by on-board button),1-17,18(used by on-board LED),19-21,26,33-42
 int8_t movedJoint[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-int8_t movedCountDown = 3; // allow the driving servo to pause in the middle rather than attaching its PWM instantly
-bool servoAttached[PWM_NUM] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+int8_t movedCountDown = 3;  // allow the driving servo to pause in the middle rather than changing its state instantly
 int measureServoPin = -1;
 byte nPulse = 3;
 
@@ -31,7 +30,6 @@ void attachAllESPServos() {
   PTLF("Calibrated Zero Position");
   for (int c = 0; c < PWM_NUM; c++) {
     byte s = c;  // attachOrder[c];
-    PTH("atached", servo[s].attached());
     int joint;
     if (WALKING_DOF == 8)
       joint = (s > 3) ? s + 4 : s;
@@ -53,7 +51,6 @@ void attachAllESPServos() {
     calibratedZeroPosition[joint] = zeroPosition[joint] + float(servoCalib[joint]) * rotationDirection[joint];
     PT(calibratedZeroPosition[joint]);
     PT('\t');
-    PTH("atached", servo[s].attached());
   }
   PTL();
 }
@@ -62,11 +59,10 @@ void reAttachAllServos() {
     if (!servo[c].attached()) {
       byte s = c < 4 ? c : c + 4;
       if (!movedJoint[s]) {
-        PTH("Re-attach PWM ", c);
         servo[c].attach(PWM_pin[c], modelObj[c]);
-        delay(12);
       }
     }
+  delay(12);
 }
 
 void servoSetup() {
@@ -170,11 +166,11 @@ int measurePulseWidth(uint8_t pwmReadPin) {
 
 float readFeedback(byte s)  // returns the pulse width in microseconds
 {                           // s is not the joint index, but the pwm pin index that may shift by 4
-  servo[s].attach(PWM_pin[s], modelObj[s]);
-  delay(12);  // it takes time to attach
+  //if(!servo[s].attached())// adding this condition will cause servos to jig. why?
+  servo[s].attach(PWM_pin[s], modelObj[s]);  // sometimes servo[s].attach() is true, but it still needs to be attached. why there's no conflict?
+  delay(12);                                 // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
   servo[s].writeMicroseconds(feedbackSignal);
   servo[s].detach();
-  servoAttached[s] = false;
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
   int n = nPulse;
@@ -200,7 +196,7 @@ void servoFeedback(int8_t index = 16) {
   if (index > -1 && index < 16)
     begin = end = index;  //
   for (byte jointIdx = begin; jointIdx <= end; jointIdx++) {
-    if (jointIdx == 4)  //skip the shoulder roll joints
+    if (jointIdx == 4)  // skip the shoulder roll joints
       jointIdx += 4;
     byte i = jointIdx < 4 ? jointIdx : jointIdx - 4;
     int feedback = readFeedback(i);
@@ -212,10 +208,10 @@ void servoFeedback(int8_t index = 16) {
       if (begin != end)
         PT('\t');
       readAngles[jointIdx] = round(convertedAngle);
-      if (fabs(currentAng[jointIdx] - convertedAngle) > 1) {  //allow smaller tolarance for driving joint
-                                                              //allow larger tolerance for driven joint
+      if (fabs(currentAng[jointIdx] - convertedAngle) > (movedJoint[jointIdx] ? 1 : 2)) {  // allow smaller tolarance for driving joint
+                                                                                           // allow larger tolerance for driven joint
         movedJoint[jointIdx] = movedCountDown;
-      } else if (movedJoint[jointIdx])
+      } else if (movedJoint[jointIdx])  //if it's not moved, its state will be decreased until set to false.
         movedJoint[jointIdx]--;
       currentAng[jointIdx] = readAngles[jointIdx];
     }
@@ -226,15 +222,15 @@ bool servoFollow() {
   bool checkAll = true, moved = false;
   byte movedJointList[DOF];
   byte movedJointCount = 0;
-  for (byte i = 0; i < PWM_NUM; i++) {  //decide if to check all servos.
+  for (byte i = 0; i < PWM_NUM; i++) {  // decide if to check all servos.
     byte jointIdx = i < 4 ? i : i + 4;
-    if (movedJoint[jointIdx]) {  //only the previouslly moved joints will be checked. if it's not moved, its state will be reset to false.
+    if (movedJoint[jointIdx]) {  // only the previouslly moved joints will be checked.
       servoFeedback(jointIdx);
       checkAll = false;
       movedJointList[movedJointCount++] = jointIdx;
     }
   }
-  if (checkAll) {  //if no joint has been moved, all joints will be checked
+  if (checkAll) {  // if no joint has been moved, all joints will be checked
     servoFeedback(16);
   }
   for (byte jointIdx = 0; jointIdx < 16; jointIdx++)
