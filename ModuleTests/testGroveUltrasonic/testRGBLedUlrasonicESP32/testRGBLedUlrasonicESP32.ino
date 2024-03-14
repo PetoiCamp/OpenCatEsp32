@@ -10,7 +10,8 @@
 
 #include "RgbUltrasonic.h"
 
-RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB)
+RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB) use the Grove Tx Rx
+// RgbUltrasonic ultrasonic(27,23);  //(signal, RGB) use the infrared reciever's pin 23 and pwm pin 27
 //The RGBLED module should be plugged in the fourth grove socket with D6, D7
 
 
