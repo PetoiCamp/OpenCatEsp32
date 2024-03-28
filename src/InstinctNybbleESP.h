@@ -1231,14 +1231,15 @@ const int8_t wh[] PROGMEM = {
    34,  38,   0,   0,  -5,  -5,   5,   5,  25,  25, -35, -35,  60,  60,   0,   0,	 8, 0, 0, 0,
 };
 const int8_t wsf[] PROGMEM = { 
--6, 0, 0, 1,
+-7, 0, 0, 1,
  2, 3, 3, 
    95, -30, -82,   0,  -5,  -5,  20,  20,  30,  30, -90, -90,  60,  60,  45,  45,	12, 2, 0, 0,
    95, -30, -82,   0,  -5,  -5,  20,  20,  30,  43, -90, -71,  85,  44,  45,   0,	 8, 0, 0, 0,
    37, -67, -52,   0,  -5,  -5,  20,  20, -87,  43, -90, -70,  22,  44,  45,   0,	 8, 0, 0, 0,
    49, -28, -70,   0,  -5,  -5,  20,  20, -56,  43, -90, -70, -16,  44,  45,   0,	 4, 4, 0, 0,
-  -45, -71, -50,   0,  -5,  -5,  20,  20,  87,  43, -90, -90, -28,  44,  45,   6,	 8, 6, 0, 0,
-   64, -39, -60,   0,  -5,  -5,  20,  20,  30,  30, -63, -63,  82,  82,  45,  45,	 8, 0, 0, 0,
+  -45, -71, -50,   0,  -5,  -5,  20,  20,  53,  43, -90, -90, -28,  44,  45,   6,	 8, 0, 0, 0,
+   64, -39, -60,   0,  -5,  -5,  20,  20,  28,  30, -63, -63,  56,  82,  45,  45,	 8, 8, 0, 0,
+   10, -20, -60,   0,  -5,  -5,  20,  20,  30,  30, -90, -90,  60,  60,  45,  45,	 8, 0, 0, 0,
 };
   const char* skillNameWithType[]={"bdI","bkI","bkLI","crFI","crLI","trFI","trLI","vtFI","vtLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","luI","restI","sitI","strI","upI","zeroN","angI","bxI","chrI","ckI","cmhI","dgI","fivI","gdbI","hdsI","hgI","hiI","hskI","huI","kcI","ndI","pdI","peeI","puI","rcI","scrhI","snfI","standI","tblI","whI","wsfI",};
 #if !defined(MAIN_SKETCH) || !defined(I2C_EEPROM)
@@ -1249,6 +1250,6 @@ const int8_t wsf[] PROGMEM = {
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };
 #endif
-//the total byte of instincts is 11047
+//the total byte of instincts is 11067
 //the maximal array size is 893 bytes of bkL. 
 //Make sure to leave enough memory for SRAM to work properly. Any single skill should be smaller than 400 bytes for safety.

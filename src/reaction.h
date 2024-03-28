@@ -642,6 +642,7 @@ void reaction() {
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
+          manualHeadQ = false;
           // newCmdIdx = 0;
           strcpy(newCmd, "tmp");
           if (skill->period > 0)
@@ -657,6 +658,7 @@ void reaction() {
             // it's better to compare skill->skillName and newCmd.
             // but need more logics for non skill cmd in between
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
+            manualHeadQ = false;
             if (skill->period > 0)
               printToAllPorts(token);
             // skill->info();

@@ -25,8 +25,12 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-  "T",                                                                     // call the last skill data sent by the Skill Composer
-  "kpu1",                                                                  // single-handed pushups
+  "T",  // call the last skill data sent by the Skill Composer
+#ifdef BITTLE
+  "kpu1",  // single-handed pushups
+#elif defined NYBBLE
+  "kwsf",  // wash face
+#endif
   "m0 80 0 -80 0 0",                                                       // wave head
   "kmw",                                                                   // moonwalk
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
@@ -109,7 +113,7 @@ void read_voice() {
       }
       if (enableVoiceQ) {
         const char *cmd = raw.c_str() + shift;
-        tQueue->addTask(token, shift > 0 ? cmd : "", 2000);
+        tQueue->addTask(token, shift > 0 ? cmd : "", 2500);
         if (strlen(cmd) > 0) {
           char end = cmd[strlen(cmd) - 1];
           if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {

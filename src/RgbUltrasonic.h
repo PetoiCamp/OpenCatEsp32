@@ -32,7 +32,8 @@ typedef enum {
 typedef enum {
   E_EFFECT_BREATHING = 0,
   E_EFFECT_ROTATE = 1,
-  E_EFFECT_FLASH = 2
+  E_EFFECT_FLASH = 2,
+  E_EFFECT_STEADY = 3,
 } E_RGB_EFFECT;
 
 class RgbUltrasonic {

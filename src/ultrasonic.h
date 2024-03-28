@@ -5,7 +5,7 @@
 #include "RgbUltrasonic.h"
 
 RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB) use the Grove Tx Rx
-//RgbUltrasonic ultrasonic(27,23);  //(signal, RGB) use the infrared reciever's pin 23 and pwm pin 27
+// RgbUltrasonic ultrasonic(27, 23);  //(signal, RGB) use the infrared reciever's pin 23 and pwm pin 27
 //The RGB LED ultrasonic module should be plugged in the fourth grove socket with D6, D7
 
 int interval = 3;
@@ -39,10 +39,11 @@ void readRGBultrasonic() {
       randomInterval = 1000;
     } else if (distance > 40) {
       if (!manualEyeColorQ)
-        ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
+        ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_STEADY);
     } else if (distance < 2) {
       token = T_SKILL;
       tQueue->addTask('k', "bk", 1500);
+      tQueue->addTask('k', "up", 0);
       randomInterval = 5000;
     } else if (distance < 4) {
       if (!manualEyeColorQ)
@@ -56,13 +57,13 @@ void readRGBultrasonic() {
         newCmd[i] = allRand[i];
       newCmd[cmdLen] = '~';
       newCmdIdx = 6;
-    } else if (distance < 6) {
+    } else if (distance < 8) {
       if (!manualEyeColorQ)
         ultrasonic.SetRgbColor(E_RGB_ALL, RGB_RED);
       tQueue->addTask('k', "sit", 2000);
     }
 
-    else {  //6~40
+    else {  //8~40
       distance -= 6;
       if (!manualEyeColorQ)
         ultrasonic.SetRgbColor(E_RGB_ALL, colors[max(min(distance / 7, 5), 0)]);

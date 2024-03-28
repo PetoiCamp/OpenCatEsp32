@@ -239,7 +239,11 @@ bool servoFollow() {
     byte jointIdx = movedJointList[i];
     for (byte j = 0; j < 4; j++)
       if (j != jointIdx % 4) {
-        newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx];
+        newCmd[(jointIdx / 4) * 4 + j] = currentAng[jointIdx]                      // >> leg
+#ifdef NYBBLE                                                                      // >< leg
+                                         * ((jointIdx % 4 / 2 == j / 2) ? 1 : -1)  //the front and back joints are symmetric
+#endif
+          ;
       } else {
         newCmd[jointIdx] = currentAng[jointIdx];
       }

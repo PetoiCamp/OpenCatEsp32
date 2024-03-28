@@ -78,7 +78,7 @@ void readSignal() {
                 IDLE_TIME
 #endif
       ;
-  else if (token != T_CALIBRATE && current - idleTimer > 0) {
+  else if (token != T_CALIBRATE && token != T_SERVO_FOLLOW && token != T_SERVO_FEEDBACK && current - idleTimer > 0) {
 
 #ifdef CAMERA
     read_camera();
