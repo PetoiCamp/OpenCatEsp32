@@ -237,13 +237,10 @@ bool newBoard = false;
 #define T_QUERY '?'
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
-#define T_TUNER '}'
 
 #define EXTENSION 'X'
 #define EXTENSION_VOICE 'A'
 #define EXTENSION_ULTRASONIC 'U'
-
-int8_t **par = new int8_t *[12];
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -539,6 +536,7 @@ void initRobot() {
   QA();
   i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
 
+  tQueue = new TaskQueue();
 #ifdef CAMERA
   cameraSetup();
 #endif
@@ -563,8 +561,6 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  // soft boot for servos
   delay(500);
-
-  tQueue = new TaskQueue();
 
 #ifdef VOICE
   voiceSetup();
