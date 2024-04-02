@@ -1,7 +1,7 @@
 void read_serial() {
   Stream *serialPort = NULL;
 // String source;
-#ifdef BT_SPP
+#ifdef BT_SSP
   if (SerialBT.available()) {  //give BT a higher priority over wired serial
     serialPort = &SerialBT;
     // source = "BT";
@@ -54,10 +54,7 @@ void read_serial() {
 
 void readSignal() {
 #ifdef IR_PIN
-#ifdef BT_BLE
-  if (!deviceConnected)  //bluetooth controller will disable the IR receiver
-#endif
-    read_infrared();  //  newCmdIdx = 1
+  read_infrared();  //  newCmdIdx = 1
 #endif
   read_serial();  //  newCmdIdx = 2
 #ifdef BT_BLE

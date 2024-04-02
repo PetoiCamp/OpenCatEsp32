@@ -71,13 +71,13 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240328"  // YYMMDD
+#define DATE "240402"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SPP    // toggle Bluetooth Serial Port Profile (BT_SPP)
+#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 
 #if defined BiBoard_V0_1 || defined BiBoard_V0_2
@@ -199,9 +199,9 @@ bool newBoard = false;
                          //a single 'C' will cancel the manual eye colors
 #define T_REST 'd'
 
-#define T_SERVO_FEEDBACK 'f'  //return the servo's position info if the chip supports feedback. \
+#define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
-#define T_SERVO_FOLLOW 'F'    //make the other legs follow the moved legs
+#define T_SERVO_FOLLOW 'F'              //make the other legs follow the moved legs
 #define T_GYRO_FINENESS 'g'             //adjust the finess of gyroscope adjustment to accelerate motion
 #define T_GYRO_BALANCE 'G'              //toggle on/off the gyro adjustment
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
@@ -214,6 +214,7 @@ bool newBoard = false;
 #define T_LISTED_BIN 'L'              // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
 #define T_INDEXED_SEQUENTIAL_ASC 'm'  // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
 #define T_INDEXED_SEQUENTIAL_BIN 'M'  // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
+#define T_NAME 'n'                    // customize the Bluetooth device name. e.g. nMyDog will name the device as "MyDog"
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
@@ -508,7 +509,7 @@ void initRobot() {
 #ifdef BT_BLE
   bleSetup();
 #endif
-#ifdef BT_SPP
+#ifdef BT_SSP
   blueSspSetup();
 #endif
   servoSetup();

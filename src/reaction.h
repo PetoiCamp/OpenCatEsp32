@@ -211,6 +211,15 @@ void reaction() {
           printToAllPorts(SoftwareVersion);
           break;
         }
+      case T_NAME:
+        {
+          if (cmdLen > 16)
+            printToAllPorts("ERROR! The name should be within 16 characters!");
+          else if (cmdLen)
+            customBleID(newCmd, cmdLen);
+          printToAllPorts(readBleID());
+          break;
+        }
       case T_GYRO_FINENESS:
       case T_GYRO_BALANCE:
       case T_PRINT_GYRO:

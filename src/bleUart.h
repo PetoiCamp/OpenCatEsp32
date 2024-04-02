@@ -92,7 +92,8 @@ void bleSetup() {
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID);
   // Create the BLE Device
-  BLEDevice::init(readBleID());  //read BLE device name from EEPROM so it's static
+  PTH("BLE: ", strcat(readBleID(), "_BLE"));
+  BLEDevice::init(strcat(readBleID(), "_BLE"));  //read BLE device name from EEPROM so it's static
 
   // Create the BLE Server
   pServer = BLEDevice::createServer();
@@ -121,7 +122,7 @@ void bleSetup() {
 
   // Start advertising
   pServer->getAdvertising()->start();
-  Serial.println("Waiting for a client connection to notify...");
+  Serial.println("Waiting for a BLE client connection to notify...");
 }
 
 
@@ -137,13 +138,13 @@ void detectBle() {
   if (!deviceConnected && oldDeviceConnected) {
     delay(50);                    // give the bluetooth stack the chance to get things ready
     pServer->startAdvertising();  // restart advertising
-    Serial.println("Bluetooth disconnected!");
+    Serial.println("Bluetooth BLE disconnected!");
     oldDeviceConnected = deviceConnected;
   }
   // connecting
   if (deviceConnected && !oldDeviceConnected) {
     // do stuff here on connecting
-    Serial.println("Bluetooth connected!");
+    Serial.println("Bluetooth BLE connected!");
     oldDeviceConnected = deviceConnected;
     delay(HOLD_TIME);
     // for (byte i = 0; i < CONNECTION_ATTEMPT; i++) {// send the keywords a few times on connection so that the app knows it's a Petoi device

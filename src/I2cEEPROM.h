@@ -42,10 +42,10 @@ bool EEPROMOverflow = false;
 #define EEPROM_BIRTHMARK_ADDRESS 0
 #define EEPROM_IMU 1                  // 2x9 = 18 bytes
 #define EEPROM_CALIB 20               // 16 bytes
-#define EEPROM_BLE_NAME 36            // 10 bytes
-#define EEPROM_BOOTUP_SOUND_STATE 46  // 1 byte
-#define EEPROM_BUZZER_VOLUME 47       // 1 byte
-#define EEPROM_RESERVED 50
+#define EEPROM_BLE_NAME 36            // 20 bytes
+#define EEPROM_BOOTUP_SOUND_STATE 56  // 1 byte
+#define EEPROM_BUZZER_VOLUME 57       // 1 byte
+#define EEPROM_RESERVED 60
 #define SERIAL_BUFF 100
 
 void i2cDetect() {
@@ -204,10 +204,8 @@ void readLong(unsigned int eeAddress, char *data) {
     } while (--len > 0 && ++readToWire < WIRE_BUFFER);
     PTL();
   }
-
   PTL("finish reading");
 }
-
 
 bool newBoardQ(unsigned int eeaddress) {
   return i2c_eeprom_read_byte(eeaddress) != BIRTHMARK;
@@ -252,9 +250,11 @@ char *readBleID() {
     id[i] = i2c_eeprom_read_byte(EEPROM_BLE_NAME + 1 + i);
   }
   id[idLen] = '\0';
-  Serial.print("Bluetooth name: ");
-  Serial.println(id);
   return id;
+}
+
+void customBleID(char *customName, int8_t len) {
+  writeLong(EEPROM_BLE_NAME, customName, len + 1);
 }
 
 int dataLen(int8_t p) {
