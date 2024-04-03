@@ -216,7 +216,8 @@ void reaction() {
           if (cmdLen > 16)
             printToAllPorts("ERROR! The name should be within 16 characters!");
           else if (cmdLen)
-            customBleID(newCmd, cmdLen);
+            customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
+                                          // it takes effect the next time the board boosup. it won't interrupt the current connecton.
           printToAllPorts(readBleID());
           break;
         }
