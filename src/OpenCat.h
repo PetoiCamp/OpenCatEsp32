@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240403"  // YYMMDD
+#define DATE "240412"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -571,7 +571,7 @@ void initRobot() {
 #endif
 #endif
 
-#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE
+#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
   loadBySkillName("sit");  //required by double light
   delay(500);              //use your palm to cover the two light sensors for calibration
 #ifdef DOUBLE_LIGHT
