@@ -724,7 +724,10 @@ void reaction() {
         // arrayNCPY(skill->dutyAngles, skill->dutyAngles + (abs(skill->period) - 1) * skill->frameSize, DOF);
         // skill->period = 1;
         // frame = 0;
-        skill->convertTargetToPosture(currentAng);
+        if (interruptedDuringBehavior) {
+          loadBySkillName("up");
+        } else
+          skill->convertTargetToPosture(currentAng);
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;

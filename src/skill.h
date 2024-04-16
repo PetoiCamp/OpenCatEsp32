@@ -1,5 +1,4 @@
 #define MEMORY_ADDRESS_SIZE 4
-
 class SkillPreview {
 public:
   char* skillName;  //use char array instead of String to save memory
@@ -261,15 +260,17 @@ public:
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
-        printToAllPorts("Progress: " + String(c+1) + "/" + abs(period));
+        if (Serial.available()) {
+          interruptedDuringBehavior = true;
+          return;
+        }
+        printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
-
 #ifdef GYRO_PIN  //if opt out the gyro, the calculation can be really fast
         if (dutyAngles[DOF + 2 + c * frameSize]) {
           int triggerAxis = dutyAngles[DOF + 2 + c * frameSize];
           int triggerAngle = dutyAngles[DOF + 3 + c * frameSize];
-
           float currentYpr = ypr[abs(triggerAxis)];
           float previousYpr = currentYpr;
           long triggerTimer = millis();

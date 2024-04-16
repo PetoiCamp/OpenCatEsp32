@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240412"  // YYMMDD
+#define DATE "240416"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -274,6 +274,7 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
+bool interruptedDuringBehavior = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
 bool printGyro = false;
