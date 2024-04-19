@@ -133,7 +133,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERVO_FREQ 240
 #endif
 
-#define MAX_READING 4096.0
+#define MAX_READING 4096.0  //to compensate the different voltage level of boards
 #define BASE_RANGE 1024.0
 double rate = 1.0 * MAX_READING / BASE_RANGE;
 
@@ -463,7 +463,7 @@ int slope = 1;
 #include "motion.h"
 #include "randomMind.h"
 #include "io.h"
-#include "sensorManager.h"
+#include "moduleManager.h"
 
 #include "skill.h"
 #ifdef NEOPIXEL_PIN
@@ -528,7 +528,7 @@ void initRobot() {
 
   tQueue = new TaskQueue();
 
-  initSensorManager();
+  initModuleManager();
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
   //    strcpy(newCmd, "calib");

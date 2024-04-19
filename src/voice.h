@@ -49,11 +49,22 @@ void voiceSetup() {
   PTLF("Init voice");
   Serial2.begin(SERIAL2_BAUD_RATE);
   Serial2.setTimeout(5);
+  delay(10);
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
   PTLF("Number of customized voice commands on the main board: ");
   PTL(listLength);
+  Serial2.println("XAc");
+  PTLF("Turn on the audio response");
+  enableVoiceQ = true;
 }
 
+void voiceStop() {
+  Serial2.println("XAd");
+  delay(10);
+  Serial2.end();
+  PTLF("Turn off the audio response");
+  enableVoiceQ = false;
+}
 void set_voice() {  // send some control command directly to the module
   // XAa: switch English
   // XAb: switch Chinese

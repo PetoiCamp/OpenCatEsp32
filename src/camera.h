@@ -125,14 +125,14 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
         { 0, 0 },
         { 0, 0 },
         { 0, 0 },
-        { frontUpX, -frontUpY },
-        { -frontUpX, -frontUpY },
-        { -backUpX, backUpY },
+        { frontUpX, (int8_t)-frontUpY },  //explicitly convert the calculation result to int8_t
+        { (int8_t)-frontUpX, (int8_t)-frontUpY },
+        { (int8_t)-backUpX, backUpY },
         { backUpX, backUpY },
-        { -frontDownX, frontDownY },
+        { (int8_t)-frontDownX, frontDownY },
         { frontDownX, frontDownY },
-        { backDownX, -backDownY },
-        { -backDownX, -backDownY },
+        { backDownX, (int8_t)-backDownY },
+        { (int8_t)-backDownX, (int8_t)-backDownY },
       };
       transformSpeed = tranSpeed;
       for (int j = 0; j < DOF; j++) {

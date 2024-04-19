@@ -606,10 +606,10 @@ void reaction() {
                                 || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
                                 )
                                  ? -2                         //want to close the sensors
-                                 : indexOfSensor(newCmd[0]);  //-1 means not found
+                                 : indexOfModule(newCmd[0]);  //-1 means not found
                                                               // >0 are existing sensors
 
-          if (moduleIndex == -2 || moduleIndex >= 0 && !sensorActivatedQ[moduleIndex])
+          if (moduleIndex == -2 || moduleIndex >= 0 && !moduleActivatedQ[moduleIndex])
             reconfigureTheActiveModule(moduleIndex);
 
           //deal with the following command
@@ -623,8 +623,11 @@ void reaction() {
 #endif
             case EXTENSION_ULTRASONIC:
               {
-                PT('=');
-                PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                PTH("lne", cmdLen);
+                if (cmdLen >= 3) {
+                  PT('=');
+                  PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                }
                 break;
               }
           }
@@ -713,7 +716,7 @@ void reaction() {
       if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
-    showSensorStatus();
+    showModuleStatus();
     resetCmd();
   }
 

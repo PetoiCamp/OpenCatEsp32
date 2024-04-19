@@ -39,15 +39,15 @@ bool makeSound = true;
 
 
 
-float kpDistance = 0.5;        // Proportional gain
-float kiDistance = 0.1;        // Integral gain
-float kdDistance = 0.2;        // Derivative gain
-float setpoint = 0;    // Target value
-float errorDistance = 0;       // Difference between setpoint and actual value
-float integral = 0;    // Running sum of errors over time
-float derivative = 0;  // Rate of change of errorDistance over time
-float last_error = 0;  // errorDistance in the previous iteration
-float currentXDistance = 0;    // Control signal sent to the sensors
+float kpDistance = 0.5;      // Proportional gain
+float kiDistance = 0.1;      // Integral gain
+float kdDistance = 0.2;      // Derivative gain
+float setpoint = 0;          // Target value
+float errorDistance = 0;     // Difference between setpoint and actual value
+float integral = 0;          // Running sum of errors over time
+float derivative = 0;        // Rate of change of errorDistance over time
+float last_error = 0;        // errorDistance in the previous iteration
+float currentXDistance = 0;  // Control signal sent to the sensors
 
 float d = SENSOR_DISPLACEMENT;  // Displacement of sensors on the x-axis
 int rawL, rawR;
@@ -127,10 +127,10 @@ void doubleInfraredDistanceSetup() {
 }
 
 void readDistancePins() {
-  rawL = analogRead(ANALOG1) /rate;
-  rawR = analogRead(ANALOG2) /rate;
-  dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(1024 - rawL);
-  dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(1024 - rawR);
+  rawL = analogRead(ANALOG1) / rate;
+  rawR = analogRead(ANALOG2) / rate;
+  dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(BASE_RANGE - rawL);
+  dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(BASE_RANGE - rawR);
   meanD = (dL + dR) / 2;
   maxD = max(dL, dR);
   minD = min(dL, dR);
@@ -154,7 +154,7 @@ void read_doubleInfraredDistance() {
   //   beep(35 - meanD, meanD / 4);
 #ifdef NEOPIXEL_PIN
   strip.clear();
-  for (int i = 0; i < min(8 - sqrt(dL) * 1.4, strip.numPixels()); i++) {                  // For each pixel in strip..
+  for (int i = 0; i < min(8 - sqrt(dL) * 1.4, strip.numPixels()); i++) {                          // For each pixel in strip..
     strip.setPixelColor(i, strip.Color(255 - meanD * 6, meanD * 6, 128 + currentXDistance * 2));  //  Set pixel's color (in RAM)
     strip.show();
   }

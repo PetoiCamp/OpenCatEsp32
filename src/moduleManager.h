@@ -1,6 +1,3 @@
-#define MAX_READING 1024.0
-#define BASE_RANGE 1024.0
-
 #ifdef VOICE
 #include "voice.h"
 #endif
@@ -61,16 +58,16 @@ int8_t moduleList[] = {
   EXTENSION_CAMERA_MU3,
   EXTENSION_VOICE
 };
-bool *sensorActivatedQ;
-int8_t indexOfSensor(char sensorName) {
+bool *moduleActivatedQ;
+int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-    if (sensorName == moduleList[i])
+    if (moduleName == moduleList[i])
       return i;
   return -1;
 }
-int8_t activeSensorIdx() {
+int8_t activeModuleIdx() {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-    if (sensorActivatedQ[i])
+    if (moduleActivatedQ[i])
       return i;
   return -1;
 }
@@ -86,8 +83,7 @@ void initModule(byte idx) {
 #ifdef ULTRASONIC
     case EXTENSION_ULTRASONIC:
       {
-        PT('=');
-        PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+        rgbUltrasonicSetup();
         break;
       }
 #endif
@@ -136,12 +132,12 @@ void initModule(byte idx) {
   }
 }
 
-void stopModule(byte idx){
+void stopModule(byte idx) {
   switch (moduleList[idx]) {
 #ifdef VOICE
     case EXTENSION_VOICE:
       {
-        //voiceStop();   // Todo
+        voiceStop();   
         break;
       }
 #endif
@@ -192,29 +188,30 @@ void stopModule(byte idx){
 #endif
   }
 }
-void reconfigureTheActiveModule(byte idx) {  // negative number will deactivate all the sensors
+void reconfigureTheActiveModule(byte idx) {  // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (i == idx) {
-      initModule(idx);
-      sensorActivatedQ[i] = true;
+      if (!moduleActivatedQ[i])
+        initModule(idx);
+      moduleActivatedQ[i] = true;
     } else {
-      if (sensorActivatedQ[i]) {
-        stopModule(i);//no need for now
-        sensorActivatedQ[i] = false;
+      if (moduleActivatedQ[i]) {
+        stopModule(i);  //no need for now
+        moduleActivatedQ[i] = false;
       }
     }
 }
 
-void showSensorStatus() {
-  byte sensorCount = sizeof(moduleList) / sizeof(char);
-  printListWithoutString((char *)moduleList, sensorCount);
-  printListWithoutString(sensorActivatedQ, sensorCount);
+void showModuleStatus() {
+  byte moduleCount = sizeof(moduleList) / sizeof(char);
+  printListWithoutString((char *)moduleList, moduleCount);
+  printListWithoutString(moduleActivatedQ, moduleCount);
 }
-void initSensorManager() {
-  byte sensorCount = sizeof(moduleList) / sizeof(char);
-  PTL(sensorCount);
-  sensorActivatedQ = new bool[sensorCount];
-  for (byte i = 0; i < sensorCount; i++)
-    sensorActivatedQ[i] = false;
-  showSensorStatus();
+void initModuleManager() {
+  byte moduleCount = sizeof(moduleList) / sizeof(char);
+  PTL(moduleCount);
+  moduleActivatedQ = new bool[moduleCount];
+  for (byte i = 0; i < moduleCount; i++)
+    moduleActivatedQ[i] = false;
+  showModuleStatus();
 }
