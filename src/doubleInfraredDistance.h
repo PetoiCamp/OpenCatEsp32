@@ -19,8 +19,6 @@ Rongzhong Li
 Petoi LLC
 2023 April 17
 */
-#define SENSOR1 34
-#define SENSOR2 35
 #define READING_COUNT 30
 #define SENSOR_DISPLACEMENT 3.7
 
@@ -41,15 +39,15 @@ bool makeSound = true;
 
 
 
-float kp = 0.5;        // Proportional gain
-float ki = 0.1;        // Integral gain
-float kd = 0.2;        // Derivative gain
+float kpDistance = 0.5;        // Proportional gain
+float kiDistance = 0.1;        // Integral gain
+float kdDistance = 0.2;        // Derivative gain
 float setpoint = 0;    // Target value
-float error = 0;       // Difference between setpoint and actual value
+float errorDistance = 0;       // Difference between setpoint and actual value
 float integral = 0;    // Running sum of errors over time
-float derivative = 0;  // Rate of change of error over time
-float last_error = 0;  // Error in the previous iteration
-float currentX = 0;    // Control signal sent to the sensors
+float derivative = 0;  // Rate of change of errorDistance over time
+float last_error = 0;  // errorDistance in the previous iteration
+float currentXDistance = 0;    // Control signal sent to the sensors
 
 float d = SENSOR_DISPLACEMENT;  // Displacement of sensors on the x-axis
 int rawL, rawR;
@@ -58,7 +56,7 @@ int meanA = 0, meanB = 0, diffA_B = 0, actualDiff = 0, last = 0;
 int longThres = 20;
 
 void resetPID() {
-  error = 0;
+  errorDistance = 0;
   last_error = 0;
   integral = 0;
   derivative = 0;
@@ -77,8 +75,8 @@ void distanceNaive(float dLeft, float dRight) {  //a simple feedback loop withou
       // PT(diff);
       // PT("\toffset ");
       // PT(offset);
-      currentX = min(90.0, max(-90.0, double(currentX + offset / 10)));
-      calibratedPWM(0, currentX, 0.2);
+      currentXDistance = min(90.0, max(-90.0, double(currentXDistance + offset / 10)));
+      calibratedPWM(0, currentXDistance, 0.2);
       // PTL();
       FPS();
     }
@@ -88,31 +86,31 @@ void distanceNaive(float dLeft, float dRight) {  //a simple feedback loop withou
 void distancePID(float dLeft, float dRight) {
   // Read the current distances from the sensors
   if (minD < longThres) {
-    // Calculate the error between the setpoint and the actual values, taking into account the x-axis displacement
-    //error = atan((dLeft - dRight) / SENSOR_DISPLACEMENT) * degPerRad;
-    error = dLeft - dRight - setpoint;
-    if (fabs(error) > 1) {
+    // Calculate the errorDistance between the setpoint and the actual values, taking into account the x-axis displacement
+    //errorDistance = atan((dLeft - dRight) / SENSOR_DISPLACEMENT) * degPerRad;
+    errorDistance = dLeft - dRight - setpoint;
+    if (fabs(errorDistance) > 1) {
       // Calculate the integral and derivative terms
-      integral = max(-900.0, min(900.0, double(integral + error)));
-      derivative = error - last_error;
+      integral = max(-900.0, min(900.0, double(integral + errorDistance)));
+      derivative = errorDistance - last_error;
 
       // Calculate the control signal using the PID formula
-      currentX = -max(-90.0, min(90.0, double(kp * error + ki * integral + kd * derivative)));
+      currentXDistance = -max(-90.0, min(90.0, double(kpDistance * errorDistance + kiDistance * integral + kdDistance * derivative)));
 
       // Send the control signal to the sensors to adjust their angles
-      calibratedPWM(0, currentX, 0);
-      // Save the current error for use in the next iteration
-      last_error = error;
+      calibratedPWM(0, currentXDistance, 0);
+      // Save the current errorDistance for use in the next iteration
+      last_error = errorDistance;
     }
   }
   // PT('\t');
-  // PT(error);
+  // PT(errorDistance);
   // PT('\t');
   // PT(integral);
   // PT('\t');
   // PT(derivative);
   // PT('\t');
-  // PT(currentX);
+  // PT(currentXDistance);
   // PTL();
 }
 
@@ -129,8 +127,8 @@ void doubleInfraredDistanceSetup() {
 }
 
 void readDistancePins() {
-  rawL = analogRead(SENSOR1) /rate;
-  rawR = analogRead(SENSOR2) /rate;
+  rawL = analogRead(ANALOG1) /rate;
+  rawR = analogRead(ANALOG2) /rate;
   dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(1024 - rawL);
   dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(1024 - rawR);
   meanD = (dL + dR) / 2;
@@ -157,7 +155,7 @@ void read_doubleInfraredDistance() {
 #ifdef NEOPIXEL_PIN
   strip.clear();
   for (int i = 0; i < min(8 - sqrt(dL) * 1.4, strip.numPixels()); i++) {                  // For each pixel in strip..
-    strip.setPixelColor(i, strip.Color(255 - meanD * 6, meanD * 6, 128 + currentX * 2));  //  Set pixel's color (in RAM)
+    strip.setPixelColor(i, strip.Color(255 - meanD * 6, meanD * 6, 128 + currentXDistance * 2));  //  Set pixel's color (in RAM)
     strip.show();
   }
 #endif
@@ -178,14 +176,14 @@ void read_doubleInfraredDistance() {
     }
   } else if (periodGlobal == 1) {
     distancePID(dL, dR);
-    if (currentX < -75 || currentX > 75) {
-      if (currentX < -75) {
+    if (currentXDistance < -75 || currentXDistance > 75) {
+      if (currentXDistance < -75) {
         tQueue->addTask('k', "vtR", 2000);
       } else {
         tQueue->addTask('k', "vtL", 2000);
       }
       tQueue->addTask('k', "sit");
-      currentX = 0;
+      currentXDistance = 0;
       resetPID();
     }
   }

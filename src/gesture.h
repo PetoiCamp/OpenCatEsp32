@@ -32,6 +32,12 @@ void gestureSetup() {
 
   PTLF("Detecting gestures ...");
 }
+
+void gestureStop() {
+  PTLF("Stopping gesture detection ...");
+  APDS.end();
+}
+
 int8_t melody54321[] = { 19, 64, 17, 64, 16, 64, 14, 64, 12, 32, '~' };
 int8_t melody12345[] = { 12, 64, 14, 64, 16, 64, 17, 64, 19, 32, '~' };
 int8_t melody67345[] = { 21, 16, 23, 32, 16, 64, 17, 64, 19, 64, '~' };

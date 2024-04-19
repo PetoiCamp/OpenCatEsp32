@@ -53,6 +53,7 @@ void read_serial() {
 }
 
 void readSignal() {
+  byte moduleIndex = activeSensorIdx();
 #ifdef IR_PIN
   read_infrared();  //  newCmdIdx = 1
 #endif
@@ -63,7 +64,8 @@ void readSignal() {
 #endif
 
 #ifdef VOICE
-  read_voice();
+  if (moduleList[moduleIndex] == EXTENSION_VOICE)
+    read_voice();
 #endif
 
   long current = millis();
@@ -76,27 +78,36 @@ void readSignal() {
 #endif
       ;
   else if (token != T_CALIBRATE && token != T_SERVO_FOLLOW && token != T_SERVO_FEEDBACK && current - idleTimer > 0) {
+  if (moduleIndex == -1)//no active sensor
+    return;
 
 #ifdef CAMERA
+  if (moduleList[moduleIndex] == EXTENSION_CAMERA_MU3)
     read_camera();
 #endif
 #ifdef ULTRASONIC
-    readRGBultrasonic();
+  if (moduleList[moduleIndex] == EXTENSION_ULTRASONIC)
+     readRGBultrasonic();
 #endif
 #ifdef GESTURE
+  if (moduleList[moduleIndex] == EXTENSION_GESTURE)
     read_gesture();
 #endif
 #ifdef PIR
+  if (moduleList[moduleIndex] == EXTENSION_PIR)
     read_PIR();
 #endif
 #ifdef DOUBLE_TOUCH
+  if (moduleList[moduleIndex] == EXTENSION_DOUBLE_TOUCH)
     read_doubleTouch();
 #endif
 #ifdef DOUBLE_LIGHT
-    read_doubleLight();
+    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_LIGHT)
+      read_doubleLight();
 #endif
 #ifdef DOUBLE_INFRARED_DISTANCE
-    // read_doubleInfraredDistance();//has some bugs
+    // if (moduleList[moduleIndex] == EXTENSION_DOUBLE_IR_DISTANCE)
+    //   read_doubleInfraredDistance();//has some bugs
 #endif
 #ifdef TOUCH0
     read_touch();
