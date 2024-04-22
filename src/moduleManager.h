@@ -47,24 +47,12 @@
 // #define GYRO_PIN 0
 #endif
 
-
-int8_t moduleList[] = {
-  EXTENSION_DOUBLE_TOUCH,
-  EXTENSION_DOUBLE_LIGHT,
-  EXTENSION_DOUBLE_IR_DISTANCE,
-  EXTENSION_PIR,
-  EXTENSION_ULTRASONIC,
-  EXTENSION_GESTURE,
-  EXTENSION_CAMERA_MU3,
-  EXTENSION_VOICE
-};
 int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleName == moduleList[i])
       return i;
   return -1;
 }
-bool *moduleActivatedQ;
 bool moduleActivatedQfunction(char moduleCode) {
   return moduleActivatedQ[indexOfModule(moduleCode)];
 }
@@ -192,39 +180,38 @@ void stopModule(char moduleCode) {
 #endif
   }
 }
-void reconfigureTheActiveModule(char *moduleCode) {  // negative number will deactivate all the modules
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
-    PTH(char(moduleList[i]), moduleActivatedQ[i]);
-    PTH(char(moduleList[i]), moduleCode[0]);
-    if (moduleList[i] == moduleCode[0]) {
-      if (!moduleActivatedQ[i]) {
-        initModule(moduleList[i]);
-        moduleActivatedQ[i] = true;
-      }
-    } else {
-      if (moduleActivatedQ[i]) {
-        stopModule(moduleList[i]);  //no need for now
-        moduleActivatedQ[i] = false;
-      }
-    }
-  }
-}
-
 void showModuleStatus() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
 }
+void reconfigureTheActiveModule(char *moduleCode) {  // negative number will deactivate all the modules
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
+    if (moduleList[i] == moduleCode[0]) {
+      if (!moduleActivatedQ[i]) {
+        initModule(moduleList[i]);
+        moduleActivatedQ[i] = true;
+        i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
+      }
+    } else {
+      if (moduleActivatedQ[i]) {
+        stopModule(moduleList[i]);  //no need for now
+        moduleActivatedQ[i] = false;
+        i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+      }
+    }
+  }
+  showModuleStatus();
+}
+
+
 void initModuleManager() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   PTL(moduleCount);
-  moduleActivatedQ = new bool[moduleCount];
   for (byte i = 0; i < moduleCount; i++) {
-    if (moduleList[i] == EXTENSION_VOICE) {
-      initModule(EXTENSION_VOICE);
-      moduleActivatedQ[i] = true;
-    } else
-      moduleActivatedQ[i] = false;  //voice is enabled by default
+    if (moduleActivatedQ[i]) {
+      initModule(moduleList[i]);
+    }
   }
   showModuleStatus();
 }

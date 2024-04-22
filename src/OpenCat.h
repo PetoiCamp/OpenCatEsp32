@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240419"  // YYMMDD
+#define DATE "240422"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -306,6 +306,17 @@ int exceptions = 0;
 byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 
+int8_t moduleList[] = {
+  EXTENSION_DOUBLE_TOUCH,
+  EXTENSION_DOUBLE_LIGHT,
+  EXTENSION_DOUBLE_IR_DISTANCE,
+  EXTENSION_PIR,
+  EXTENSION_ULTRASONIC,
+  EXTENSION_GESTURE,
+  EXTENSION_CAMERA_MU3,
+  EXTENSION_VOICE
+};
+bool moduleActivatedQ[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
 bool initialBoot = true;
 bool safeRest = true;
 bool soundState;
@@ -549,9 +560,10 @@ void initRobot() {
 #if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
   if (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT)) {
     tQueue->addTask(T_SKILL, "sit", 500);
-  } else tQueue->addTask(T_SKILL, "rest");
+  } else {
+    tQueue->addTask(T_REST, "");
+  }
 #endif
-
 
   PTL("Ready!");
   idleTimer = millis();

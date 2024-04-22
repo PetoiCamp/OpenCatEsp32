@@ -16,12 +16,12 @@
 // allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
 #define VOICE  // Petoi Grove voice module
 #define ULTRASONIC
-#define PIR           //for PIR (Passive Infrared) sensor
-#define DOUBLE_TOUCH  //for double touch sensor
-#define DOUBLE_LIGHT  //for double light sensor
+#define PIR                       //for PIR (Passive Infrared) sensor
+#define DOUBLE_TOUCH              //for double touch sensor
+#define DOUBLE_LIGHT              //for double light sensor
 #define DOUBLE_INFRARED_DISTANCE  //for double distance sensor
-#define GESTURE       //for Gesture module
-#define CAMERA        //for Mu Vision camera
+#define GESTURE                   //for Gesture module
+#define CAMERA                    //for Mu Vision camera
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
 // Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
 // The battery should be turned on to drive the servos.

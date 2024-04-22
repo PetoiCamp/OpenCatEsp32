@@ -218,7 +218,7 @@ void reaction() {
           else if (cmdLen)
             customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
                                           // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-          printToAllPorts(readBleID());
+          printToAllPorts(readLongByBytes(EEPROM_BLE_NAME));
           break;
         }
       case T_GYRO_FINENESS:
@@ -348,10 +348,7 @@ void reaction() {
         }
       case T_RESET:
         {
-          i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, 'R');  // esp_random() % 128); //mark the board as uninitialized
-          PTL("Alter the birthmark for reset!");
-          delay(5);
-          ESP.restart();
+          resetAsNewBoard('R');
           break;
         }
       case T_CALIBRATE:                 // calibration
@@ -717,7 +714,6 @@ void reaction() {
       if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
-    showModuleStatus();
     resetCmd();
   }
 

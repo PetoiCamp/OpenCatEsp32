@@ -40,12 +40,14 @@ bool EEPROMOverflow = false;
 
 
 #define EEPROM_BIRTHMARK_ADDRESS 0
-#define EEPROM_IMU 1                  // 2x9 = 18 bytes
-#define EEPROM_CALIB 20               // 16 bytes
-#define EEPROM_BLE_NAME 36            // 20 bytes
-#define EEPROM_BOOTUP_SOUND_STATE 56  // 1 byte
-#define EEPROM_BUZZER_VOLUME 57       // 1 byte
-#define EEPROM_RESERVED 60
+#define EEPROM_IMU 1                   // 2x9 = 18 bytes
+#define EEPROM_CALIB 20                // 16 bytes
+#define EEPROM_BLE_NAME 36             // 20 bytes
+#define EEPROM_BOOTUP_SOUND_STATE 56   // 1 byte
+#define EEPROM_BUZZER_VOLUME 57        // 1 byte
+#define EEPROM_MODULE_ENABLED_LIST 58  // 8 bytes
+#define EEPROM_VERSION_DATE 70         // 11 bytes
+#define EEPROM_RESERVED 82
 #define SERIAL_BUFF 100
 
 void i2cDetect() {
@@ -102,7 +104,6 @@ byte i2c_eeprom_read_byte(unsigned int eeaddress) {
   if (Wire.available()) rdata = Wire.read();
   return rdata;
 }
-
 
 //This function will write a 2-byte integer to the EEPROM at the specified address and address + 1
 void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
@@ -207,7 +208,19 @@ void readLong(unsigned int eeAddress, char *data) {
   PTL("finish reading");
 }
 
+char *readLongByBytes(int address) {
+  int len = i2c_eeprom_read_byte(address);
+  char *id = new char[len + 1];
+  //  readLong(address, id);
+  for (int i = 0; i < len; i++) {
+    id[i] = i2c_eeprom_read_byte(address + 1 + i);
+  }
+  id[len] = '\0';
+  return id;
+}
+
 bool newBoardQ(unsigned int eeaddress) {
+  // PTH("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
   return i2c_eeprom_read_byte(eeaddress) != BIRTHMARK;
 }
 
@@ -242,17 +255,6 @@ void genBleID(int suffixDigits = 2) {
   writeLong(EEPROM_BLE_NAME, id, prelen + suffixDigits);
 }
 
-char *readBleID() {
-  int idLen = i2c_eeprom_read_byte(EEPROM_BLE_NAME);
-  char *id = new char[idLen + 1];
-  //  readLong(EEPROM_BLE_NAME, id);
-  for (int i = 0; i < idLen; i++) {
-    id[i] = i2c_eeprom_read_byte(EEPROM_BLE_NAME + 1 + i);
-  }
-  id[idLen] = '\0';
-  return id;
-}
-
 void customBleID(char *customName, int8_t len) {
   writeLong(EEPROM_BLE_NAME, customName, len + 1);
 }
@@ -266,15 +268,39 @@ int dataLen(int8_t p) {
   int len = skillHeader + abs(p) * frameSize;
   return len;
 }
+
+void resetAsNewBoard(char mark) {
+  i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, mark);  // esp_random() % 128); //mark the board as uninitialized
+  PTL("Alter the birthmark for reset!");
+  delay(5);
+  ESP.restart();
+}
+
+void resetIfVersionOlderThan(String versionStr) {
+  char *savedVersionDate = readLongByBytes(EEPROM_VERSION_DATE);
+  long savedDate = atoi(savedVersionDate + strlen(savedVersionDate) - 6);
+  long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
+  if (savedDate > 200101 && savedDate < currentDate) {
+    delay(1000);
+    PTH("\n* The previous version on the board is", savedVersionDate);
+    PTH("* The robot will reboot and upgrade to", versionStr);
+    resetAsNewBoard('X');
+  }
+}
 void i2cEepromSetup() {
   newBoard = newBoardQ(EEPROM_BIRTHMARK_ADDRESS);
   if (newBoard) {
     PTLF("Set up the new board...");
+    char tempStr[12];
+    strcpy(tempStr, SoftwareVersion.c_str());
+    writeLong(EEPROM_VERSION_DATE, tempStr, SoftwareVersion.length());
     i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, 5);
     soundState = 1;
     buzzerVolume = 5;
-    PTF("Unmute and set volume to 5/10");
+    PTLF("Unmute and set volume to 5/10");
+    for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+      i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
 #ifndef AUTO_INIT
     playMelody(melodyInit, sizeof(melodyInit) / 2);
 #endif
@@ -295,8 +321,12 @@ void i2cEepromSetup() {
 #ifndef AUTO_INIT
     }
 #endif
-  } else
+  } else {
+    resetIfVersionOlderThan(SoftwareVersion);
     playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
+    for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+      moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
+  }
 }
 void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
   int len = dataLen(newCmd[0]) + 1;
