@@ -218,7 +218,7 @@ void reaction() {
           else if (cmdLen)
             customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
                                           // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-          printToAllPorts(readBleID());
+          printToAllPorts(readLongByBytes(EEPROM_BLE_NAME));
           break;
         }
       case T_GYRO_FINENESS:
@@ -348,10 +348,7 @@ void reaction() {
         }
       case T_RESET:
         {
-          i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, 'R');  // esp_random() % 128); //mark the board as uninitialized
-          PTL("Alter the birthmark for reset!");
-          delay(5);
-          ESP.restart();
+          resetAsNewBoard('R');
           break;
         }
       case T_CALIBRATE:                 // calibration
@@ -601,6 +598,20 @@ void reaction() {
         }
       case EXTENSION:
         {
+          //check if the module is activated
+          // int8_t moduleIndex = (cmdLen == 0        // with only 'X'
+          //                       || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
+          //                       )
+          //                        ? -2                         //want to close the sensors
+          //                        : indexOfModule(newCmd[0]);  //-1 means not found
+          // >0 are existing sensors
+          if (cmdLen == 0        // with only 'X'
+              || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
+          )
+            newCmd[0] = '\0';
+          reconfigureTheActiveModule(newCmd);
+
+          //deal with the following command
           switch (newCmd[0]) {
 #ifdef VOICE
             case EXTENSION_VOICE:
@@ -611,8 +622,10 @@ void reaction() {
 #endif
             case EXTENSION_ULTRASONIC:
               {
-                PT('=');
-                PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                if (cmdLen >= 3) {
+                  PT('=');
+                  PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                }
                 break;
               }
           }

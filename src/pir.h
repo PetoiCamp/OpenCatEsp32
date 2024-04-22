@@ -1,4 +1,4 @@
-#define PIR_PIN 34
+#define PIR_PIN ANALOG1
 bool previousPIR = false;
 
 void createPirTask() {  //this is an example task
@@ -10,6 +10,9 @@ void createPirTask() {  //this is an example task
   tQueue->addTask('k', "up");
 }
 
+void pirSetup() {
+  pinMode(PIR_PIN, INPUT);
+}
 void read_PIR() {
   bool currentPIR = analogRead(PIR_PIN) > 3000;
   PTL(currentPIR);

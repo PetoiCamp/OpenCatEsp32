@@ -92,8 +92,8 @@ void bleSetup() {
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID);
   // Create the BLE Device
-  PTH("BLE: ", strcat(readBleID(), "_BLE"));
-  BLEDevice::init(strcat(readBleID(), "_BLE"));  //read BLE device name from EEPROM so it's static
+  PTH("BLE: ", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
+  BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  //read BLE device name from EEPROM so it's static
 
   // Create the BLE Server
   pServer = BLEDevice::createServer();

@@ -1,9 +1,12 @@
-#define TOUCH_PIN_L 34
-#define TOUCH_PIN_R 35
-byte touchIn[2] = { TOUCH_PIN_L, TOUCH_PIN_R };
+byte touchIn[2] = { ANALOG1, ANALOG2 };
 bool previousTouchState[2] = { false, false };
 bool currentTouchState[2];
 
+
+void touchSetup() {
+  pinMode(touchIn[0], INPUT);
+  pinMode(touchIn[1], INPUT);
+}
 void read_doubleTouch() {
   for (byte i = 0; i < 2; i++)
     // currentTouchState[i] = digitalRead(touchIn[i]);
@@ -26,13 +29,13 @@ void read_doubleTouch() {
       tQueue->addTask('k', "up", 1500);
     } else if (currentTouchState[0]) {
       tQueue->addTask('b', "10,16,12,16,14,16");  //example using 'b' for ASCII commands. Not recommended because of low encoding efficiency.It uses 17 byes to encode 6 numbers
-      tQueue->addTask('i', "0,90", 3000);         //example using 'i' for ASCII commands. Not recommended because of low encoding efficiency. It uses 4 byes to encode 2 numbers
+      tQueue->addTask('i', "0,90", 500);         //example using 'i' for ASCII commands. Not recommended because of low encoding efficiency. It uses 4 byes to encode 2 numbers
                                                               //the movement starts after the music
     } else if (currentTouchState[1]) {
       int8_t mel[] = { 17, 16, 19, 16, 21, 16, '~' };  //example using 'B' for Binary commands. it has to end up with '~' because regular 0 can be mistaken as '\0'.
       int8_t mov[] = { 0, -90, '~' };                  //example using 'I' for Binary commands. it has to end up with '~' because regular 0 can be mistaken as '\0'.
       tQueue->addTask('I', mov, 500);           //the movement starts before the music
-      tQueue->addTask('B', mel,3000);
+      tQueue->addTask('B', mel,500);
     } else {
       // char mel[]={
       int8_t mel[] = { 15, 16, 14, 16, 12, 16, '~' };

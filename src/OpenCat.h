@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240418"  // YYMMDD
+#define DATE "240422"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -86,6 +86,13 @@ String SoftwareVersion = "";
 #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 25
 #define IR_PIN 23
+#define ANALOG1 34
+#define ANALOG2 35
+#define ANALOG3 36
+#define ANALOG4 39
+#define UART_RX 16
+#define UART_TX 17
+
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
   19, 4, 2, 27,   // head or shoulder roll
@@ -126,7 +133,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERVO_FREQ 240
 #endif
 
-#define MAX_READING 4096.0
+#define MAX_READING 4096.0  //to compensate the different voltage level of boards
 #define BASE_RANGE 1024.0
 double rate = 1.0 * MAX_READING / BASE_RANGE;
 
@@ -240,8 +247,14 @@ bool newBoard = false;
 #define T_DECELERATE ','
 
 #define EXTENSION 'X'
-#define EXTENSION_VOICE 'A'
+#define EXTENSION_DOUBLE_TOUCH 'T'
+#define EXTENSION_DOUBLE_LIGHT 'L'
+#define EXTENSION_DOUBLE_IR_DISTANCE 'D'
+#define EXTENSION_PIR 'I'
 #define EXTENSION_ULTRASONIC 'U'
+#define EXTENSION_GESTURE 'G'
+#define EXTENSION_CAMERA_MU3 'M'
+#define EXTENSION_VOICE 'A'
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -293,6 +306,17 @@ int exceptions = 0;
 byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 
+int8_t moduleList[] = {
+  EXTENSION_DOUBLE_TOUCH,
+  EXTENSION_DOUBLE_LIGHT,
+  EXTENSION_DOUBLE_IR_DISTANCE,
+  EXTENSION_PIR,
+  EXTENSION_ULTRASONIC,
+  EXTENSION_GESTURE,
+  EXTENSION_CAMERA_MU3,
+  EXTENSION_VOICE
+};
+bool moduleActivatedQ[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
 bool initialBoot = true;
 bool safeRest = true;
 bool soundState;
@@ -450,40 +474,14 @@ int slope = 1;
 #include "motion.h"
 #include "randomMind.h"
 #include "io.h"
+#include "moduleManager.h"
 
-#ifdef CAMERA
-#include "camera.h"
-#endif
-#ifdef VOICE
-#include "voice.h"
-#endif
-// #ifdef ULTRASONIC
-#include "ultrasonic.h"
-// #endif
-#ifdef GESTURE
-#include "gesture.h"
-#endif
-#ifdef PIR
-#include "pir.h"
-#endif
-#ifdef DOUBLE_TOUCH
-#include "doubleTouch.h"
-#endif
-#ifdef DOUBLE_LIGHT
-#include "doubleLight.h"
-#elif defined DOUBLE_INFRARED_DISTANCE
-#include "doubleInfraredDistance.h"
-#endif
 #include "skill.h"
 #ifdef NEOPIXEL_PIN
 #include "led.h"
 #endif
-#include "sense.h"
 #include "reaction.h"
 #include "qualityAssurance.h"
-
-
-
 
 void initRobot() {
   beep(20);
@@ -539,16 +537,8 @@ void initRobot() {
   i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
 
   tQueue = new TaskQueue();
-#ifdef CAMERA
-  cameraSetup();
-#endif
-  // #ifdef ULTRASONIC
-  rgbUltrasonicSetup();
-// #endif
-#ifdef GESTURE
-  gestureSetup();
-#endif
 
+  initModuleManager();
 
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
   //    strcpy(newCmd, "calib");
@@ -563,31 +553,16 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  // soft boot for servos
   delay(500);
-
-#ifdef VOICE
-  voiceSetup();
-#ifdef VOICE_ENGLISH
-  PTLF("Enter the English mode");
-  Serial2.println("XAa");
-#endif
-#endif
-
-#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
-  loadBySkillName("sit");  //required by double light
-  delay(500);              //use your palm to cover the two light sensors for calibration
-#ifdef DOUBLE_LIGHT
-  doubleLightSetup();
-#endif
-#ifdef DOUBLE_INFRARED_DISTANCE
-  doubleInfraredDistanceSetup();
-#endif
-#else
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-
-  token = (exceptions) ? T_CALIBRATE : T_REST;  // put the robot's side on the table to enter calibration posture for attaching legs
-  newCmdIdx = 2;
+  tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
+#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
+  if (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT)) {
+    tQueue->addTask(T_SKILL, "sit", 500);
+  } else {
+    tQueue->addTask(T_REST, "");
+  }
 #endif
 
   PTL("Ready!");

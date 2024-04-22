@@ -66,11 +66,11 @@ void BTAuthCompleteCallback(boolean success) {
 }
 
 void blueSspSetup() {
-  PTH("SSP: ", strcat(readBleID(), "_SSP"));
+  PTH("SSP: ", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);
-  SerialBT.begin(strcat(readBleID(), "_SSP"));  //Bluetooth device name
+  SerialBT.begin(strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));  //Bluetooth device name
   Serial.println("The SSP device is started, now you can pair it with Bluetooth!");
 }
 
