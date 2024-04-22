@@ -280,7 +280,7 @@ void resetIfVersionOlderThan(String versionStr) {
   char *savedVersionDate = readLongByBytes(EEPROM_VERSION_DATE);
   long savedDate = atoi(savedVersionDate + strlen(savedVersionDate) - 6);
   long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
-  if (savedDate > 200101 && savedDate < currentDate) {
+  if (savedDate < currentDate) {
     delay(1000);
     PTH("\n* The previous version on the board is", savedVersionDate);
     PTH("* The robot will reboot and upgrade to", versionStr);
