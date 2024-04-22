@@ -469,7 +469,6 @@ int slope = 1;
 #ifdef NEOPIXEL_PIN
 #include "led.h"
 #endif
-#include "sense.h"
 #include "reaction.h"
 #include "qualityAssurance.h"
 
@@ -543,18 +542,16 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  // soft boot for servos
   delay(500);
-
-#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
-  loadBySkillName("sit");  //required by double light
-  delay(500);              //use your palm to cover the two light sensors for calibration
-#else
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
+#endif
+#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
+  if (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT)) {
+    tQueue->addTask(T_SKILL, "sit", 500);
+  } else tQueue->addTask(T_SKILL, "rest");
+#endif
 
-  token = (exceptions) ? T_CALIBRATE : T_REST;  // put the robot's side on the table to enter calibration posture for attaching legs
-  newCmdIdx = 2;
-#endif
-#endif
 
   PTL("Ready!");
   idleTimer = millis();

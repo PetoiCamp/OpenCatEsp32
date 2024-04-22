@@ -602,15 +602,17 @@ void reaction() {
       case EXTENSION:
         {
           //check if the module is activated
-          int8_t moduleIndex = (cmdLen == 0        // with only 'X'
-                                || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
-                                )
-                                 ? -2                         //want to close the sensors
-                                 : indexOfModule(newCmd[0]);  //-1 means not found
-                                                              // >0 are existing sensors
-
-          if (moduleIndex == -2 || moduleIndex >= 0 && !moduleActivatedQ[moduleIndex])
-            reconfigureTheActiveModule(moduleIndex);
+          // int8_t moduleIndex = (cmdLen == 0        // with only 'X'
+          //                       || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
+          //                       )
+          //                        ? -2                         //want to close the sensors
+          //                        : indexOfModule(newCmd[0]);  //-1 means not found
+          // >0 are existing sensors
+          if (cmdLen == 0        // with only 'X'
+              || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
+          )
+            newCmd[0] = '\0';
+          reconfigureTheActiveModule(newCmd);
 
           //deal with the following command
           switch (newCmd[0]) {
@@ -623,7 +625,6 @@ void reaction() {
 #endif
             case EXTENSION_ULTRASONIC:
               {
-                PTH("lne", cmdLen);
                 if (cmdLen >= 3) {
                   PT('=');
                   PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));

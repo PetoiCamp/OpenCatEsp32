@@ -58,21 +58,25 @@ int8_t moduleList[] = {
   EXTENSION_CAMERA_MU3,
   EXTENSION_VOICE
 };
-bool *moduleActivatedQ;
 int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleName == moduleList[i])
       return i;
   return -1;
 }
+bool *moduleActivatedQ;
+bool moduleActivatedQfunction(char moduleCode) {
+  return moduleActivatedQ[indexOfModule(moduleCode)];
+}
+
 int8_t activeModuleIdx() {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleActivatedQ[i])
       return i;
   return -1;
 }
-void initModule(byte idx) {
-  switch (moduleList[idx]) {
+void initModule(char moduleCode) {
+  switch (moduleCode) {
 #ifdef VOICE
     case EXTENSION_VOICE:
       {
@@ -132,12 +136,12 @@ void initModule(byte idx) {
   }
 }
 
-void stopModule(byte idx) {
-  switch (moduleList[idx]) {
+void stopModule(char moduleCode) {
+  switch (moduleCode) {
 #ifdef VOICE
     case EXTENSION_VOICE:
       {
-        voiceStop();   
+        voiceStop();
         break;
       }
 #endif
@@ -188,18 +192,22 @@ void stopModule(byte idx) {
 #endif
   }
 }
-void reconfigureTheActiveModule(byte idx) {  // negative number will deactivate all the modules
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-    if (i == idx) {
-      if (!moduleActivatedQ[i])
-        initModule(idx);
-      moduleActivatedQ[i] = true;
+void reconfigureTheActiveModule(char *moduleCode) {  // negative number will deactivate all the modules
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
+    PTH(char(moduleList[i]), moduleActivatedQ[i]);
+    PTH(char(moduleList[i]), moduleCode[0]);
+    if (moduleList[i] == moduleCode[0]) {
+      if (!moduleActivatedQ[i]) {
+        initModule(moduleList[i]);
+        moduleActivatedQ[i] = true;
+      }
     } else {
       if (moduleActivatedQ[i]) {
-        stopModule(i);  //no need for now
+        stopModule(moduleList[i]);  //no need for now
         moduleActivatedQ[i] = false;
       }
     }
+  }
 }
 
 void showModuleStatus() {
@@ -211,7 +219,151 @@ void initModuleManager() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   PTL(moduleCount);
   moduleActivatedQ = new bool[moduleCount];
-  for (byte i = 0; i < moduleCount; i++)
-    moduleActivatedQ[i] = false;
+  for (byte i = 0; i < moduleCount; i++) {
+    if (moduleList[i] == EXTENSION_VOICE) {
+      initModule(EXTENSION_VOICE);
+      moduleActivatedQ[i] = true;
+    } else
+      moduleActivatedQ[i] = false;  //voice is enabled by default
+  }
   showModuleStatus();
+}
+
+void read_serial() {
+  Stream *serialPort = NULL;
+// String source;
+#ifdef BT_SSP
+  if (SerialBT.available()) {  //give BT a higher priority over wired serial
+    serialPort = &SerialBT;
+    // source = "BT";
+  } else
+#endif
+    if (Serial.available()) {
+    serialPort = &Serial;
+    // source = "SER";
+  }
+  if (serialPort) {
+    token = serialPort->read();
+    lowerToken = tolower(token);
+    newCmdIdx = 2;
+    delay(1);                                                  //leave enough time for serial read
+    terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';  //capitalized tokens use binary encoding for long data commands
+                                                               //'~' ASCII code = 126; may introduce bug when the angle is 126 so only use angles <= 125
+    serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
+    lastSerialTime = millis();
+    do {
+      if (serialPort->available()) {
+        // long current = millis();
+        // PTH(source, current - lastSerialTime);
+        do {
+          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData
+              || cmdLen >= BUFF_LEN) {
+            PTF("OVF");
+            beep(5, 100, 50, 5);
+            do { serialPort->read(); } while (serialPort->available());
+            printToAllPorts(token);
+            token = T_SKILL;
+            strcpy(newCmd, "up");
+            cmdLen = 2;
+            return;
+          }
+          newCmd[cmdLen++] = serialPort->read();
+        } while (serialPort->available());
+        lastSerialTime = millis();
+      }
+    } while (newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout);  //the lower case tokens are encoded in ASCII and can be entered in Arduino IDE's serial monitor
+                                                                                                    //if the terminator of the command is set to "no line ending" or "new line", parsing can be different
+                                                                                                    //so it needs a timeout for the no line ending case
+    // PTH("* " + source, long(millis() - lastSerialTime));
+    cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
+    newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
+    newCmdIdx = 2;
+    // PTL(cmdLen);
+    // printCmdByType(token, newCmd, cmdLen);
+  }
+}
+
+void readSignal() {
+  byte moduleIndex = activeModuleIdx();
+#ifdef IR_PIN
+  read_infrared();  //  newCmdIdx = 1
+#endif
+  read_serial();  //  newCmdIdx = 2
+#ifdef BT_BLE
+  detectBle();  //  newCmdIdx = 3;
+  readBle();
+#endif
+
+#ifdef VOICE
+  if (moduleList[moduleIndex] == EXTENSION_VOICE)
+    read_voice();
+#endif
+
+  long current = millis();
+  if (newCmdIdx)
+    idleTimer = millis() +
+#ifdef DOUBLE_INFRARED_DISTANCE
+                0
+#else
+                IDLE_TIME
+#endif
+      ;
+  else if (token != T_CALIBRATE && token != T_SERVO_FOLLOW && token != T_SERVO_FEEDBACK && current - idleTimer > 0) {
+    if (moduleIndex == -1)  //no active module
+      return;
+
+#ifdef CAMERA
+    if (moduleList[moduleIndex] == EXTENSION_CAMERA_MU3)
+      read_camera();
+#endif
+#ifdef ULTRASONIC
+    if (moduleList[moduleIndex] == EXTENSION_ULTRASONIC) {
+      PTL("AA");
+      readRGBultrasonic();
+    }
+
+#endif
+#ifdef GESTURE
+    if (moduleList[moduleIndex] == EXTENSION_GESTURE)
+      read_gesture();
+#endif
+#ifdef PIR
+    if (moduleList[moduleIndex] == EXTENSION_PIR)
+      read_PIR();
+#endif
+#ifdef DOUBLE_TOUCH
+    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_TOUCH)
+      read_doubleTouch();
+#endif
+#ifdef DOUBLE_LIGHT
+    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_LIGHT)
+      read_doubleLight();
+#endif
+#ifdef DOUBLE_INFRARED_DISTANCE
+    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_IR_DISTANCE)
+      read_doubleInfraredDistance();  //has some bugs
+#endif
+#ifdef TOUCH0
+    read_touch();
+#endif
+    // powerSaver -> 4
+    // other -> 5
+    // randomMind -> 100
+
+    if (autoSwitch) {
+      randomMind();             //make the robot do random demos
+      powerSaver(POWER_SAVER);  //make the robot rest after a certain period, the unit is seconds
+    }
+  }
+}
+
+//— read human sensors (top level) —
+void readHuman() {
+#ifdef TOUCH0
+  read_touch();
+#endif
+}
+//— generate behavior by fusing all sensors and instruction
+String decision() {
+  return "";
 }
