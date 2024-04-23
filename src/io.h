@@ -23,7 +23,7 @@ void read_touch() {
 #endif
 void readEnvironment() {
 #ifdef GYRO_PIN
-  if (gyroBalanceQ && !(frame % imuSkip))
+  if (ImuDataReadQ && !(frame % imuSkip))
     imuUpdated = read_IMU();
 #endif
   read_sound();

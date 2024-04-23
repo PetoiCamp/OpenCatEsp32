@@ -290,6 +290,7 @@ long lastSerialTime = 0;
 bool interruptedDuringBehavior = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
+bool ImuDataReadQ = true;          //  Read IMU data for ANY purpose.  -ee
 bool printGyro = false;
 bool autoSwitch = false;
 bool walkingQ = false;
