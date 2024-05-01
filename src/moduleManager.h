@@ -75,6 +75,7 @@ void initModule(char moduleCode) {
 #ifdef ULTRASONIC
     case EXTENSION_ULTRASONIC:
       {
+        tQueue->addTask('k', "sit");
         rgbUltrasonicSetup();
         break;
       }
@@ -82,6 +83,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_TOUCH
     case EXTENSION_DOUBLE_TOUCH:
       {
+        tQueue->addTask('k', "sit");
         touchSetup();
         break;
       }
@@ -89,6 +91,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_LIGHT
     case EXTENSION_DOUBLE_LIGHT:
       {
+        tQueue->addTask('k', "sit");
         doubleLightSetup();
         break;
       }
@@ -96,6 +99,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_IR_DISTANCE
     case EXTENSION_DOUBLE_IR_DISTANCE:
       {
+        tQueue->addTask('k', "sit");
         doubleInfraredDistanceSetup();
         break;
       }
@@ -110,13 +114,15 @@ void initModule(char moduleCode) {
 #ifdef GESTURE
     case EXTENSION_GESTURE:
       {
+        tQueue->addTask('k', "sit");
         gestureSetup();
         break;
       }
 #endif
 #ifdef CAMERA
-    case EXTENSION_CAMERA_MU3:
+    case EXTENSION_CAMERA:
       {
+        tQueue->addTask('k', "sit");
         cameraSetup();
         break;
       }
@@ -172,7 +178,7 @@ void stopModule(char moduleCode) {
       }
 #endif
 #ifdef CAMERA
-    case EXTENSION_CAMERA_MU3:
+    case EXTENSION_CAMERA:
       {
         //cameraStop();   // Todo
         break;
@@ -300,7 +306,7 @@ void readSignal() {
       return;
 
 #ifdef CAMERA
-    if (moduleList[moduleIndex] == EXTENSION_CAMERA_MU3)
+    if (moduleList[moduleIndex] == EXTENSION_CAMERA)
       read_camera();
 #endif
 #ifdef ULTRASONIC
