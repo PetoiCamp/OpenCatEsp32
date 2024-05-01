@@ -1,19 +1,82 @@
+// #include <Wire.h>
+#define MU_CAMERA
+// #define SENTRY1_CAMERA
+// #define GROVE_VISION_AI_V2
+// #define TALL_TARGET
+
+#ifdef MU_CAMERA
+// You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
+// Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
+// The battery should be turned on to drive the servos.
+
+// You can use these 3D printed structures to attach the camera module.
+// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/MuIntelligentCamera_mount.stl
+// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/bone.stl
+// After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
+/*
+   Choose communication mode define here:
+      I2C_MODE    : I2C mode, default pin: MU_SDA <==> ARDUINO_SDA, MU_SCL <==> ARDUINO_SCL
+      SERIAL_MODE : Serial mode, default pin: MU_TX <==> ARDUINO_PIN3, MU_RX <==> ARDUINO_PIN2
+*/
+#define I2C_MODE
+//#define SERIAL_MODE
+/*
+   Choose MU address here: 0x60, 0x61, 0x62, 0x63
+          default address: 0x60
+*/
+#define MU_ADDRESS 0x50  //in later versions we set the I2C device to 0x50, 0x51, 0x52, 0x53
+#define ALT_MU_ADDRESS 0x60
+
+#include <MuVisionSensor.h>  //you need to download the library https://github.com/mu-opensource/MuVisionSensor3 into your ~/Documents/Arduino/libraries/
+#ifdef I2C_MODE
 #include <Wire.h>
+#endif
+#ifdef SERIAL_MODE
+#include <SoftwareSerial.h>
+#define TX_PIN 6
+#define RX_PIN 7
+SoftwareSerial mySerial(RX_PIN, TX_PIN);
+#endif
+#endif
+
+#ifdef GROVE_VISION_AI_V2
+#include <Seeed_Arduino_SSCMA.h>
+#endif
+
 #define T_TUNER '}'
 int xCoord, yCoord, width, widthCounter;  //the x y returned by the sensor
 int xDiff, yDiff;                         //the scaled distance from the center of the frame
 int currentX = 0, currentY = 0;           //the current x y of the camera's direction in the world coordinate
-int imgRangeX = 100;                      //the frame size 0~100 on X and Y direction
+
+#if defined MU_CAMERA
+int imgRangeX = 100;  //the frame size 0~100 on X and Y direction
 int imgRangeY = 100;
+#elif defined GROVE_VISION_AI_V2
+int imgRangeX = 240;  //the frame size 0~100 on X and Y direction
+int imgRangeY = 240;
+#elif defined SENTRY1_CAMERA
+#elif defined TALL_TARGET
+#else
+#error "Please define the camera type"
+#endif
+
+
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, frontUp, backUp, frontDown, backDown;
 
 #ifdef BITTLE
 int8_t initPars[] = {
+#ifdef MU_CAMERA
   30, 11, 4, 10, 0,
   60, 80, 20, 80,
   20, 30, 12, 30,
   60, 90, 10, -20
+#elif defined GROVE_VISION_AI_V2
+  20, 20, 4, 12, 0,
+  58, 76, 16, 76,
+  18, 26, 8, 26,
+  60, 90, 10, -20
+#endif
 };
 #elif defined NYBBLE
 int8_t initPars[] = {
@@ -29,9 +92,6 @@ int8_t *par[] = { &lensFactor, &proportion, &tranSpeed, &pan, &tilt,
                   &frontUpY, &backUpY, &frontDownY, &backDownY,
                   &frontUp, &backUp, &frontDown, &backDown };
 
-#define MU_CAMERA
-// #define SENTRY1_CAMERA
-// #define TALL_TARGET
 
 #ifdef MU_CAMERA
 void muCameraSetup();
@@ -41,6 +101,11 @@ void read_MuCamera();
 #ifdef SENTRY1_CAMERA
 void sentry1CameraSetup();
 void read_Sentry1Camera();
+#endif
+
+#ifdef GROVE_VISION_AI_V2
+void groveVisionSetup();
+void read_GroveVision();
 #endif
 
 void cameraSetup() {
@@ -56,14 +121,16 @@ void cameraSetup() {
   proportion = 20;
   sentry1CameraSetup();
 #endif
+#ifdef GROVE_VISION_AI_V2
+  groveVisionSetup();
+#endif
   fps = 0;
   loopTimer = millis();
-  tQueue->addTask('k', "sit");
 }
 void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
-  PT(xCoord);  // get vision result: x axes value
+  PT(xCoord - imgRangeX / 2.0);  // get vision result: x axes value
   PT('\t');
-  PT(yCoord);  // get vision result: y axes value
+  PT(yCoord - imgRangeY / 2.0);  // get vision result: y axes value
   PT('\t');
   PT("size = ");
   PT(width);
@@ -78,7 +145,7 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
               // it works the best on the table so the robot doesn't need to loop upward.
 // #define ROTATE
 void cameraBehavior(int xCoord, int yCoord, int width) {
-  // showRecognitionResult(xCoord, yCoord, width);
+  showRecognitionResult(xCoord, yCoord, width);
 #ifdef WALK
   if (width > 45 && width != 52)  //52 maybe a noise signal
     widthCounter++;
@@ -177,42 +244,12 @@ void read_camera() {
 #ifdef SENTRY1_CAMERA
   read_Sentry1Camera();
 #endif
+#ifdef GROVE_VISION_AI_V2
+  read_GroveVision();
+#endif
 }
 
 #ifdef MU_CAMERA
-// You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
-// Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
-// The battery should be turned on to drive the servos.
-
-// You can use these 3D printed structures to attach the camera module.
-// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/MuIntelligentCamera_mount.stl
-// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/bone.stl
-// After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
-/*
-   Choose communication mode define here:
-      I2C_MODE    : I2C mode, default pin: MU_SDA <==> ARDUINO_SDA, MU_SCL <==> ARDUINO_SCL
-      SERIAL_MODE : Serial mode, default pin: MU_TX <==> ARDUINO_PIN3, MU_RX <==> ARDUINO_PIN2
-*/
-#define I2C_MODE
-//#define SERIAL_MODE
-/*
-   Choose MU address here: 0x60, 0x61, 0x62, 0x63
-          default address: 0x60
-*/
-#define MU_ADDRESS 0x50  //in later versions we set the I2C device to 0x50, 0x51, 0x52, 0x53
-#define ALT_MU_ADDRESS 0x60
-
-#include <MuVisionSensor.h>  //you need to download the library https://github.com/mu-opensource/MuVisionSensor3 into your ~/Documents/Arduino/libraries/
-#ifdef I2C_MODE
-#include <Wire.h>
-#endif
-#ifdef SERIAL_MODE
-#include <SoftwareSerial.h>
-#define TX_PIN 6
-#define RX_PIN 7
-SoftwareSerial mySerial(RX_PIN, TX_PIN);
-#endif
-
 MuVisionSensor *Mu;
 int skip = 1;  //, counter; //an efforts to reduce motion frequency without using delay. set skip >1 to take effect
 int i2cdelay = 3;
@@ -288,8 +325,8 @@ void read_MuCamera() {
       }
     }
     //-------ball------
-    cameraBehavior(xCoord, yCoord, width);
-    // FPS();
+    // cameraBehavior(xCoord, yCoord, width);
+    FPS();
   } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
     (*Mu).VisionEnd(object[objectIdx]);
     objectIdx = (objectIdx + 1) % (sizeof(object) / 2);
@@ -367,5 +404,44 @@ void read_Sentry1Camera() {
     delay(10);
   }
   // do something or delay some time
+}
+#endif
+
+#ifdef GROVE_VISION_AI_V2
+SSCMA AI;
+int height;
+
+void groveVisionSetup() {
+  AI.begin();
+}
+
+void read_GroveVision() {
+  if (!AI.invoke()) {
+    if (AI.boxes().size() >= 1) {
+      xCoord = AI.boxes()[0].x;  // read x value
+      yCoord = AI.boxes()[0].y;  // read y value
+      width = AI.boxes()[0].w;   // read width value
+      height = AI.boxes()[0].h;  // read height value
+
+      cameraBehavior(xCoord, yCoord, width);
+      // FPS();
+      // for (int i = 0; i < AI.boxes().size(); i++) {
+      //   Serial.print("Box[");
+      //   Serial.print(i);
+      //   Serial.print("] target=");
+      //   Serial.print(AI.boxes()[i].target);
+      //   Serial.print(", score=");
+      //   Serial.print(AI.boxes()[i].score);
+      //   Serial.print(", x=");
+      //   Serial.print(AI.boxes()[i].x);
+      //   Serial.print(", y=");
+      //   Serial.print(AI.boxes()[i].y);
+      //   Serial.print(", w=");
+      //   Serial.print(AI.boxes()[i].w);
+      //   Serial.print(", h=");
+      //   Serial.println(AI.boxes()[i].h);
+      // }
+    }
+  }
 }
 #endif

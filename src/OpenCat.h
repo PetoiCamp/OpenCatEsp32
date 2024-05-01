@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240422"  // YYMMDD
+#define DATE "240508"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -253,7 +253,7 @@ bool newBoard = false;
 #define EXTENSION_PIR 'I'
 #define EXTENSION_ULTRASONIC 'U'
 #define EXTENSION_GESTURE 'G'
-#define EXTENSION_CAMERA_MU3 'M'
+#define EXTENSION_CAMERA 'M'
 #define EXTENSION_VOICE 'A'
 
 // bool updated[10];
@@ -313,7 +313,7 @@ int8_t moduleList[] = {
   EXTENSION_PIR,
   EXTENSION_ULTRASONIC,
   EXTENSION_GESTURE,
-  EXTENSION_CAMERA_MU3,
+  EXTENSION_CAMERA,
   EXTENSION_VOICE
 };
 bool moduleActivatedQ[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
@@ -474,9 +474,9 @@ int slope = 1;
 #include "motion.h"
 #include "randomMind.h"
 #include "io.h"
-#include "moduleManager.h"
 
 #include "skill.h"
+#include "moduleManager.h"
 #ifdef NEOPIXEL_PIN
 #include "led.h"
 #endif
@@ -538,8 +538,6 @@ void initRobot() {
 
   tQueue = new TaskQueue();
 
-  initModuleManager();
-
   //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
   //    strcpy(newCmd, "calib");
   //    exceptions = 0;
@@ -557,13 +555,8 @@ void initRobot() {
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
-#if defined DOUBLE_LIGHT || defined DOUBLE_TOUCH || defined DOUBLE_INFRARED_DISTANCE || defined ULTRASONIC
-  if (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT)) {
-    tQueue->addTask(T_SKILL, "sit", 500);
-  } else {
-    tQueue->addTask(T_REST, "");
-  }
-#endif
+  initModuleManager();
+
 
   PTL("Ready!");
   idleTimer = millis();
