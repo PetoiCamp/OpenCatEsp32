@@ -6,7 +6,13 @@
 // Rongzhong Li
 // Petoi LLC
 // Jan 12, 2023
-#define SERIAL2_BAUD_RATE 9600
+#ifdef BiBoard_V1_0
+#define SERIAL_VOICE Serial1
+#else
+#define SERIAL_VOICE Serial2
+#endif
+
+#define SERIAL_VOICE_BAUD_RATE 9600
 #define MAX_CUSTOMIZED_CMD 10
 
 // Speak "start learning" to record your voice commands in order. You can record up to 10 voice commands
@@ -25,47 +31,54 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-  "T",  // call the last skill data sent by the Skill Composer
+    "T", // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
-  "kpu1",  // single-handed pushups
+    "kpu1", // single-handed pushups
 #elif defined NYBBLE
-  "kwsf",  // wash face
+    "kwsf", // wash face
 #endif
-  "m0 80 0 -80 0 0",                                                       // wave head
-  "kmw",                                                                   // moonwalk
-  "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
+    "m0 80 0 -80 0 0",                                                    // wave head
+    "kmw",                                                                // moonwalk
+    "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
-  14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
-  "6th",
-  "7th",
-  "8th",
-  "9th",
-  "10th"  // define up to 10 customized commands.
+  14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4", // twinkle star
+    "6th",
+    "7th",
+    "8th",
+    "9th",
+    "10th" // define up to 10 customized commands.
 };
 int listLength = 0;
 bool enableVoiceQ = true;
 
-void voiceSetup() {
+void voiceSetup()
+{
   PTLF("Init voice");
-  Serial2.begin(SERIAL2_BAUD_RATE);
-  Serial2.setTimeout(5);
+#ifdef BiBoard_V1_0
+  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, 26, 25);
+#else
+  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
+#endif
+  SERIAL_VOICE.setTimeout(5);
   delay(10);
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
   PTLF("Number of customized voice commands on the main board: ");
   PTL(listLength);
-  Serial2.println("XAc");
+  SERIAL_VOICE.println("XAc");
   PTLF("Turn on the audio response");
   enableVoiceQ = true;
 }
 
-void voiceStop() {
-  Serial2.println("XAd");
+void voiceStop()
+{
+  SERIAL_VOICE.println("XAd");
   delay(10);
-  Serial2.end();
+  SERIAL_VOICE.end();
   PTLF("Turn off the audio response");
   enableVoiceQ = false;
 }
-void set_voice() {  // send some control command directly to the module
+void set_voice()
+{ // send some control command directly to the module
   // XAa: switch English
   // XAb: switch Chinese
   // XAc: turn on the sound response
@@ -79,41 +92,50 @@ void set_voice() {  // send some control command directly to the module
   newCmd[c - 1] = '\0';
   // Serial.print('X');
   // Serial.println(newCmd);
-  Serial2.print('X');
-  Serial2.println(newCmd);
-  while (Serial2.available())
-    PT(Serial2.read());
+  SERIAL_VOICE.print('X');
+  SERIAL_VOICE.println(newCmd);
+  while (SERIAL_VOICE.available())
+    PT(SERIAL_VOICE.read());
   PTL();
-  if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+  if (!strcmp(newCmd, "Ac")) // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
     // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
     enableVoiceQ = true;
-  else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+  else if (!strcmp(newCmd, "Ad")) // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
     // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
     enableVoiceQ = false;
-  printToAllPorts('X');  // the blue read runs on a separate core.
+  printToAllPorts('X'); // the blue read runs on a separate core.
   // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
   resetCmd();
 }
-void read_voice() {
-  if (Serial2.available()) {
-    String raw = Serial2.readStringUntil('\n');
+void read_voice()
+{
+  if (SERIAL_VOICE.available())
+  {
+    String raw = SERIAL_VOICE.readStringUntil('\n');
     PTL(raw);
-    byte index = (byte)raw[2];  // interpret the 3rd byte as integer
+    byte index = (byte)raw[2]; // interpret the 3rd byte as integer
     int shift = -1;
-    if (index > 10 && index < 61) {
-      if (index < 21) {  // 11 ~ 20 are customized commands, and their indexes should be shifted by 11
+    if (index > 10 && index < 61)
+    {
+      if (index < 21)
+      { // 11 ~ 20 are customized commands, and their indexes should be shifted by 11
         index -= 11;
         PT(index);
         PT(' ');
-        if (index < listLength) {
+        if (index < listLength)
+        {
           raw = customizedCmdList[index];
           token = raw[0];
           shift = 1;
-        } else {
+        }
+        else
+        {
           PTLF("Undefined!");
         }
-      } else if (index < 61) {  // 21 ~ 60 are preset commands, and their indexes should be shifted by 21.
-                                // But we don't need to use their indexes.
+      }
+      else if (index < 61)
+      { // 21 ~ 60 are preset commands, and their indexes should be shifted by 21.
+        // But we don't need to use their indexes.
 #ifdef VOICE_MODULE_SAMPLE
         token = T_SKILL;
         shift = 3;
@@ -122,55 +144,61 @@ void read_voice() {
         shift = 4;
 #endif
       }
-      if (enableVoiceQ) {
+      if (enableVoiceQ)
+      {
         const char *cmd = raw.c_str() + shift;
         tQueue->addTask(token, shift > 0 ? cmd : "", 2500);
-        if (strlen(cmd) > 0) {
+        if (strlen(cmd) > 0)
+        {
           char end = cmd[strlen(cmd) - 1];
-          if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
+          if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z')
+          {
             tQueue->addTask('k', "up");
           }
         }
       }
-    } else {
-      switch (tolower(index)) {
-        case 'a':  // say "Bing-bing" to switch English /说“冰冰”切换英文
-          {
-            PTLF("Switch English");
-            break;
-          }
-        case 'b':  // say "Di-di" to switch Chinese /说“滴滴”切换中文
-          {
-            PTLF("Switch Chinese");
-            break;
-          }
-        case 'c':  // say "play sound" to enable voice reactions / 说“打开音效”激活语音动作
-          {
-            enableVoiceQ = true;
-            PTLF("Turn on the audio response");
-            break;
-          }
-        case 'd':  // say "be quiet" to disable voice reactions / 说“安静点”禁用语音动作
-          {
-            enableVoiceQ = false;
-            PTLF("Turn off the audio response");
-            break;
-          }
-        case 'e':
-          {
-            PTLF("Start learning");
-            break;
-          }
-        case 'f':
-          {
-            PTLF("Stop learning");
-            break;
-          }
-        case 'g':
-          {
-            PTLF("Delete all learning data!");
-            break;
-          }
+    }
+    else
+    {
+      switch (tolower(index))
+      {
+      case 'a': // say "Bing-bing" to switch English /说“冰冰”切换英文
+      {
+        PTLF("Switch English");
+        break;
+      }
+      case 'b': // say "Di-di" to switch Chinese /说“滴滴”切换中文
+      {
+        PTLF("Switch Chinese");
+        break;
+      }
+      case 'c': // say "play sound" to enable voice reactions / 说“打开音效”激活语音动作
+      {
+        enableVoiceQ = true;
+        PTLF("Turn on the audio response");
+        break;
+      }
+      case 'd': // say "be quiet" to disable voice reactions / 说“安静点”禁用语音动作
+      {
+        enableVoiceQ = false;
+        PTLF("Turn off the audio response");
+        break;
+      }
+      case 'e':
+      {
+        PTLF("Start learning");
+        break;
+      }
+      case 'f':
+      {
+        PTLF("Stop learning");
+        break;
+      }
+      case 'g':
+      {
+        PTLF("Delete all learning data!");
+        break;
+      }
       }
     }
   }
