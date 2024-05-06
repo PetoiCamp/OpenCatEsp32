@@ -123,19 +123,21 @@ bool lowBattery() {
     uptime = currentTime;
     float voltage = analogRead(VOLTAGE);
     if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) > 10) {  // if battery voltage < threshold, it needs to be recharged
-      // give the robot a break when voltage drops after sprint
-      // adjust the thresholds according to your batteries' voltage
-      // if set too high, the robot will stop working when the battery still has power.
-      // If too low, the robot may not alarm before the battery shuts off
+                                                                                     // give the robot a break when voltage drops after sprint
+                                                                                     // adjust the thresholds according to your batteries' voltage
+                                                                                     // if set too high, the robot will stop working when the battery still has power.
+                                                                                     // If too low, the robot may not alarm before the battery shuts off
+      lowBatteryQ = true;
       if (!safeRest) {
         strcpy(lastCmd, "rest");
         loadBySkillName(lastCmd);
         shutServos();
         safeRest = true;
       }
-      PT("Low power: ");
+      PTF("Low power: ");
       PT(voltage / vFactor);
       PTL("V");
+      PTLF("Long-press the battery's button to turn it on!");
       if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
         playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
       //    strip.show();
@@ -156,12 +158,16 @@ bool lowBattery() {
       return true;
     }
     if (safeRest) {
-      strcpy(lastCmd, "rest");
-      loadBySkillName(lastCmd);
-      shutServos();
+      // strcpy(lastCmd, "rest");
+      // loadBySkillName(lastCmd);
+      // shutServos();
       safeRest = false;
     }
     lastVoltage = voltage;
+    if (voltage > low_voltage && lowBatteryQ) {
+      playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
+      lowBatteryQ = false;
+    }
   }
   return false;
 }
@@ -303,9 +309,11 @@ void reaction() {
           playMelody(melody1, sizeof(melody1) / 2);
           break;
         }
-        // #ifdef ULTRASONIC
+#ifdef ULTRASONIC
       case T_COLOR:
         {
+          if (!ultrasonicLEDinitializedQ)
+            rgbUltrasonicSetup();
           if (cmdLen < 2)  // a single 'C' will turn off the manual color mode
             manualEyeColorQ = false;
           else {  // turn on the manual color mode
@@ -315,7 +323,7 @@ void reaction() {
           }
           break;
         }
-        // #endif
+#endif
       case ';':
         {
           setServoP(P_SOFT);
@@ -598,20 +606,20 @@ void reaction() {
         }
       case EXTENSION:
         {
-          //check if the module is activated
-          // int8_t moduleIndex = (cmdLen == 0        // with only 'X'
-          //                       || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
-          //                       )
-          //                        ? -2                         //want to close the sensors
-          //                        : indexOfModule(newCmd[0]);  //-1 means not found
-          // >0 are existing sensors
+          // check if the module is activated
+          //  int8_t moduleIndex = (cmdLen == 0        // with only 'X'
+          //                        || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
+          //                        )
+          //                         ? -2                         //want to close the sensors
+          //                         : indexOfModule(newCmd[0]);  //-1 means not found
+          //  >0 are existing sensors
           if (cmdLen == 0        // with only 'X'
               || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
           )
             newCmd[0] = '\0';
           reconfigureTheActiveModule(newCmd);
 
-          //deal with the following command
+          // deal with the following command
           switch (newCmd[0]) {
 #ifdef VOICE
             case EXTENSION_VOICE:
@@ -759,7 +767,7 @@ void reaction() {
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {
-    if (servoFollow()) {  //don't move the joints if no manual movement is detected
+    if (servoFollow()) {  // don't move the joints if no manual movement is detected
       reAttachAllServos();
       transform((int8_t *)newCmd, 1, 2);
     }

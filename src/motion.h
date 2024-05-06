@@ -11,10 +11,14 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
 
   for (int s = 0; s <= steps; s++) {
     int degree = duty + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * (duty0 - duty));
+#ifdef VOLTAGE
+    if (!lowBatteryQ) {
 #ifdef ESP_PWM
-    servo[actualServoIndex].write(degree);
+      servo[actualServoIndex].write(degree);
 #else
-    pwm.writeAngle(actualServoIndex, degree);
+      pwm.writeAngle(actualServoIndex, degree);
+#endif
+    } 
 #endif
     //    delayMicroseconds(1);
   }
@@ -151,7 +155,7 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int s = 0; s <= steps; s++) {
       for (byte i = offset; i < DOF; i++) {
 #ifdef ESP_PWM
-        if(movedJoint[i])// don't drive the servo if it's being moved by hand in the follow function. 
+        if (movedJoint[i])  // don't drive the servo if it's being moved by hand in the follow function.
           continue;
         if (manualHeadQ && i < HEAD_GROUP_LEN && token == T_SKILL)  // the head motion will be handled by skill.perform()
           continue;

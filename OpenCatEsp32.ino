@@ -15,8 +15,8 @@
 
 // you can also activate the following modes (they will diable the gyro to save programming space)
 // allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
-#define VOICE // Petoi Grove voice module
-#define ULTRASONIC
+#define VOICE                    // Petoi Grove voice module
+#define ULTRASONIC               // for Petoi RGB ultrasonic distance sensor
 #define PIR                      // for PIR (Passive Infrared) sensor
 #define DOUBLE_TOUCH             // for double touch sensor
 #define DOUBLE_LIGHT             // for double light sensor

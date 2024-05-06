@@ -303,6 +303,7 @@ char terminator;
 long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
+bool lowBatteryQ = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
 bool printGyro = false;
