@@ -23,9 +23,11 @@ int feedbackDirection = -1;
 #elif defined NYBBLE
 int feedbackDirection = 1;
 #endif
+bool ultrasonicLEDinitializedQ = false;
 void rgbUltrasonicSetup()
 {
   ultrasonic.SetupLED();
+  ultrasonicLEDinitializedQ = true;
   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_BLUE, E_EFFECT_BREATHING);
   ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
