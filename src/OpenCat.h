@@ -91,14 +91,37 @@ String SoftwareVersion = "";
 #define ANALOG2 35
 #define ANALOG3 36
 #define ANALOG4 39
-#define UART_RX 16
-#define UART_TX 17
+#define UART_RX2 16
+#define UART_TX2 17
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
   19, 4, 2, 27,   // head or shoulder roll
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
+};
+
+#elif defined BiBoard_V1_0
+#define ESP_PWM
+#define PWM_NUM 12
+// #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
+#define BUZZER 2
+// #define IR_PIN 23
+#define VOLTAGE 35
+#define LOW_VOLTAGE 6.8
+#define ANALOG1 34
+#define ANALOG2 2
+#define ANALOG3 36
+#define ANALOG4 39
+#define VOICE_RX 26
+#define VOICE_TX 25
+#define UART_RX2 10  //mistake in the pcb layout
+#define UART_TX2 9
+// L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
+const uint8_t PWM_pin[PWM_NUM] = {
+  18, 5, 14, 27,   // head or shoulder roll
+  23, 15, 12, 33,  // shoulder pitch
+  19, 4, 13, 32    // knee
 };
 
 #elif defined BiBoard2
@@ -114,38 +137,17 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH1 13
 #define TOUCH2 32
 #define TOUCH3 33
+// L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
-//                                headPan, tilt, tailPan, NA
 const uint8_t PWM_pin[PWM_NUM] = {
-  12, 11, 4, 3,
+  12, 11, 4, 3,  //                                headPan, tilt, tailPan, NA
   13, 10, 5, 2,  // shoulder roll
   14, 9, 6, 1,   // shoulder pitch
   //                                  13,       10,     6,    2,     //shoulder roll
   //                                  14,        9,     5,    1,     //shoulder pitch
   15, 8, 7, 0  // knee
 };
-// L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
-#elif defined BiBoard_V1_0
-#define ESP_PWM
-#define PWM_NUM 12
-// #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
-#define BUZZER 2
-// #define IR_PIN 23
-#define VOLTAGE 35
-#define LOW_VOLTAGE 6.8
-#define ANALOG1 34
-#define ANALOG2 2
-#define ANALOG3 36
-#define ANALOG4 39
-#define UART_RX 16
-#define UART_TX 17
 
-// L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
-const uint8_t PWM_pin[PWM_NUM] = {
-  18, 5, 14, 27,   // head or shoulder roll
-  23, 15, 12, 33,  // shoulder pitch
-  19, 4, 13, 32    // knee
-};
 #endif
 
 #define MAX_READING 4096.0  //to compensate the different voltage level of boards
@@ -262,14 +264,15 @@ bool newBoard = false;
 #define T_DECELERATE ','
 
 #define EXTENSION 'X'
-#define EXTENSION_DOUBLE_TOUCH 'T'
-#define EXTENSION_DOUBLE_LIGHT 'L'
-#define EXTENSION_DOUBLE_IR_DISTANCE 'D'
-#define EXTENSION_PIR 'I'
-#define EXTENSION_ULTRASONIC 'U'
-#define EXTENSION_GESTURE 'G'
-#define EXTENSION_CAMERA_MU3 'M'
-#define EXTENSION_VOICE 'A'
+#define EXTENSION_GROVE_SERIAL 'S'        // connect to Grove UART2
+#define EXTENSION_VOICE 'A'               // connect to Grove UART2 (on V0_*: a slide switch can choose the voice or the Grove), or UART1 (on V1). Hidden on board.
+#define EXTENSION_DOUBLE_TOUCH 'T'        // connect to ANALOG1, ANALOG2
+#define EXTENSION_DOUBLE_LIGHT 'L'        // connect to ANALOG1, ANALOG2
+#define EXTENSION_DOUBLE_IR_DISTANCE 'D'  // connect to ANALOG3, ANALOG4
+#define EXTENSION_PIR 'I'                 // connect to ANALOG3
+#define EXTENSION_ULTRASONIC 'U'          // connect to Grove UART2
+#define EXTENSION_GESTURE 'G'             // connect to Grove I2C
+#define EXTENSION_CAMERA 'C'              // connect to Grove I2C
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -293,7 +296,7 @@ char *lastCmd = new char[CMD_LEN + 1];  // the last char must be '\0' for safe s
 int cmdLen = 0;
 byte newCmdIdx = 0;
 int8_t periodGlobal = 0;
-#define BUFF_LEN 2507  // 1524 =125*20+7=2507  
+#define BUFF_LEN 2507  // 1524 =125*20+7=2507
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
@@ -323,16 +326,17 @@ byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 
 int8_t moduleList[] = {
+  EXTENSION_GROVE_SERIAL,
+  EXTENSION_VOICE,
   EXTENSION_DOUBLE_TOUCH,
   EXTENSION_DOUBLE_LIGHT,
   EXTENSION_DOUBLE_IR_DISTANCE,
   EXTENSION_PIR,
   EXTENSION_ULTRASONIC,
   EXTENSION_GESTURE,
-  EXTENSION_CAMERA_MU3,
-  EXTENSION_VOICE
+  EXTENSION_CAMERA,
 };
-bool moduleActivatedQ[] = { 0, 0, 0, 0, 0, 0, 0, 1 };
+bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0 };
 bool initialBoot = true;
 bool safeRest = true;
 bool soundState;
@@ -571,7 +575,9 @@ void initRobot() {
   //  }
   //  loadBySkillName(newCmd);
   //
-  allCalibratedPWM(currentAng);  // soft boot for servos
+
+  loadBySkillName("rest");  // must have to avoid memory crash. need to check why.
+                            // allCalibratedPWM(currentAng); alone will lead to crash
   delay(500);
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading

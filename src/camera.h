@@ -269,7 +269,7 @@ void read_MuCamera() {
     yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
     width = (int)(*Mu).GetValue(object[objectIdx], kWidthValue);
     // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
-    //-------ball------
+    //vvvvvvvvvvvv ball vvvvvvvvvvvvv
     if (objectIdx == 1) {
       int ballType = (*Mu).GetValue(object[objectIdx], kLabel);
       if (lastBallType != ballType) {
@@ -287,7 +287,9 @@ void read_MuCamera() {
         lastBallType = ballType;
       }
     }
-    //-------ball------
+
+    //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
+
     cameraBehavior(xCoord, yCoord, width);
     // FPS();
   } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
