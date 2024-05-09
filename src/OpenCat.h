@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240508"  // YYMMDD
+#define DATE "240509"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -551,14 +551,14 @@ void initRobot() {
   //
   allCalibratedPWM(currentAng);  // soft boot for servos
   delay(500);
+
+  initModuleManager();
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
+  if (!moduleActivatedQfunction('L') && !moduleActivatedQfunction('T') && !moduleActivatedQfunction('G') && !moduleActivatedQfunction('D') && !moduleActivatedQfunction('M') && !moduleActivatedQfunction('U'))
+    tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
-  initModuleManager();
-
-
   PTL("Ready!");
-  idleTimer = millis();
   beep(24, 50);
+  idleTimer = millis();
 }

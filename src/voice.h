@@ -81,8 +81,9 @@ void set_voice() {  // send some control command directly to the module
   // Serial.println(newCmd);
   Serial2.print('X');
   Serial2.println(newCmd);
-  while (Serial2.available())
-    PT(Serial2.read());
+  while (Serial2.available()){
+    PT(char(Serial2.read()));
+    }
   PTL();
   if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
     // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作

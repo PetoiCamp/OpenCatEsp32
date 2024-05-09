@@ -75,7 +75,7 @@ void initModule(char moduleCode) {
 #ifdef ULTRASONIC
     case EXTENSION_ULTRASONIC:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         rgbUltrasonicSetup();
         break;
       }
@@ -83,7 +83,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_TOUCH
     case EXTENSION_DOUBLE_TOUCH:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         touchSetup();
         break;
       }
@@ -91,7 +91,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_LIGHT
     case EXTENSION_DOUBLE_LIGHT:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         doubleLightSetup();
         break;
       }
@@ -99,7 +99,7 @@ void initModule(char moduleCode) {
 #ifdef DOUBLE_IR_DISTANCE
     case EXTENSION_DOUBLE_IR_DISTANCE:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         doubleInfraredDistanceSetup();
         break;
       }
@@ -114,7 +114,7 @@ void initModule(char moduleCode) {
 #ifdef GESTURE
     case EXTENSION_GESTURE:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         gestureSetup();
         break;
       }
@@ -122,7 +122,7 @@ void initModule(char moduleCode) {
 #ifdef CAMERA
     case EXTENSION_CAMERA:
       {
-        tQueue->addTask('k', "sit");
+        loadBySkillName("sit");
         cameraSetup();
         break;
       }
@@ -311,7 +311,6 @@ void readSignal() {
 #endif
 #ifdef ULTRASONIC
     if (moduleList[moduleIndex] == EXTENSION_ULTRASONIC) {
-      PTL("AA");
       readRGBultrasonic();
     }
 
