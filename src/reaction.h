@@ -340,7 +340,7 @@ void reaction() {
           saveCalib(servoCalib);
 #ifdef VOICE
           if (newCmdIdx == 2)
-            Serial2.println("XAc");
+            SERIAL_VOICE.println("XAc");
 #endif
           break;
         }
@@ -350,7 +350,7 @@ void reaction() {
           i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
 #ifdef VOICE
           if (newCmdIdx == 2)
-            Serial2.println("XAc");
+            SERIAL_VOICE.println("XAc");
 #endif
           break;
         }
@@ -415,7 +415,7 @@ void reaction() {
 #endif
 #ifdef VOICE
                   if (newCmdIdx == 2)
-                    Serial2.println("XAd");
+                    SERIAL_VOICE.println("XAd");
 #endif
                   strcpy(newCmd, "calib");
                   loadBySkillName(newCmd);
