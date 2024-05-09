@@ -63,8 +63,19 @@ int8_t activeModuleIdx() {
       return i;
   return -1;
 }
+
 void initModule(char moduleCode) {
   switch (moduleCode) {
+    case EXTENSION_GROVE_SERIAL:
+      {
+#ifdef BiBoard_V1_0
+        Serial2.begin(115200, SERIAL_8N1, 9, 10);
+#else
+        Serial2.begin(115200, SERIAL_8N1, UART_RX2, UART_TX2);
+#endif
+        PTL("Start Serial 2");
+        break;
+      }
 #ifdef VOICE
     case EXTENSION_VOICE:
       {
@@ -132,6 +143,12 @@ void initModule(char moduleCode) {
 
 void stopModule(char moduleCode) {
   switch (moduleCode) {
+    case EXTENSION_GROVE_SERIAL:
+      {
+        Serial2.end();
+        PTL("Stop Serial 2");
+        break;
+      }
 #ifdef VOICE
     case EXTENSION_VOICE:
       {
@@ -180,7 +197,7 @@ void stopModule(char moduleCode) {
 #ifdef CAMERA
     case EXTENSION_CAMERA:
       {
-        //cameraStop();   // Todo
+        // cameraStop();   // Todo
         break;
       }
 #endif
@@ -191,23 +208,29 @@ void showModuleStatus() {
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
 }
-void reconfigureTheActiveModule(char *moduleCode) {  // negative number will deactivate all the modules
+
+void reconfigureTheActiveModule(char *moduleCode) {               // negative number will deactivate all the modules
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {  // disable unneeded modules
+    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {
+      PTH("disable ", char(moduleList[i]));
+      stopModule(moduleList[i]);
+      moduleActivatedQ[i] = false;
+      i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+    }
+  }
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
-    if (moduleList[i] == moduleCode[0]) {
-      if (!moduleActivatedQ[i]) {
-        initModule(moduleList[i]);
-        moduleActivatedQ[i] = true;
-        i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
-      }
-    } else {
-      if (moduleActivatedQ[i]) {
-        stopModule(moduleList[i]);  // no need for now
-        moduleActivatedQ[i] = false;
-        i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
-      }
+    if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
+      PTH("enable ", char(moduleList[i]));
+      initModule(moduleList[i]);
+      moduleActivatedQ[i] = true;
+      i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
     }
   }
   showModuleStatus();
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
+    PTT(bool(i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i)), '\t');
+  }
+  PTL();
 }
 
 void initModuleManager() {
@@ -230,7 +253,9 @@ void read_serial() {
     // source = "BT";
   } else
 #endif
-    if (Serial.available()) {
+    if (moduleActivatedQ[0] && Serial2.available()) {
+    serialPort = &Serial2;
+  } else if (Serial.available()) {
     serialPort = &Serial;
     // source = "SER";
   }

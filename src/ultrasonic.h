@@ -5,9 +5,9 @@
 #include "RgbUltrasonic.h"
 
 #ifdef BiBoard_V1_0
-RgbUltrasonic ultrasonic(10, 9); //(UART_RX, UART_TX);  //(signal, RGB) use the Grove Tx Rx
+RgbUltrasonic ultrasonic(UART_RX2, UART_TX2); //(UART_RX, UART_TX);  //(signal, RGB) use the Grove Tx Rx
 #else
-RgbUltrasonic ultrasonic(UART_RX, UART_TX); //(signal, RGB) use the Grove Tx Rx
+RgbUltrasonic ultrasonic(UART_RX2, UART_TX2); //(signal, RGB) use the Grove Tx Rx
 // RgbUltrasonic ultrasonic(27, 23);  //(signal, RGB) use the infrared reciever's pin 23 and pwm pin 27
 #endif
 // The RGB LED ultrasonic module should be plugged in the fourth grove socket with D6, D7

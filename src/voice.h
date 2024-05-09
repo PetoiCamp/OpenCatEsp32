@@ -54,7 +54,7 @@ bool enableVoiceQ = true;
 void voiceSetup() {
   PTLF("Init voice");
 #ifdef BiBoard_V1_0
-  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, 26, 25);
+  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, VOICE_RX, VOICE_TX);
 #else
   SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
 #endif
@@ -94,7 +94,6 @@ void set_voice() {  // send some control command directly to the module
   SERIAL_VOICE.println(newCmd);
   while (SERIAL_VOICE.available())
     PT(char(SERIAL_VOICE.read()));
-
   PTL();
   if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
     // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
