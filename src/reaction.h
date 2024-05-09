@@ -187,10 +187,10 @@ void reaction() {
       idleTimer = millis();
     if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
       beep(15 + newCmdIdx, 5);  // ToDo: check the muted sound when newCmdIdx = -1
-    if (hardServoQ && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
+    if (!workingStiffness && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
-      setServoP(P_SOFT);
-      hardServoQ = false;
+      setServoP(P_WORKING);
+      workingStiffness = true;
 #endif
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
@@ -411,7 +411,7 @@ void reaction() {
                 if (lastToken != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
-                  hardServoQ = true;
+                  workingStiffness = false;
 #endif
 #ifdef VOICE
                   if (newCmdIdx == 2)
@@ -445,7 +445,7 @@ void reaction() {
                 delay(10);
               }
 #ifdef T_SERVO_MICROSECOND
-              else if (token == T_SERVO_MICROSECOND) {
+              else if (token == T_SERVO_MICROSECOND) {  // there might be some problems.
 #ifdef ESP_PWM
                 servo[PWM_pin[target[0]]].writeMicroseconds(target[1]);
 #else
@@ -455,6 +455,8 @@ void reaction() {
 #endif
 #ifdef T_SERVO_FEEDBACK
               else if (token == T_SERVO_FEEDBACK) {
+                setServoP(P_SOFT);
+                workingStiffness = false;
                 gyroBalanceQ = false;
                 // measureServoPin = (inLen == 1) ? target[0] : 16;
                 if (inLen == 0)
@@ -466,6 +468,8 @@ void reaction() {
                 } else
                   measureServoPin = target[0];
               } else if (token == T_SERVO_FOLLOW) {
+                setServoP(P_SOFT);
+                workingStiffness = false;
                 gyroBalanceQ = false;
                 measureServoPin = 16;
               }
@@ -769,6 +773,8 @@ void reaction() {
   else if (token == T_SERVO_FOLLOW) {
     if (servoFollow()) {  // don't move the joints if no manual movement is detected
       reAttachAllServos();
+      setServoP(P_SOFT);
+      workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
   }

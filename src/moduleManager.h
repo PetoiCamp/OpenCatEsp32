@@ -268,8 +268,9 @@ void read_serial()
         // PTH(source, current - lastSerialTime);
         do
         {
-          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData || cmdLen >= BUFF_LEN)
+          if ((token == T_SKILL || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC) && cmdLen >= spaceAfterStoringData || cmdLen > BUFF_LEN)
           {
+            PTH("Cmd Length: ",cmdLen);
             PTF("OVF");
             beep(5, 100, 50, 5);
             do

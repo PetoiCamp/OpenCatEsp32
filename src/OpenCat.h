@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240422"  // YYMMDD
+#define DATE "240508"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -293,7 +293,7 @@ char *lastCmd = new char[CMD_LEN + 1];  // the last char must be '\0' for safe s
 int cmdLen = 0;
 byte newCmdIdx = 0;
 int8_t periodGlobal = 0;
-#define BUFF_LEN 2507  // 1524 =125*20+7=2507
+#define BUFF_LEN 2507  // 1524 =125*20+7=2507  
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
@@ -311,7 +311,7 @@ bool autoSwitch = false;
 bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
-bool hardServoQ = true;
+bool workingStiffness = true;
 bool manualEyeColorQ = false;
 // bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4  // used for controlling head pan, tilt, tail, and other joints independent from walking
