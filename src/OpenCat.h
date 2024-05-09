@@ -79,6 +79,7 @@ String SoftwareVersion = "";
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define SERVO_FREQ 240
 
 #if defined BiBoard_V0_1 || defined BiBoard_V0_2
 #define ESP_PWM
@@ -99,13 +100,8 @@ const uint8_t PWM_pin[PWM_NUM] = {
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
 };
-#if defined NYBBLE || defined BITTLE
-#define SERVO_FREQ 250
-#else  // CUB
-#define SERVO_FREQ 250
-#endif
 
-#else  // BiBoard2
+#elif defined BiBoard2
 #define PWM_NUM 16
 #define INTERRUPT_PIN 27  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 14
@@ -129,8 +125,27 @@ const uint8_t PWM_pin[PWM_NUM] = {
   15, 8, 7, 0  // knee
 };
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
+#elif defined BiBoard_V1_0
+#define ESP_PWM
+#define PWM_NUM 12
+// #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
+#define BUZZER 2
+// #define IR_PIN 23
+#define VOLTAGE 35
+#define LOW_VOLTAGE 6.8
+#define ANALOG1 34
+#define ANALOG2 2
+#define ANALOG3 36
+#define ANALOG4 39
+#define UART_RX 16
+#define UART_TX 17
 
-#define SERVO_FREQ 240
+// L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
+const uint8_t PWM_pin[PWM_NUM] = {
+  18, 5, 14, 27,   // head or shoulder roll
+  23, 15, 12, 33,  // shoulder pitch
+  19, 4, 13, 32    // knee
+};
 #endif
 
 #define MAX_READING 4096.0  //to compensate the different voltage level of boards
@@ -278,7 +293,7 @@ char *lastCmd = new char[CMD_LEN + 1];  // the last char must be '\0' for safe s
 int cmdLen = 0;
 byte newCmdIdx = 0;
 int8_t periodGlobal = 0;
-#define BUFF_LEN 2507  // 1524 =125*20+7=2507
+#define BUFF_LEN 2507  // 1524 =125*20+7=2507  
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
@@ -288,6 +303,7 @@ char terminator;
 long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
+bool lowBatteryQ = false;
 bool fineAdjust = true;
 bool gyroBalanceQ = true;
 bool printGyro = false;
@@ -295,7 +311,7 @@ bool autoSwitch = false;
 bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
-bool hardServoQ = true;
+bool workingStiffness = true;
 bool manualEyeColorQ = false;
 // bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4  // used for controlling head pan, tilt, tail, and other joints independent from walking
@@ -485,7 +501,11 @@ int slope = 1;
 
 void initRobot() {
   beep(20);
+#ifdef BiBoard_V1_0
+  Wire.begin(22, 21);
+#else
   Wire.begin();
+#endif
   SoftwareVersion = SoftwareVersion + BOARD + "_" + DATE;
   PTL('k');
   PTLF("Flush the serial buffer...");
