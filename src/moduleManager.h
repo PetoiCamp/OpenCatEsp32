@@ -73,6 +73,7 @@ void initModule(char moduleCode) {
 #else
         Serial2.begin(115200, SERIAL_8N1, UART_RX2, UART_TX2);
 #endif
+        Serial2.setTimeout(SERIAL_TIMEOUT);
         PTL("Start Serial 2");
         break;
       }
