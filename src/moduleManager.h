@@ -223,10 +223,6 @@ void reconfigureTheActiveModule(char *moduleCode) {               // negative nu
     }
   }
   showModuleStatus();
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
-    PTT(bool(i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i)), '\t');
-  }
-  PTL();
 }
 
 void initModuleManager() {
