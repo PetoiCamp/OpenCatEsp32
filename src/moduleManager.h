@@ -34,11 +34,6 @@
 #include "doubleInfraredDistance.h"
 #endif
 
-#ifdef GROVE_SERIAL_PASS_THROUGH
-#define ULTRASONIC
-#include "ultrasonic.h"
-#endif
-
 #ifdef OTHER_MODULES
 #endif
 
@@ -295,10 +290,18 @@ void read_serial() {
                                                                                                     // if the terminator of the command is set to "no line ending" or "new line", parsing can be different
                                                                                                     // so it needs a timeout for the no line ending case
     // PTH("* " + source, long(millis() - lastSerialTime));
+    if (token == 'X' or token == 'R' or token == 'W') {
+      for(byte i = cmdLen; i > 0; i--){
+        if((newCmd[cmdLen] == '\n') || (newCmd[cmdLen] == '\r')) {
+          newCmd[cmdLen] = '\0';
+          cmdLen = cmdLen - 1;
+        } 
+      }
+    }
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     newCmdIdx = 2;
-    // PTL(cmdLen);
+    // PTH("read_serial, cmdLen = ", cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
   }
 }

@@ -581,7 +581,9 @@ void initRobot() {
   initModuleManager();
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  if (!moduleActivatedQfunction('L') && !moduleActivatedQfunction('T') && !moduleActivatedQfunction('G') && !moduleActivatedQfunction('D') && !moduleActivatedQfunction('M') && !moduleActivatedQfunction('U'))
+  if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) 
+      && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) 
+      && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");

@@ -621,7 +621,11 @@ void reaction() {
               || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
           )
             newCmd[0] = '\0';
-          reconfigureTheActiveModule(newCmd);
+
+          // PTH("cmdLen = ", cmdLen);
+          if (cmdLen >= 0 && cmdLen < 3) {
+            reconfigureTheActiveModule(newCmd);
+          }
 
           // deal with the following command
           switch (newCmd[0]) {
@@ -635,8 +639,8 @@ void reaction() {
             case EXTENSION_ULTRASONIC:
               {
                 if (cmdLen >= 3) {
-                  PT('=');
-                  PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                  printToAllPorts('=');
+                  printToAllPorts(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
                 }
                 break;
               }
