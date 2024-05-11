@@ -610,20 +610,9 @@ void reaction() {
         }
       case EXTENSION:
         {
-          // check if the module is activated
-          //  int8_t moduleIndex = (cmdLen == 0        // with only 'X'
-          //                        || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
-          //                        )
-          //                         ? -2                         //want to close the sensors
-          //                         : indexOfModule(newCmd[0]);  //-1 means not found
-          //  >0 are existing sensors
-          if (cmdLen == 0        // with only 'X'
-              || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
-          )
-            newCmd[0] = '\0';
-
           // PTH("cmdLen = ", cmdLen);
-          if (cmdLen >= 0 && cmdLen < 3) {
+          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen ==1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+                                                                       // and we don't want to change the activation status of the ultrasonic sensor behavior
             reconfigureTheActiveModule(newCmd);
           }
 

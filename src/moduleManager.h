@@ -208,7 +208,7 @@ void showModuleStatus() {
 void reconfigureTheActiveModule(char *moduleCode) {               // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {  // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {
-      PTH("disable ", char(moduleList[i]));
+      PTH("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
@@ -216,7 +216,7 @@ void reconfigureTheActiveModule(char *moduleCode) {               // negative nu
   }
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
-      PTH("enable ", char(moduleList[i]));
+      PTH("+  enable", moduleNames[i]);
       initModule(moduleList[i]);
       moduleActivatedQ[i] = true;
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
@@ -290,12 +290,13 @@ void read_serial() {
                                                                                                     // if the terminator of the command is set to "no line ending" or "new line", parsing can be different
                                                                                                     // so it needs a timeout for the no line ending case
     // PTH("* " + source, long(millis() - lastSerialTime));
-    if (token == 'X' or token == 'R' or token == 'W') {
-      for(byte i = cmdLen; i > 0; i--){
-        if((newCmd[cmdLen] == '\n') || (newCmd[cmdLen] == '\r')) {
-          newCmd[cmdLen] = '\0';
-          cmdLen = cmdLen - 1;
-        } 
+    if (!(token >= 'A' && token <= 'Z') || token == 'X' || token == 'R' || token == 'W') {  // serial monitor is used to send lower cased tokens by users
+                                                                                            // delete the unexpected '\r' '\n' if the serial monitor sends line ending symbols
+      for (int i = cmdLen - 1; i >= 0; i--) {
+        if ((newCmd[i] == '\n') || (newCmd[i] == '\r')) {
+          newCmd[i] = '\0';
+          cmdLen--;
+        }
       }
     }
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
