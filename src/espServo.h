@@ -198,6 +198,7 @@ void servoFeedback(int8_t index = 16) {
   byte begin = 0, end = 15;
   if (index > -1 && index < 16)
     begin = end = index;  //
+  bool infoPrinted = false;
   for (byte jointIdx = begin; jointIdx <= end; jointIdx++) {
     if (jointIdx == 4)  // skip the shoulder roll joints
       jointIdx += 4;
@@ -210,6 +211,7 @@ void servoFeedback(int8_t index = 16) {
       PTD(convertedAngle, 1);
       if (begin != end)
         PT('\t');
+      infoPrinted = true;
       readAngles[jointIdx] = round(convertedAngle);
       if (fabs(currentAng[jointIdx] - convertedAngle) > (movedJoint[jointIdx] ? 1 : 2)) {  // allow smaller tolarance for driving joint
                                                                                            // allow larger tolerance for driven joint
@@ -219,7 +221,8 @@ void servoFeedback(int8_t index = 16) {
       currentAng[jointIdx] = readAngles[jointIdx];
     }
   }
-  PTL();
+  if (infoPrinted)
+    PTL();
 }
 bool servoFollow() {
   bool checkAll = true, moved = false;
