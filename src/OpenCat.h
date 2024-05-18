@@ -109,10 +109,10 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define IR_PIN 23
 #define VOLTAGE 35
 #define LOW_VOLTAGE 6.8
-#define ANALOG1 34
-#define ANALOG2 2
-#define ANALOG3 36
-#define ANALOG4 39
+#define ANALOG1 36
+#define ANALOG2 39
+#define ANALOG3 34
+#define ANALOG4 2
 #define VOICE_RX 26
 #define VOICE_TX 25
 #define UART_RX2 10  //mistake in the pcb layout
