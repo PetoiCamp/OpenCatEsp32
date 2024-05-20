@@ -123,19 +123,21 @@ bool lowBattery() {
     uptime = currentTime;
     float voltage = analogRead(VOLTAGE);
     if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) > 10) {  // if battery voltage < threshold, it needs to be recharged
-      // give the robot a break when voltage drops after sprint
-      // adjust the thresholds according to your batteries' voltage
-      // if set too high, the robot will stop working when the battery still has power.
-      // If too low, the robot may not alarm before the battery shuts off
+                                                                                     // give the robot a break when voltage drops after sprint
+                                                                                     // adjust the thresholds according to your batteries' voltage
+                                                                                     // if set too high, the robot will stop working when the battery still has power.
+                                                                                     // If too low, the robot may not alarm before the battery shuts off
+      lowBatteryQ = true;
       if (!safeRest) {
         strcpy(lastCmd, "rest");
         loadBySkillName(lastCmd);
         shutServos();
         safeRest = true;
       }
-      PT("Low power: ");
+      PTF("Low power: ");
       PT(voltage / vFactor);
       PTL("V");
+      PTLF("Long-press the battery's button to turn it on!");
       if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
         playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
       //    strip.show();
@@ -156,12 +158,16 @@ bool lowBattery() {
       return true;
     }
     if (safeRest) {
-      strcpy(lastCmd, "rest");
-      loadBySkillName(lastCmd);
-      shutServos();
+      // strcpy(lastCmd, "rest");
+      // loadBySkillName(lastCmd);
+      // shutServos();
       safeRest = false;
     }
     lastVoltage = voltage;
+    if (voltage > low_voltage && lowBatteryQ) {
+      playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
+      lowBatteryQ = false;
+    }
   }
   return false;
 }
@@ -181,10 +187,10 @@ void reaction() {
       idleTimer = millis();
     if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
       beep(15 + newCmdIdx, 5);  // ToDo: check the muted sound when newCmdIdx = -1
-    if (hardServoQ && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
+    if (!workingStiffness && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
-      setServoP(P_SOFT);
-      hardServoQ = false;
+      setServoP(P_WORKING);
+      workingStiffness = true;
 #endif
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
@@ -303,9 +309,11 @@ void reaction() {
           playMelody(melody1, sizeof(melody1) / 2);
           break;
         }
-        // #ifdef ULTRASONIC
+#ifdef ULTRASONIC
       case T_COLOR:
         {
+          if (!ultrasonicLEDinitializedQ)
+            rgbUltrasonicSetup();
           if (cmdLen < 2)  // a single 'C' will turn off the manual color mode
             manualEyeColorQ = false;
           else {  // turn on the manual color mode
@@ -315,7 +323,7 @@ void reaction() {
           }
           break;
         }
-        // #endif
+#endif
       case ';':
         {
           setServoP(P_SOFT);
@@ -332,7 +340,7 @@ void reaction() {
           saveCalib(servoCalib);
 #ifdef VOICE
           if (newCmdIdx == 2)
-            Serial2.println("XAc");
+            SERIAL_VOICE.println("XAc");
 #endif
           break;
         }
@@ -342,7 +350,7 @@ void reaction() {
           i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
 #ifdef VOICE
           if (newCmdIdx == 2)
-            Serial2.println("XAc");
+            SERIAL_VOICE.println("XAc");
 #endif
           break;
         }
@@ -403,11 +411,11 @@ void reaction() {
                 if (lastToken != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
-                  hardServoQ = true;
+                  workingStiffness = false;
 #endif
 #ifdef VOICE
                   if (newCmdIdx == 2)
-                    Serial2.println("XAd");
+                    SERIAL_VOICE.println("XAd");
 #endif
                   strcpy(newCmd, "calib");
                   loadBySkillName(newCmd);
@@ -437,7 +445,7 @@ void reaction() {
                 delay(10);
               }
 #ifdef T_SERVO_MICROSECOND
-              else if (token == T_SERVO_MICROSECOND) {
+              else if (token == T_SERVO_MICROSECOND) {  // there might be some problems.
 #ifdef ESP_PWM
                 servo[PWM_pin[target[0]]].writeMicroseconds(target[1]);
 #else
@@ -447,6 +455,8 @@ void reaction() {
 #endif
 #ifdef T_SERVO_FEEDBACK
               else if (token == T_SERVO_FEEDBACK) {
+                setServoP(P_SOFT);
+                workingStiffness = false;
                 gyroBalanceQ = false;
                 // measureServoPin = (inLen == 1) ? target[0] : 16;
                 if (inLen == 0)
@@ -458,6 +468,8 @@ void reaction() {
                 } else
                   measureServoPin = target[0];
               } else if (token == T_SERVO_FOLLOW) {
+                setServoP(P_SOFT);
+                workingStiffness = false;
                 gyroBalanceQ = false;
                 measureServoPin = 16;
               }
@@ -598,20 +610,13 @@ void reaction() {
         }
       case EXTENSION:
         {
-          //check if the module is activated
-          // int8_t moduleIndex = (cmdLen == 0        // with only 'X'
-          //                       || newCmd[0] < 48  //if the serial monitor is set to send a newline or carriage return
-          //                       )
-          //                        ? -2                         //want to close the sensors
-          //                        : indexOfModule(newCmd[0]);  //-1 means not found
-          // >0 are existing sensors
-          if (cmdLen == 0        // with only 'X'
-              || newCmd[0] < 48  // if the serial monitor is set to send a newline or carriage return
-          )
-            newCmd[0] = '\0';
-          reconfigureTheActiveModule(newCmd);
+          // PTH("cmdLen = ", cmdLen);
+          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen ==1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+                                                                       // and we don't want to change the activation status of the ultrasonic sensor behavior
+            reconfigureTheActiveModule(newCmd);
+          }
 
-          //deal with the following command
+          // deal with the following command
           switch (newCmd[0]) {
 #ifdef VOICE
             case EXTENSION_VOICE:
@@ -623,8 +628,8 @@ void reaction() {
             case EXTENSION_ULTRASONIC:
               {
                 if (cmdLen >= 3) {
-                  PT('=');
-                  PTL(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                  printToAllPorts('=');
+                  printToAllPorts(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
                 }
                 break;
               }
@@ -759,8 +764,10 @@ void reaction() {
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {
-    if (servoFollow()) {  //don't move the joints if no manual movement is detected
+    if (servoFollow()) {  // don't move the joints if no manual movement is detected
       reAttachAllServos();
+      setServoP(P_SOFT);
+      workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
   }
