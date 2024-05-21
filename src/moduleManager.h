@@ -288,7 +288,8 @@ void read_serial() {
     // PTH("* " + source, long(millis() - lastSerialTime));
     if (!(token >= 'A' && token <= 'Z') || token == 'X' || token == 'R' || token == 'W') {  // serial monitor is used to send lower cased tokens by users
                                                                                             // delete the unexpected '\r' '\n' if the serial monitor sends line ending symbols
-      for (int i = cmdLen - 1; i >= 0; i--) {
+      trimSpaceBeforeString(newCmd);                                                        // allow space between token and parameters, such as "k sit"
+      for (int i = cmdLen - 1; i >= 0; i--) {                                               //delete the '/r' and '/n' if the serial monitor is configured to send terminators
         if ((newCmd[i] == '\n') || (newCmd[i] == '\r')) {
           newCmd[i] = '\0';
           cmdLen--;

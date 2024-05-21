@@ -611,8 +611,8 @@ void reaction() {
       case EXTENSION:
         {
           // PTH("cmdLen = ", cmdLen);
-          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen ==1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
-                                                                       // and we don't want to change the activation status of the ultrasonic sensor behavior
+          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+                                                                        // and we don't want to change the activation status of the ultrasonic sensor behavior
             reconfigureTheActiveModule(newCmd);
           }
 

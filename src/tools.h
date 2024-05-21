@@ -175,6 +175,13 @@ void FPS() {
   }
 }
 
+void trimSpaceBeforeString(char* s) {
+  char* head = s;
+  while (*head == ' ')
+    head++;
+  strcpy(s, head);
+}
+
 void printCmd() {
   PTF("lastT:");
   PT(lastToken);
