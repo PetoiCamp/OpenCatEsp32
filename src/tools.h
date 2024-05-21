@@ -175,9 +175,9 @@ void FPS() {
   }
 }
 
-void trimSpaceBeforeString(char* s) {
-  char* head = s;
-  while (*head == ' ')
+void leftTrimSpaces(char *s) {
+  char *head = s;
+  while (*head == ' ' || *head == '\t')
     head++;
   strcpy(s, head);
 }
