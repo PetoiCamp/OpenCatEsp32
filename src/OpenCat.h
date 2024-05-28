@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240521"  // YYMMDD
+#define DATE "240528"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -115,7 +115,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define ANALOG4 39
 #define VOICE_RX 26
 #define VOICE_TX 25
-#define UART_RX2 10  //mistake in the pcb layout
+#define UART_RX2 10  // mistake in the pcb layout
 #define UART_TX2 9
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -150,7 +150,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 
 #endif
 
-#define MAX_READING 4096.0  //to compensate the different voltage level of boards
+#define MAX_READING 4096.0  // to compensate the different voltage level of boards
 #define BASE_RANGE 1024.0
 double rate = 1.0 * MAX_READING / BASE_RANGE;
 
@@ -175,8 +175,8 @@ enum ServoModel_t {
 #define HEAD
 #define TAIL
 #define X_LEG
-#define REGULAR P1S  //G41
-#define KNEE P1S     //G41
+#define REGULAR P1S  // G41
+#define KNEE P1S     // G41
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
@@ -211,7 +211,7 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'      //abort the calibration values
+#define T_ABORT 'a'      // abort the calibration values
 #define T_BEEP 'b'       //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
@@ -225,9 +225,9 @@ bool newBoard = false;
 
 #define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
-#define T_SERVO_FOLLOW 'F'              //make the other legs follow the moved legs
-#define T_GYRO_FINENESS 'g'             //adjust the finess of gyroscope adjustment to accelerate motion
-#define T_GYRO_BALANCE 'G'              //toggle on/off the gyro adjustment
+#define T_SERVO_FOLLOW 'F'              // make the other legs follow the moved legs
+#define T_GYRO_FINENESS 'g'             // adjust the finess of gyroscope adjustment to accelerate motion
+#define T_GYRO_BALANCE 'G'              // toggle on/off the gyro adjustment
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'  // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
@@ -273,6 +273,7 @@ bool newBoard = false;
 #define EXTENSION_ULTRASONIC 'U'          // connect to Grove UART2
 #define EXTENSION_GESTURE 'G'             // connect to Grove I2C
 #define EXTENSION_CAMERA 'C'              // connect to Grove I2C
+#define EXTENSION_QUICK_DEMO 'Q'          // activate the quick demo at the end of OpenCatEsp32.ino
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -335,14 +336,17 @@ int8_t moduleList[] = {
   EXTENSION_ULTRASONIC,
   EXTENSION_GESTURE,
   EXTENSION_CAMERA,
+  EXTENSION_QUICK_DEMO,
 };
-String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "Ultrasonic", "Gesture", "Camera" };
-bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0 };
+
+String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
+bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+byte moduleIndex;
 bool initialBoot = true;
 bool safeRest = true;
 bool soundState;
 byte buzzerVolume;
-float amplifierFactor = 100.0;  //to fit the actual amplifier range of BiBoard
+float amplifierFactor = 100.0;  // to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
 int delayMid = 8;
@@ -582,9 +586,7 @@ void initRobot() {
   initModuleManager();
 #ifdef GYRO_PIN
   // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH)
-      && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE)
-      && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
+  if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");
