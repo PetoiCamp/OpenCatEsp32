@@ -53,6 +53,10 @@ byte melodyLowBattery[] = {
   15, 11, 13, 10, 11,  //tone
   4, 4, 4, 4, 4,       //relative duration, 8 means 1/8 note length
 };
+byte melodyOnBattery[] = {
+  11, 10, 13, 11, 15,  //tone
+  8, 8, 8, 8, 8,       //relative duration, 8 means 1/8 note length
+};
 byte melody1[] = { 15, 8, 10, 12, 13, 15, 8, 8, 17, 13, 15, 17, 19, 20, 8, 8,
                    2, 4, 4, 4, 4, 2, 2, 2, 2, 4, 4, 4, 4, 2, 2, 2 };
 byte melodyIRpass[] = {

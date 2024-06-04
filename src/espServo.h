@@ -1,3 +1,4 @@
+#include "esp32-hal-adc.h"
 #include "PetoiESP32Servo/ESP32Servo.h"
 //------------------angleRange  frequency  minPulse  maxPulse;
 ServoModel servoG41(180, SERVO_FREQ, 500, 2500);
@@ -10,7 +11,8 @@ ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
 #define P_STEP 32
 #define P_BASE 3000 + 3 * P_STEP  // 3000~3320
 #define P_HARD (P_BASE + P_STEP * 2)
-#define P_SOFT (P_BASE - P_STEP * 2)
+#define P_WORKING (P_BASE - P_STEP * 2)
+#define P_SOFT (P_BASE - P_STEP * 3)
 #define FEEDBACK_SIGNAL 3500
 int feedbackSignal = FEEDBACK_SIGNAL;
 int waitTimeForResponse = 10000;
@@ -157,9 +159,10 @@ int measurePulseWidth(uint8_t pwmReadPin) {
       return -1;
   }
   long t1 = micros();
+  long t2 = micros();
   while (digitalRead(pwmReadPin)) {
     if (micros() - t1 > maxPulseWidth)
-      return -1;
+      return -2;
   }
   return (micros() - t1);
 }
@@ -168,7 +171,7 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
 {                           // s is not the joint index, but the pwm pin index that may shift by 4
   //if(!servo[s].attached())// adding this condition will cause servos to jig. why?
   servo[s].attach(PWM_pin[s], modelObj[s]);  // sometimes servo[s].attach() is true, but it still needs to be attached. why there's no conflict?
-  delay(12);                                 // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
+  delay(15);                                 // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
   servo[s].writeMicroseconds(feedbackSignal);
   servo[s].detach();
   pinMode(PWM_pin[s], INPUT);
@@ -176,10 +179,10 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
   int n = nPulse;
   for (byte i = 0; i < nPulse; i++) {  // 测三次求平均值
     int temp = measurePulseWidth(PWM_pin[s]);
-    if (temp < 0) {
+    if (temp < 400) {  //there can be noises to return a fake pulsewidth. it's usually smaller than the shortest possible signal (500ms)
       n--;
       if (n == 0)
-        return -1;
+        return -3;
     } else if (i > 0)
       mean += temp;
   }
@@ -187,7 +190,7 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
     // PTT(n, ": ")
     return mean / (n - 1);
   } else
-    return -1;
+    return -4;
 }
 
 void servoFeedback(int8_t index = 16) {
@@ -195,6 +198,7 @@ void servoFeedback(int8_t index = 16) {
   byte begin = 0, end = 15;
   if (index > -1 && index < 16)
     begin = end = index;  //
+  bool infoPrinted = false;
   for (byte jointIdx = begin; jointIdx <= end; jointIdx++) {
     if (jointIdx == 4)  // skip the shoulder roll joints
       jointIdx += 4;
@@ -207,6 +211,7 @@ void servoFeedback(int8_t index = 16) {
       PTD(convertedAngle, 1);
       if (begin != end)
         PT('\t');
+      infoPrinted = true;
       readAngles[jointIdx] = round(convertedAngle);
       if (fabs(currentAng[jointIdx] - convertedAngle) > (movedJoint[jointIdx] ? 1 : 2)) {  // allow smaller tolarance for driving joint
                                                                                            // allow larger tolerance for driven joint
@@ -216,7 +221,8 @@ void servoFeedback(int8_t index = 16) {
       currentAng[jointIdx] = readAngles[jointIdx];
     }
   }
-  PTL();
+  if (infoPrinted)
+    PTL();
 }
 bool servoFollow() {
   bool checkAll = true, moved = false;

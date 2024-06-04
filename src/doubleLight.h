@@ -193,8 +193,6 @@ void get_error() {
   diffANALOG2 = max(-MAX_DIFF, min(MAX_DIFF, diffANALOG2));
   errorLight = diffANALOG2 - diffANALOG1;
   errorLight = 110 * atan(errorLight / 90);  // the 110 and 90 are the fitting constants to rescale the errorLight
-
-  lasterror = errorLight;
 }
 void compute_pid()  // get the output;
 {
@@ -207,15 +205,17 @@ void compute_pid()  // get the output;
   } else {
     setpid_parm(0.18, 0.02, 0.03);
   }
+  //(ANALOG1_mean + ANALOG2_mean) / (ANALOG1_current + ANALOG2_current)will decrease with increasing ANALOG1_current.
+  //There should be a factor to increase the error for dark conditions and decrease the factor for bright conditions.
   if (0 < errorLight < 10 && (diffANALOG1 + diffANALOG2) < 20 && (diffANALOG1 + diffANALOG2) > 5) {
     ANALOG1_current = result[0] * analogRead(ANALOG1) / rate + result[1];
     ANALOG2_current = analogRead(ANALOG2) / rate;
-    errorLight * 20 * sqrt((ANALOG1_mean + ANALOG2_mean) / min(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean)/2));
+    errorLight *= 20 * sqrt((ANALOG1_mean + ANALOG2_mean) / min(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean) / 2));
   }
   if (0 < errorLight < 10 && diffANALOG1 < -3 && diffANALOG2 < -3) {  //low light
     ANALOG1_current = result[0] * analogRead(ANALOG1) / rate + result[1];
     ANALOG2_current = analogRead(ANALOG2) / rate;
-    errorLight *= 3 * sqrt((ANALOG1_mean + ANALOG2_mean) / max(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean)/2));
+    errorLight *= 5 * sqrt((ANALOG1_mean + ANALOG2_mean) / max(ANALOG1_current + ANALOG2_current, (ANALOG1_mean + ANALOG2_mean) / 2));
   }
 #else
   if (abs(errorLight) > 500) {

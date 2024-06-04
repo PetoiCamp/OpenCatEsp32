@@ -260,7 +260,22 @@ public:
     if (period < 0) {  //behaviors
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
-        if (Serial.available()) {
+        Stream* serialPort = NULL;
+// String source;
+#ifdef BT_SSP
+        if (SerialBT.available()) {  // give BT a higher priority over wired serial
+          serialPort = &SerialBT;
+          // source = "BT";
+        } else
+#endif
+          //the BT_BLE is unhandled here
+          if (moduleActivatedQ[0] && Serial2.available()) {
+            serialPort = &Serial2;
+          } else if (Serial.available()) {
+            serialPort = &Serial;
+            // source = "SER";
+          }
+        if (serialPort) {
           interruptedDuringBehavior = true;
           return;
         }

@@ -117,5 +117,7 @@ template<typename T> void printToAllPorts(T text) {
   if (BTconnected)
     SerialBT.println(text);
 #endif
+  if (moduleActivatedQ[0])//serial2
+    Serial2.println(text);
   PTL(text);
 }

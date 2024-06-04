@@ -37,15 +37,13 @@
 #define EEPROM_SIZE (65535 / 8)
 bool EEPROMOverflow = false;
 
-
-
 #define EEPROM_BIRTHMARK_ADDRESS 0
 #define EEPROM_IMU 1                   // 2x9 = 18 bytes
 #define EEPROM_CALIB 20                // 16 bytes
 #define EEPROM_BLE_NAME 36             // 20 bytes
 #define EEPROM_BOOTUP_SOUND_STATE 56   // 1 byte
 #define EEPROM_BUZZER_VOLUME 57        // 1 byte
-#define EEPROM_MODULE_ENABLED_LIST 58  // 8 bytes
+#define EEPROM_MODULE_ENABLED_LIST 58  // 9 bytes
 #define EEPROM_VERSION_DATE 70         // 11 bytes
 #define EEPROM_RESERVED 82
 #define SERIAL_BUFF 100
