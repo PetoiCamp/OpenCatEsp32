@@ -183,6 +183,9 @@ void reaction() {
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
     }
+#ifdef PWM_LED_PIN
+    digitalWrite(PWM_LED_PIN, HIGH);
+#endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
     if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
@@ -720,9 +723,15 @@ void reaction() {
         token = T_SKILL;
     }
     resetCmd();
+#ifdef PWM_LED_PIN
+    digitalWrite(PWM_LED_PIN, LOW);
+#endif
   }
 
   if (token == T_SKILL) {
+#ifdef PWM_LED_PIN
+    analogWrite(PWM_LED_PIN, abs(currentAng[8]));
+#endif
     skill->perform();
     if (skill->period > 1)
       delay(delayShort + max(0, int(runDelay

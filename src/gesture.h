@@ -54,12 +54,12 @@ void read_gesture() {
           tQueue->addTask(T_BEEP_BIN, melody12345, 0);
           tQueue->addTask('k', "fiv", 2000);
           tQueue->addTask('k',
-#ifdef BITTLE
-                                     "scrh"
-#elif defined NYBBLE
-                                     "wsf"
+#ifdef NYBBLE
+                          "wsf"
+#else
+                          "scrh"
 #endif
-                                     );
+          );
           break;
         }
 

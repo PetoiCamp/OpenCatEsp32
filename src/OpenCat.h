@@ -106,17 +106,18 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define PWM_NUM 12
 // #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 2
+#define PWM_LED_PIN 27
 // #define IR_PIN 23
 #define VOLTAGE 35
 #define LOW_VOLTAGE 6.8
-#define ANALOG1 34
-#define ANALOG2 2
-#define ANALOG3 36
-#define ANALOG4 39
+#define ANALOG1 36
+#define ANALOG2 39
+#define ANALOG3 34
+#define ANALOG4 32
 #define VOICE_RX 26
 #define VOICE_TX 25
-#define UART_RX2 10  // mistake in the pcb layout
-#define UART_TX2 9
+#define UART_RX2 9
+#define UART_TX2 10
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
   18, 5, 14, 27,   // head or shoulder roll
@@ -182,6 +183,7 @@ enum ServoModel_t {
 #elif defined BITTLE
 #define MODEL "Bittle"
 #define HEAD
+#define TAIL
 #define LL_LEG
 #define REGULAR P1S
 #define KNEE P1S
@@ -510,11 +512,11 @@ int slope = 1;
 
 void initRobot() {
   beep(20);
-#ifdef BiBoard_V1_0
-  Wire.begin(22, 21);
-#else
+  // #ifdef BiBoard_V1_0
+  //   Wire.begin(22, 21);
+  // #else
   Wire.begin();
-#endif
+  // #endif
   SoftwareVersion = SoftwareVersion + BOARD + "_" + DATE;
   PTL('k');
   PTLF("Flush the serial buffer...");

@@ -296,7 +296,7 @@ bool read_IMU()
     for (byte i = 0; i < 3; i++)
     { // no need to flip yaw
       ypr[i] *= degPerRad;
-#if defined BiBoard_V0_1 || defined BiBoard_V1_0
+#if defined BiBoard_V0_1
       ypr[i] = -ypr[i];
       if (i != 2)
         *xyzReal[i] = -*xyzReal[i];

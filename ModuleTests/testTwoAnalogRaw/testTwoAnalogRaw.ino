@@ -1,11 +1,11 @@
 
 #define BUZZER 5
 
-#define SOUND_MAX 4095
+#define SOUND_MAX 1024
 #define SOUND_THRESHOLD SOUND_MAX * 0.97
 
-#define IN1 34
-#define IN2 35
+#define IN1 A2
+#define IN2 A3
 
 void beep(int8_t note, float duration = 10, int pause = 0, byte repeat = 1) {
   if (note == 0) {  //rest note
@@ -58,8 +58,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   //stats();
   //  sensorConnectedQ(READING_COUNT);
+
   Serial.print(analogRead(IN1));
   Serial.print('\t');
-  Serial.println(analogRead(IN2));
+  Serial.print(analogRead(IN2));
+  Serial.print('\t');
+  Serial.print(0);
+  Serial.print('\t');
+  Serial.println(1024);
   //  con ? beep(10, 200) : beep(20, 200);
 }

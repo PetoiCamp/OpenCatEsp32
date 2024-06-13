@@ -62,7 +62,13 @@ int imgRangeY = 240;
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, frontUp, backUp, frontDown, backDown;
 
-#ifdef BITTLE
+#ifdef NYBBLE
+int8_t initPars[] = {
+    30, 11, 4, 10, 15,
+    60, -50, 31, -50,
+    45, -40, 40, -36,
+    25, -60, 60, 16};
+#else // BITTLE or CUB
 int8_t initPars[] = {
 #ifdef MU_CAMERA
     30, 11, 4, 10, 0,
@@ -76,12 +82,6 @@ int8_t initPars[] = {
     60, 90, 10, -20
 #endif
 };
-#elif defined NYBBLE
-int8_t initPars[] = {
-    30, 11, 4, 10, 15,
-    60, -50, 31, -50,
-    45, -40, 40, -36,
-    25, -60, 60, 16};
 #endif
 
 int8_t *par[] = {&lensFactor, &proportion, &tranSpeed, &pan, &tilt,
