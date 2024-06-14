@@ -51,7 +51,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
 byte bleMessageShift = 1;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    std::string rxValue = pCharacteristic->getValue();
+    String rxValue = pCharacteristic->getValue().c_str();
     if (rxValue.length() > 0) {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
