@@ -111,7 +111,6 @@ void servoSetup() {
 void shutServos(byte id = PWM_NUM) {
   ServoModel *model;
   if (id == PWM_NUM) {
-
     for (byte s = 0; s < PWM_NUM; s++) {  // PWM_NUM
 #ifdef ESP_PWM
       /* the following method can shut down the servos.
@@ -143,8 +142,9 @@ void shutServos(byte id = PWM_NUM) {
 #endif
     }
   } else {
+    id = (PWM_NUM == 12 && id > 3) ? id - 4 : id;
 #ifdef ESP_PWM
-     servo[id].writeMicroseconds(0);  
+    servo[id].writeMicroseconds(0);
 #else  // using PCA9685
     pwm.setPWM(id, 0, 4096);
 #endif

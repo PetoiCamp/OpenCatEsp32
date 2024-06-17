@@ -130,7 +130,12 @@ void initModule(char moduleCode) {
     case EXTENSION_CAMERA:
       {
         loadBySkillName("sit");
-        cameraSetup();
+        if (!cameraSetup()) {
+          int i = indexOfModule(moduleCode);
+          PTH("- disable", moduleNames[i]);
+          moduleActivatedQ[i] = false;
+          i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+        }
         break;
       }
 #endif
