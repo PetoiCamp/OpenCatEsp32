@@ -122,7 +122,7 @@ bool lowBattery() {
   if (currentTime > uptime) {
     uptime = currentTime;
     float voltage = analogRead(VOLTAGE);
-    if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) > 10) {  // if battery voltage < threshold, it needs to be recharged
+    if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) < 10) {  // if battery voltage < threshold, it needs to be recharged
                                                                                      // give the robot a break when voltage drops after sprint
                                                                                      // adjust the thresholds according to your batteries' voltage
                                                                                      // if set too high, the robot will stop working when the battery still has power.
@@ -284,14 +284,20 @@ void reaction() {
         }
       case T_REST:
         {
-          strcpy(newCmd, "rest");
-          if (strcmp(newCmd, lastCmd)) {
-            loadBySkillName(newCmd);
-          }
-          shutServos();
           gyroBalanceQ = false;
-          manualHeadQ = false;
           printToAllPorts('g');
+          if (cmdLen == 0) {
+            strcpy(newCmd, "rest");
+            if (strcmp(newCmd, lastCmd)) {
+              loadBySkillName(newCmd);
+            }
+            PTL("all");
+            shutServos();
+            manualHeadQ = false;
+          } else if (cmdLen == 1) {
+            PTH("single", atoi(newCmd));
+            shutServos(atoi(newCmd));
+          }
           break;
         }
       case T_JOINTS:

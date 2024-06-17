@@ -81,6 +81,40 @@ String SoftwareVersion = "";
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
+// Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
+#ifdef NYBBLE
+#define MODEL "Nybble"
+#define HEAD
+#define TAIL
+#define X_LEG
+#define REGULAR P1S  // G41
+#define KNEE P1S     // G41
+#include "InstinctNybbleESP.h"
+
+#elif defined BITTLE
+#define MODEL "Bittle"
+#define HEAD
+// #ifdef ROBOTIC_ARM
+#define TAIL
+// #endif
+#define LL_LEG
+#define REGULAR P1S
+#define KNEE P1S
+#include "InstinctBittleESP.h"
+
+#elif defined CUB
+#define MODEL "DoF16"
+#ifdef BiBoard2
+#define HEAD
+#define TAIL
+#endif
+#define LL_LEG
+#define REGULAR P1S
+#define KNEE P2K
+#include "InstinctCubESP.h"
+// #define MPU_YAW180
+#endif
+
 #if defined BiBoard_V0_1 || defined BiBoard_V0_2
 #define ESP_PWM
 #define PWM_NUM 12
@@ -96,9 +130,15 @@ String SoftwareVersion = "";
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
+#ifndef ROBOTIC_ARM
   19, 4, 2, 27,   // head or shoulder roll
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
+#else             // swap the front left knee servo spot for better accessibility of the clip servo's cable
+  19, 4, 32, 2,   // head or shoulder roll
+  33, 5, 15, 14,  // shoulder pitch
+  27, 18, 13, 12  // knee
+#endif
 };
 
 #elif defined BiBoard_V1_0
@@ -106,7 +146,6 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define PWM_NUM 12
 // #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 2
-#define PWM_LED_PIN 27
 // #define IR_PIN 23
 #define VOLTAGE 35
 #define LOW_VOLTAGE 6.8
@@ -118,12 +157,24 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define VOICE_TX 25
 #define UART_RX2 9
 #define UART_TX2 10
+
+#ifndef ROBOTIC_ARM
+#define PWM_LED_PIN 27  
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
   18, 5, 14, 27,   // head or shoulder roll
   23, 15, 12, 33,  // shoulder pitch
   19, 4, 13, 32    // knee
 };
+#else  // swap the front left knee servo spot for better accessibility of the clip servo's cable
+const uint8_t PWM_pin[PWM_NUM] = {
+  18, 5, 19, 14,   // head or shoulder roll
+  23, 15, 12, 33,  // shoulder pitch
+  27, 4, 13, 32    // knee
+};
+#endif
+
+
 
 #elif defined BiBoard2
 #define PWM_NUM 16
@@ -169,38 +220,6 @@ enum ServoModel_t {
   P1S,
   P2K
 };
-
-// Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
-#ifdef NYBBLE
-#define MODEL "Nybble"
-#define HEAD
-#define TAIL
-#define X_LEG
-#define REGULAR P1S  // G41
-#define KNEE P1S     // G41
-#include "InstinctNybbleESP.h"
-
-#elif defined BITTLE
-#define MODEL "Bittle"
-#define HEAD
-#define TAIL
-#define LL_LEG
-#define REGULAR P1S
-#define KNEE P1S
-#include "InstinctBittleESP.h"
-
-#elif defined CUB
-#define MODEL "DoF16"
-#ifdef BiBoard2
-#define HEAD
-#define TAIL
-#endif
-#define LL_LEG
-#define REGULAR P1S
-#define KNEE P2K
-#include "InstinctCubESP.h"
-// #define MPU_YAW180
-#endif
 
 ServoModel_t servoModelList[] = {
   REGULAR, REGULAR, REGULAR, REGULAR,

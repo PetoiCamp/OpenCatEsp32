@@ -354,12 +354,12 @@ public:
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
-        //          PT(duty); PT('\t');
-        calibratedPWM(jointIndex, duty
+        duty =
 #ifdef GYRO_PIN
-                                    + gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
+          +gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
-        );
+          + duty;
+        calibratedPWM(jointIndex, duty);
       }
       //        PTL();
       frame += tStep;

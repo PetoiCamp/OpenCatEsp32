@@ -108,36 +108,45 @@ void servoSetup() {
 #endif
 }
 
-void shutServos() {
+void shutServos(byte id = PWM_NUM) {
   ServoModel *model;
-  for (byte s = 0; s < PWM_NUM; s++) {  // PWM_NUM
+  if (id == PWM_NUM) {
+    for (byte s = 0; s < PWM_NUM; s++) {  // PWM_NUM
 #ifdef ESP_PWM
-    /* the following method can shut down the servos.
+      /* the following method can shut down the servos.
        however, because a single Timer is divided to generate four PWMs, there's random noise when the PWM transits to zero.
        It will cause the servo to jump before shutdown.
     */
-    //    if (shutEsp32Servo)
-    servo[s].writeMicroseconds(0);  // the joints may randomly jump when the signal goes to zero. the source is in hardware
-                                    //     servo[s].detach(); //another way to turn off the servo
-                                    //     int joint;
-                                    //     if (WALKING_DOF == 8)
-                                    //       joint = ( s > 3) ? s + 4 : s;
-                                    //     else// if (WALKING_DOF == 12)
-                                    //       joint = s + 4;
-                                    //     switch (servoModelList[joint]) {
-                                    //       case G41:
-                                    //         model = &servoG41;
-                                    //         break;
-                                    //       case P1S:
-                                    //         model = &servoP1S;
-                                    //         break;
-                                    //       case P2K:
-                                    //         model = &servoP1L;
-                                    //         break;
-                                    //     }
-                                    //     servo[s].attach(PWM_pin[s], model);
-#else                               // using PCA9685
-    pwm.setPWM(s, 0, 4096);
+      //    if (shutEsp32Servo)
+      servo[s].writeMicroseconds(0);  // the joints may randomly jump when the signal goes to zero. the source is in hardware
+                                      //     servo[s].detach(); //another way to turn off the servo
+                                      //     int joint;
+                                      //     if (WALKING_DOF == 8)
+                                      //       joint = ( s > 3) ? s + 4 : s;
+                                      //     else// if (WALKING_DOF == 12)
+                                      //       joint = s + 4;
+                                      //     switch (servoModelList[joint]) {
+                                      //       case G41:
+                                      //         model = &servoG41;
+                                      //         break;
+                                      //       case P1S:
+                                      //         model = &servoP1S;
+                                      //         break;
+                                      //       case P2K:
+                                      //         model = &servoP1L;
+                                      //         break;
+                                      //     }
+                                      //     servo[s].attach(PWM_pin[s], model);
+#else                                 // using PCA9685
+      pwm.setPWM(s, 0, 4096);
+#endif
+    }
+  } else {
+    id = (PWM_NUM == 12 && id > 3) ? id - 4 : id;
+#ifdef ESP_PWM
+    servo[id].writeMicroseconds(0);
+#else  // using PCA9685
+    pwm.setPWM(id, 0, 4096);
 #endif
   }
   //  shutEsp32Servo = false;
