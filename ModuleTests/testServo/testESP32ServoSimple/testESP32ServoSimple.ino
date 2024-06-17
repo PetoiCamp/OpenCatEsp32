@@ -36,15 +36,24 @@
  * if you are particular, adjust the min and max values to match your needs.
  */
 
+#define BiBoard_V1_0
 #include <ESP32Servo.h>
 Servo myservo[12];  // create servo object to control a servo
 // 16 servo objects can be created on the ESP32
 
 int pos = 0;  // variable to store the servo position
 // Recommended PWM GPIO pins on the ESP32 include 2,4,12-19,21-23,25-27,32-33
+#if defined BiBoard_V0_1 || defined BiBoard_V0_2
 byte servoPin[] = { 19, 4, 2, 27,   // head or shoulder roll
                     33, 5, 15, 14,  // shoulder pitch
                     32, 18, 13, 12 };
+#elif defined BiBoard_V1_0
+byte servoPin[] = {
+  18, 5, 14, 27,   // head or shoulder roll
+  23, 15, 12, 33,  // shoulder pitch
+  19, 4, 13, 32    // knee
+};
+#endif
 
 void setup() {
   // Allow allocation of all timers
@@ -53,16 +62,16 @@ void setup() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
   for (byte s = 0; s < 12; s++) {
-    myservo[s].setPeriodHertz(200);             
-    myservo[s].attach(servoPin[s], 500, 2500); 
-                                                // using default min/max of 500us and 2500us
-                                                // different servos may require different min/max settings
-                                                // for an accurate 0 to 180 sweep
+    myservo[s].setPeriodHertz(200);
+    myservo[s].attach(servoPin[s], 500, 2500);
+    // using default min/max of 500us and 2500us
+    // different servos may require different min/max settings
+    // for an accurate 0 to 180 sweep
   }
 }
 
 void loop() {
-  for (pos = 60; pos <= 120; pos += 1) { 
+  for (pos = 60; pos <= 120; pos += 1) {
     for (byte s = 0; s < 12; s++)
       myservo[s].write(pos);  // tell servo to go to position in variable 'pos'
     delay(4);                 // waits 15ms for the servo to reach the position
