@@ -135,9 +135,9 @@ const uint8_t PWM_pin[PWM_NUM] = {
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
 #else             // swap the front left knee servo spot for better accessibility of the clip servo's cable
-  19, 4, 32, 2,   // head or shoulder roll
+  19, 4, 18, 27,  // head or shoulder roll
   33, 5, 15, 14,  // shoulder pitch
-  27, 18, 13, 12  // knee
+  32, 2, 13, 12   // knee
 #endif
 };
 
@@ -149,28 +149,28 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define IR_PIN 23
 #define VOLTAGE 35
 #define LOW_VOLTAGE 6.8
-#define ANALOG1 36
-#define ANALOG2 39
-#define ANALOG3 34
-#define ANALOG4 32
+#define ANALOG1 34
+#define ANALOG2 32
+#define ANALOG3 36
+#define ANALOG4 39
 #define VOICE_RX 26
 #define VOICE_TX 25
 #define UART_RX2 9
 #define UART_TX2 10
 
 #ifndef ROBOTIC_ARM
-#define PWM_LED_PIN 27  
+#define PWM_LED_PIN 27
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
-  18, 5, 14, 27,   // head or shoulder roll
-  23, 15, 12, 33,  // shoulder pitch
-  19, 4, 13, 32    // knee
+  18, 5, 14, 27,  // head or shoulder roll
+  23, 4, 12, 33,  // shoulder pitch
+  19, 15, 13, 32  // knee
 };
 #else  // swap the front left knee servo spot for better accessibility of the clip servo's cable
 const uint8_t PWM_pin[PWM_NUM] = {
-  18, 5, 19, 14,   // head or shoulder roll
-  23, 15, 12, 33,  // shoulder pitch
-  27, 4, 13, 32    // knee
+  18, 5, 4, 23,    // head or shoulder roll
+  19, 15, 12, 33,  // shoulder pitch
+  32, 13, 14, 27   // knee
 };
 #endif
 
@@ -428,7 +428,11 @@ int8_t rotationDirection[] = { 1, -1, 1, 1,
 int angleLimit[][2] = {
   { -120, 120 },
   { -85, 85 },
+#ifdef ROBOTIC_ARM
   { -120, 120 },
+#else
+  { -120, 120 },
+#endif
   { -120, 120 },
   { -90, 60 },
   { -90, 60 },
@@ -466,20 +470,20 @@ int angleLimit[][2] = {
 #endif
 
 #ifdef X_LEG
-int currentAng[DOF] = { -30, -80, -45, 0,
+int currentAng[DOF] = { 0, 0, 0, 0,
                         0, 0, 0, 0,
                         75, 75, -75, -75,
                         -55, -55, 55, 55 };
-int previousAng[DOF] = { -30, -80, -45, 0,
+int previousAng[DOF] = { 0, 0, 0, 0,
                          0, 0, 0, 0,
                          75, 75, -75, -75,
                          -55, -55, 55, 55 };
 #else
-int currentAng[DOF] = { -30, -80, -45, 0,
+int currentAng[DOF] = { 0, 0, 0, 0,
                         0, 0, 0, 0,
                         75, 75, 75, 75,
                         -55, -55, -55, -55 };
-int previousAng[DOF] = { -30, -80, -45, 0,
+int previousAng[DOF] = { 0, 0, 0, 0,
                          0, 0, 0, 0,
                          75, 75, 75, 75,
                          -55, -55, -55, -55 };

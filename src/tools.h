@@ -14,6 +14,12 @@
   { \
     Serial.print(head); \
     Serial.print('\t'); \
+    Serial.print(value); \
+  }
+#define PTHL(head, value) \
+  { \
+    Serial.print(head); \
+    Serial.print('\t'); \
     Serial.println(value); \
   }
 
