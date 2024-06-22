@@ -344,11 +344,15 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && manualHeadQ) {
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-waling joints
+            || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
+        {
+#ifndef ROBOT_ARM
           if (!manualHeadQ && jointIndex < 4) {
             duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
+#endif
             duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])))
                    - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
@@ -358,6 +362,16 @@ public:
 #ifdef GYRO_PIN
           +gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
+#ifdef ROBOT_ARM                         // counter-weight adjustment
+          + ((jointIndex % 4 < 2) ?      //front legs
+               ((jointIndex / 4 == 2) ?  //shoulder
+                  -10
+                                      : jointIndex / 4 == 3 ?  //knee
+                                          10
+                                                            : 0)
+                                  : 0)
+#endif
+
           + duty;
         calibratedPWM(jointIndex, duty);
       }

@@ -63,7 +63,7 @@ int imgRangeY = 240;
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, frontUp, backUp, frontDown, backDown;
 
-#ifdef ROBOTIC_ARM
+#ifdef ROBOT_ARM
 float adjustmentFactor = 1.5;
 #else
 float adjustmentFactor = 1;

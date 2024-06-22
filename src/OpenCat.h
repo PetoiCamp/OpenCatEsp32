@@ -71,7 +71,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240528"  // YYMMDD
+#define DATE "240622"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -94,7 +94,7 @@ String SoftwareVersion = "";
 #elif defined BITTLE
 #define MODEL "Bittle"
 #define HEAD
-// #ifdef ROBOTIC_ARM
+// #ifdef ROBOT_ARM
 #define TAIL
 // #endif
 #define LL_LEG
@@ -130,15 +130,9 @@ String SoftwareVersion = "";
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
-#ifndef ROBOTIC_ARM
   19, 4, 2, 27,   // head or shoulder roll
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
-#else             // swap the front left knee servo spot for better accessibility of the clip servo's cable
-  19, 4, 18, 27,  // head or shoulder roll
-  33, 5, 15, 14,  // shoulder pitch
-  32, 2, 13, 12   // knee
-#endif
 };
 
 #elif defined BiBoard_V1_0
@@ -158,7 +152,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_RX2 9
 #define UART_TX2 10
 
-#ifndef ROBOTIC_ARM
+#ifndef ROBOT_ARM
 #define PWM_LED_PIN 27
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -255,7 +249,8 @@ bool newBoard = false;
 #define T_JOINTS 'j'                    // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
-#define T_SLOPE 'l'                   // inverse the slope of the adjustment function
+#define T_BALANCE_SLOPE 'l'           // change the slope of the balancing adjustment in roll and pitch directions. \
+                                      // default "l 1 1". the numbers allows [-2,-1,0,1,2]
 #define T_LISTED_BIN 'L'              // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
 #define T_INDEXED_SEQUENTIAL_ASC 'm'  // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
 #define T_INDEXED_SEQUENTIAL_BIN 'M'  // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
@@ -264,6 +259,7 @@ bool newBoard = false;
 #define T_MELODY 'o'
 #define T_PAUSE 'p'
 #define T_TASK_QUEUE 'q'
+#define T_ROBOT_ARM 'r'
 #define T_SAVE 's'
 #define T_TILT 't'
 #define T_TEMP 'T'  // call the last skill data received from the serial port
@@ -303,7 +299,10 @@ float radPerDeg = M_PI / 180;
 // control related variables
 #define IDLE_TIME 3000
 long idleTimer = 0;
-#define CHECK_BATTERY_PERIOD 10000  // every 10 seconds. 60 mins -> 3600 seconds
+#define CHECK_BATTERY_PERIOD 1000  // every 1 seconds. 60 mins -> 3600 seconds
+#define BATTERY_WARNING_FREQ 10    // every 10 seconds
+byte batteryWarningCounter = 0;
+float lastVoltage;
 int uptime = -1;
 int frame = 0;
 int tStep = 1;
@@ -322,7 +321,6 @@ int8_t periodGlobal = 0;
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
-int lastVoltage;
 char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
@@ -383,7 +381,7 @@ int8_t middleShift[] = { 0, 15, 0, 0,
                          10, 10, -10, -10,
                          -30, -30, 30, 30 };
 #elif defined BITTLE
-int8_t middleShift[] = { 0, 15, 0, 0,
+int8_t middleShift[] = { 0, -90, 0, 0,
                          -45, -45, -45, -45,
                          55, 55, -55, -55,
                          -55, -55, -55, -55 };
@@ -427,13 +425,17 @@ int8_t rotationDirection[] = { 1, -1, 1, 1,
 #ifdef BITTLE
 int angleLimit[][2] = {
   { -120, 120 },
+#ifdef ROBOT_ARM
+  { -10, 180 },
+#else
   { -85, 85 },
-#ifdef ROBOTIC_ARM
+#endif
+  { -120, 120 },
+#ifdef ROBOT_ARM
   { -120, 120 },
 #else
   { -120, 120 },
 #endif
-  { -120, 120 },
   { -90, 60 },
   { -90, 60 },
   { -90, 90 },
@@ -503,7 +505,7 @@ int16_t imuOffset[9] = { 0, 0, 0,
 float expectedRollPitch[2];
 float RollPitchDeviation[2];
 float currentAdjust[DOF] = {};
-int slope = 1;
+int balanceSlope[2] = { 1, 1 };  //roll, pitch
 
 #include "tools.h"
 #include "QList/QList.h"

@@ -181,10 +181,12 @@ void FPS() {
   }
 }
 
-void leftTrimSpaces(char *s) {
+void leftTrimSpaces(char *s,int *len) {
   char *head = s;
-  while (*head == ' ' || *head == '\t')
+  while (*head == ' ' || *head == '\t'){
     head++;
+    (*len)--;
+  }
   strcpy(s, head);
 }
 
