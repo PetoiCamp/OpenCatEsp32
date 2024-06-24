@@ -353,8 +353,8 @@ public:
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
 #endif
-            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])))
-                   - gyroBalanceQ * currentAdjust[jointIndex];
+            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])));
+                  //  - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
@@ -362,15 +362,15 @@ public:
 #ifdef GYRO_PIN
           +gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
-#ifdef ROBOT_ARM                         // counter-weight adjustment
-          + ((jointIndex % 4 < 2) ?      //front legs
-               ((jointIndex / 4 == 2) ?  //shoulder
-                  -10
-                                      : jointIndex / 4 == 3 ?  //knee
-                                          10
-                                                            : 0)
-                                  : 0)
-#endif
+// #ifdef ROBOT_ARM                         // counter-weight adjustment
+//           + ((jointIndex % 4 < 2) ?      //front legs
+//                ((jointIndex / 4 == 2) ?  //shoulder
+//                   -10
+//                                       : jointIndex / 4 == 3 ?  //knee
+//                                           10
+//                                                             : 0)
+//                                   : 0)
+// #endif
 
           + duty;
         calibratedPWM(jointIndex, duty);

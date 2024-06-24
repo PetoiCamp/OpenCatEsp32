@@ -178,6 +178,7 @@ bool lowBattery() {
     if (voltage > LOW_VOLTAGE && lowBatteryQ) {
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
+      batteryWarningCounter = 0;
     }
   }
   return false;
