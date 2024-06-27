@@ -114,32 +114,43 @@ void dealWithExceptions() {
 #endif
 }
 
+// V_read / 4096 * 3.3 = V_real / ratio
+// V_real = V_read / 4096 * 3.3 * ratio
+// V_real = V_read / vFactor, vFactor = 4096 / 3.3 / ratio
+// a more accurate fitting for V1_0 is V_real = V_read / 515 + 1.95
 #ifdef VOLTAGE
-float vFactor = 4096 / 3.3 / 3;
-float low_voltage = LOW_VOLTAGE * vFactor;
 bool lowBattery() {
   long currentTime = millis() / CHECK_BATTERY_PERIOD;
   if (currentTime > uptime) {
     uptime = currentTime;
     float voltage = analogRead(VOLTAGE);
-    if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) < 10) {  // if battery voltage < threshold, it needs to be recharged
+#ifdef BiBoard_V1_0
+    voltage = voltage / 515 + 1.9;
+#else
+    voltage = voltage / 414;
+#endif
+    if (voltage < 6 || voltage < LOW_VOLTAGE && abs(voltage - lastVoltage) < 0.2) {  // if battery voltage < threshold, it needs to be recharged
                                                                                      // give the robot a break when voltage drops after sprint
                                                                                      // adjust the thresholds according to your batteries' voltage
                                                                                      // if set too high, the robot will stop working when the battery still has power.
                                                                                      // If too low, the robot may not alarm before the battery shuts off
       lowBatteryQ = true;
       if (!safeRest) {
+        // shutServos();
+        // delay(2000);
         strcpy(lastCmd, "rest");
         loadBySkillName(lastCmd);
         shutServos();
         safeRest = true;
       }
       PTF("Low power: ");
-      PT(voltage / vFactor);
+      PT(voltage);
       PTL("V");
       PTLF("Long-press the battery's button to turn it on!");
-      if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
+      if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE) && !batteryWarningCounter) {
         playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
+      }
+      batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
       int8_t bStep = 1;
       for (byte brightness = 1; brightness > 0; brightness += bStep) {
@@ -164,9 +175,10 @@ bool lowBattery() {
       safeRest = false;
     }
     lastVoltage = voltage;
-    if (voltage > low_voltage && lowBatteryQ) {
+    if (voltage > LOW_VOLTAGE && lowBatteryQ) {
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
+      batteryWarningCounter = 0;
     }
   }
   return false;
@@ -235,7 +247,6 @@ void reaction() {
       case T_PRINT_GYRO:
       case T_VERBOSELY_PRINT_GYRO:
       case T_RANDOM_MIND:
-      case T_SLOPE:
         {
           if (token == T_RANDOM_MIND) {
             autoSwitch = !autoSwitch;
@@ -255,9 +266,6 @@ void reaction() {
           } else if (token == T_VERBOSELY_PRINT_GYRO) {
             printGyro = !printGyro;
             token = printGyro ? 'V' : 'v';  // V for verbosely print gyro data
-          } else if (token == T_SLOPE) {
-            slope = -slope;
-            token = slope > 0 ? 'R' : 'r';  // G for activated gyro
           }
 #endif
           break;
@@ -291,11 +299,9 @@ void reaction() {
             if (strcmp(newCmd, lastCmd)) {
               loadBySkillName(newCmd);
             }
-            PTL("all");
             shutServos();
             manualHeadQ = false;
-          } else if (cmdLen == 1) {
-            PTH("single", atoi(newCmd));
+          } else if (cmdLen == 1) {  // allow turning off a single joint
             shutServos(atoi(newCmd));
           }
           break;
@@ -384,6 +390,7 @@ void reaction() {
 #ifdef T_TUNER
       case T_TUNER:
 #endif
+      case T_BALANCE_SLOPE:
         {
           if (token == T_INDEXED_SIMULTANEOUS_ASC && cmdLen == 0)
             manualHeadQ = false;
@@ -525,6 +532,12 @@ void reaction() {
                 }
               }
 #endif
+              else if (token == T_BALANCE_SLOPE) {
+                if (inLen == 2) {
+                  balanceSlope[0] = max(-2, min(2, target[0]));
+                  balanceSlope[1] = max(-2, min(2, target[1]));
+                }
+              }
               // delay(5);
             } while (pch != NULL);
 #ifdef T_TUNER
@@ -694,8 +707,10 @@ void reaction() {
           if (!strcmp("x", newCmd)        // x for random skill
               || strcmp(lastCmd, newCmd)  // won't transform for the same gait.
               || skill->period <= 1) {    // skill->period can be NULL!
-            // it's better to compare skill->skillName and newCmd.
-            // but need more logics for non skill cmd in between
+                                          // it's better to compare skill->skillName and newCmd.
+                                          // but need more logics for non skill cmd in between
+            if (!strcmp(newCmd, "bk"))
+              strcpy(newCmd, "bkF");
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             manualHeadQ = false;
             if (skill->period > 0)
@@ -725,7 +740,7 @@ void reaction() {
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
+      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();

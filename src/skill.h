@@ -219,8 +219,8 @@ public:
     //such as failed fall-recovering against a wall.
     expectedRollPitch[0] = -expectedRollPitch[0];
     for (int k = 0; k < abs(period); k++) {
-      if (period <= 1) {
-        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];
+      if (period <= 1) {                                         // behavior
+        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];  // head and tail panning angles
         dutyAngles[k * frameSize + 2] = -dutyAngles[k * frameSize + 2];
       }
       for (byte col = (period > 1) ? 0 : 2; col < ((period > 1) ? WALKING_DOF : DOF) / 2; col++) {
@@ -228,6 +228,21 @@ public:
         dutyAngles[k * frameSize + 2 * col] = dutyAngles[k * frameSize + 2 * col + 1];
         dutyAngles[k * frameSize + 2 * col + 1] = temp;
       }
+    }
+  }
+  void shiftCenterOfMass(int angle) {
+    int offset = 8;
+    if (period > 1)
+      offset = 0;
+    for (int k = 0; k < abs(period); k++) {
+      printList(dutyAngles + k * frameSize, frameSize);
+      for (byte col = 0; col < 2; col++) {
+        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] + angle;
+      }
+      for (byte col = 4; col < 6; col++) {
+        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * 1.2;
+      }
+      printList(dutyAngles + k * frameSize, frameSize);
     }
   }
   int nearestFrame() {
@@ -344,13 +359,17 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && manualHeadQ) {
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-waling joints
+            || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
+        {
+#ifndef ROBOT_ARM
           if (!manualHeadQ && jointIndex < 4) {
             duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
                    + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
           } else
-            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])))
-                   - gyroBalanceQ * currentAdjust[jointIndex];
+#endif
+            duty = currentAng[jointIndex] + max(-5, min(5, (targetHead[jointIndex] - currentAng[jointIndex])));
+          //  - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
@@ -370,30 +389,49 @@ public:
 };
 Skill* skill;
 
+
 void loadBySkillName(const char* skillName) {  //get lookup information from on-board EEPROM and read the data array from storage
-  int skillIndex = skillList->lookUp(skillName);
+  char lr = skillName[strlen(skillName) - 1];
+  int skillIndex;
+#ifdef ROBOT_ARM
+  char* nameStr = new char[strlen(skillName) + 4];
+  strcpy(nameStr, skillName);
+  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {
+    nameStr[strlen(skillName) - 1] = '\0';
+    strcat(nameStr, "Arm");
+    nameStr[strlen(skillName) + 2] = lr;
+    nameStr[strlen(skillName) + 3] = '\0';
+    PTHL("mod ", nameStr);
+  }
+  skillIndex = skillList->lookUp(nameStr);
+  if (skillIndex == -1)
+#endif
+    skillIndex = skillList->lookUp(skillName);
   if (skillIndex != -1) {
     // if (skill != NULL)
     //   delete[] skill;
-    char lr = skillName[strlen(skillName) - 1];
+
     skill->offsetLR = (lr == 'L' ? 30 : (lr == 'R' ? -30 : 0));
     skill->buildSkill(skillList->get(skillIndex)->index);
     strcpy(newCmd, skill->skillName);
-    if (strcmp(newCmd, "calib") && skill->period == 1)
-      protectiveShift = esp_random() % 100 / 10.0 - 5;
-    else
-      protectiveShift = 0;
 #ifdef GYRO_PIN
     // keepDirectionQ = (skill->period > 1) ? false : true;
     thresX = (skill->period > 1) ? 12000 : 8000;
     thresY = (skill->period > 1) ? 10000 : 6000;
 // thresZ = (skill->period > 1) ? -8000 : -10000;
 #endif
-    for (byte i = 0; i < DOF; i++)
-      skill->dutyAngles[i] += protectiveShift;
+    if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
+      int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;
+      for (byte i = 0; i < DOF; i++)
+        skill->dutyAngles[i] += protectiveShift;  // add protective shift to reduce wearing at the same spot
+    }
     // skill->info();
     if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
       skill->mirror();  //randomly mirror the direction of a behavior
+#ifdef ROBOT_ARM
+    if (skill->period == 1 && strcmp(newCmd, "calib"))
+      skill->shiftCenterOfMass(-10);
+#endif
     skill->transformToSkill(skill->nearestFrame());
 #ifdef NYBBLE
     for (byte i = 0; i < HEAD_GROUP_LEN; i++)

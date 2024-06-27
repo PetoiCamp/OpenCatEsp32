@@ -9,20 +9,11 @@ void touchSetup() {
 }
 void read_doubleTouch() {
   for (byte i = 0; i < 2; i++)
-    // currentTouchState[i] = digitalRead(touchIn[i]);
-    currentTouchState[i] = analogRead(touchIn[i]) > 3000;
-  if (currentTouchState[0] || currentTouchState[1]) {
-    PT(previousTouchState[0]);
-    PT(currentTouchState[0]);
-    PT('\t');
-    PT(previousTouchState[1]);
-    PTL(currentTouchState[1]);
-  }
+    currentTouchState[i] = digitalRead(touchIn[i]);
   if (currentTouchState[0] != previousTouchState[0] || currentTouchState[1] != previousTouchState[1]) {
     delay(100);  // read again for concurrent touches
     for (byte i = 0; i < 2; i++)
-      // currentTouchState[i] = digitalRead(touchIn[i]);
-      currentTouchState[i] = analogRead(touchIn[i]) > 3000;
+      currentTouchState[i] = digitalRead(touchIn[i]);
     if (currentTouchState[0] && currentTouchState[1]) {
       beep(20, 50, 50, 3);
       tQueue->addTask('k', "bk", 1500);
@@ -42,6 +33,14 @@ void read_doubleTouch() {
       tQueue->addTask('i', "");
       tQueue->addTask('k', "sit");
       tQueue->addTask('B', mel);
+    }
+    if (currentTouchState[0] || currentTouchState[1]) {
+      PT("Previous: ");
+      PT(previousTouchState[0]);
+      PT(previousTouchState[1]);
+      PT("\tCurrent: ");
+      PT(currentTouchState[0]);
+      PTL(currentTouchState[1]);
     }
   }
   for (byte i = 0; i < 2; i++)

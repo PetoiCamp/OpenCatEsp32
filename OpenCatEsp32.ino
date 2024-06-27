@@ -4,6 +4,7 @@
 // #define NYBBLE // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 // #define CUB
 
+
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
 #define BiBoard_V0_2
 // #define BiBoard_V1_0
@@ -24,7 +25,7 @@
 #define GESTURE                   // for Gesture module
 #define CAMERA                    // for Mu Vision camera
 #define QUICK_DEMO                // for quick demo
-// #define ROBOTIC_ARM               // for attaching head clip arm
+// #define ROBOT_ARM               // for attaching head clip arm
 #include "src/OpenCat.h"
 
 void setup() {

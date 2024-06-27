@@ -14,6 +14,12 @@
   { \
     Serial.print(head); \
     Serial.print('\t'); \
+    Serial.print(value); \
+  }
+#define PTHL(head, value) \
+  { \
+    Serial.print(head); \
+    Serial.print('\t'); \
     Serial.println(value); \
   }
 
@@ -175,10 +181,12 @@ void FPS() {
   }
 }
 
-void leftTrimSpaces(char *s) {
+void leftTrimSpaces(char *s,int *len) {
   char *head = s;
-  while (*head == ' ' || *head == '\t')
+  while (*head == ' ' || *head == '\t'){
     head++;
+    (*len)--;
+  }
   strcpy(s, head);
 }
 

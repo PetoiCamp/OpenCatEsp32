@@ -31,9 +31,17 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-  "T",  // call the last skill data sent by the Skill Composer
+#ifdef ROBOT_ARM
+  "kpick",
+  "kdrop",
+  "khunt",
+  "kshowOff",
+  "kthro",
+  "kshoot",
+#else
+  "F",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
-  "kpu1",  // single-handed pushups
+  "kpu1",                                                                  // single-handed pushups
 #elif defined NYBBLE
   "kwsf",  // wash face
 #endif
@@ -43,6 +51,7 @@ String customizedCmdList[] = {
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
   "6th",
+#endif
   "7th",
   "8th",
   "9th",
