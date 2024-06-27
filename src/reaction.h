@@ -299,11 +299,9 @@ void reaction() {
             if (strcmp(newCmd, lastCmd)) {
               loadBySkillName(newCmd);
             }
-            PTL("all");
             shutServos();
             manualHeadQ = false;
-          } else if (cmdLen == 1) {
-            PTH("single", atoi(newCmd));
+          } else if (cmdLen == 1) {  // allow turning off a single joint
             shutServos(atoi(newCmd));
           }
           break;
@@ -709,8 +707,10 @@ void reaction() {
           if (!strcmp("x", newCmd)        // x for random skill
               || strcmp(lastCmd, newCmd)  // won't transform for the same gait.
               || skill->period <= 1) {    // skill->period can be NULL!
-            // it's better to compare skill->skillName and newCmd.
-            // but need more logics for non skill cmd in between
+                                          // it's better to compare skill->skillName and newCmd.
+                                          // but need more logics for non skill cmd in between
+            if (!strcmp(newCmd, "bk"))
+              strcpy(newCmd, "bkF");
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             manualHeadQ = false;
             if (skill->period > 0)

@@ -152,7 +152,14 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_RX2 9
 #define UART_TX2 10
 
-#ifndef ROBOT_ARM
+#ifdef ROBOT_ARM
+const uint8_t PWM_pin[PWM_NUM] = {
+  // swap the front left knee servo spot for better accessibility of the clip servo's cable
+  18, 5, 4, 23,    // head or shoulder roll
+  19, 15, 12, 33,  // shoulder pitch
+  32, 13, 14, 27   // knee
+};
+#else
 #define PWM_LED_PIN 27
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -160,15 +167,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
   23, 4, 12, 33,  // shoulder pitch
   19, 15, 13, 32  // knee
 };
-#else  // swap the front left knee servo spot for better accessibility of the clip servo's cable
-const uint8_t PWM_pin[PWM_NUM] = {
-  18, 5, 4, 23,    // head or shoulder roll
-  19, 15, 12, 33,  // shoulder pitch
-  32, 13, 14, 27   // knee
-};
 #endif
-
-
 
 #elif defined BiBoard2
 #define PWM_NUM 16
@@ -236,8 +235,8 @@ bool newBoard = false;
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
 #define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'
-
+#define T_REST 'd'       //set the robot to rest posture and shut down all the servos \
+                         //"d index" can turn off a single servo
 #define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
 #define T_SERVO_FOLLOW 'F'              // make the other legs follow the moved legs
