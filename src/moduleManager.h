@@ -136,7 +136,7 @@ void initModule(char moduleCode) {
         loadBySkillName("sit");
         if (!cameraSetup()) {
           int i = indexOfModule(moduleCode);
-          PTH("- disable", moduleNames[i]);
+          PTHL("- disable", moduleNames[i]);
           moduleActivatedQ[i] = false;
           i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
         }
@@ -229,7 +229,7 @@ void showModuleStatus() {
 void reconfigureTheActiveModule(char *moduleCode) {               // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {  // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {
-      PTH("- disable", moduleNames[i]);
+      PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
@@ -237,7 +237,7 @@ void reconfigureTheActiveModule(char *moduleCode) {               // negative nu
   }
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
-      PTH("+  enable", moduleNames[i]);
+      PTHL("+  enable", moduleNames[i]);
       initModule(moduleList[i]);
       moduleActivatedQ[i] = true;
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);

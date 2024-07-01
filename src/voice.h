@@ -78,6 +78,15 @@ void voiceSetup() {
 }
 
 void voiceStop() {
+  if(!SERIAL_VOICE){
+#ifdef BiBoard_V1_0
+      SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, VOICE_RX, VOICE_TX);
+#else
+      SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
+#endif
+      SERIAL_VOICE.setTimeout(5);
+      delay(10);
+  }
   SERIAL_VOICE.println("XAd");
   delay(10);
   SERIAL_VOICE.end();

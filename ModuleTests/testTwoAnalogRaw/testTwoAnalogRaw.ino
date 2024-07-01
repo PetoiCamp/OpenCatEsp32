@@ -1,11 +1,11 @@
 
 #define BUZZER 5
 
-#define SOUND_MAX 1024
+#define SOUND_MAX 4096
 #define SOUND_THRESHOLD SOUND_MAX * 0.97
 
-#define IN1 A2
-#define IN2 A3
+#define IN1 34
+#define IN2 35
 
 void beep(int8_t note, float duration = 10, int pause = 0, byte repeat = 1) {
   if (note == 0) {  //rest note
@@ -50,6 +50,9 @@ int correctedReading(int light) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial.setTimeout(2);
+  pinMode(IN1, INPUT);
+  pinMode(IN2, INPUT);
   delay(100);
   Serial.println("start");
 }
@@ -65,6 +68,6 @@ void loop() {
   Serial.print('\t');
   Serial.print(0);
   Serial.print('\t');
-  Serial.println(1024);
+  Serial.println(SOUND_MAX);
   //  con ? beep(10, 200) : beep(20, 200);
 }
