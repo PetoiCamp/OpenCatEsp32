@@ -1,8 +1,7 @@
 
 #define BUZZER 5
 
-#define SOUND_MAX 4096
-#define SOUND_THRESHOLD SOUND_MAX * 0.97
+#define MAX_READING 4096
 
 #define IN1 34
 #define IN2 35
@@ -68,6 +67,6 @@ void loop() {
   Serial.print('\t');
   Serial.print(0);
   Serial.print('\t');
-  Serial.println(SOUND_MAX);
+  Serial.println(MAX_READING);
   //  con ? beep(10, 200) : beep(20, 200);
 }
