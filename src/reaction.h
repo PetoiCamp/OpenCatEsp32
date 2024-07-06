@@ -280,6 +280,18 @@ void reaction() {
             shutServos();
           break;
         }
+      case T_POWER:
+        {
+          float voltage = analogRead(VOLTAGE);
+#ifdef BiBoard_V1_0
+          voltage = voltage / 515 + 1.9;
+#else
+          voltage = voltage / 414;
+#endif
+          String message = "Voltage: ";
+          printToAllPorts(message + voltage + " V");
+          break;
+        }
       case T_ACCELERATE:
         {
           runDelay = max(0, runDelay - 1);
@@ -446,6 +458,8 @@ void reaction() {
                 }
 
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)//there's no such joint in this configuration
+                  continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
                 servo[actualServoIndex].write(duty);
@@ -740,7 +754,7 @@ void reaction() {
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
+      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();

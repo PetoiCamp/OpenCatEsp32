@@ -252,9 +252,12 @@ void initModuleManager() {
   for (byte i = 0; i < moduleCount; i++) {
     if (moduleActivatedQ[i]) {
       initModule(moduleList[i]);
-    } else if (moduleList[i] == EXTENSION_VOICE) {
+    }
+#ifdef VOICE
+    else if (moduleList[i] == EXTENSION_VOICE) {
       voiceStop();
     }
+#endif
   }
   showModuleStatus();
 }

@@ -36,8 +36,8 @@
  * if you are particular, adjust the min and max values to match your needs.
  */
 
-// #define BiBoard_V1_0
-#define BiBoard_V0_1
+#define BiBoard_V1_0
+// #define BiBoard_V0_1
 #include <ESP32Servo.h>
 Servo myservo[12];  // create servo object to control a servo
 // 16 servo objects can be created on the ESP32
@@ -52,9 +52,9 @@ byte servoPin[] = { 19, 4, 2, 27,   // head or shoulder roll
                     32, 18, 13, 12 };
 #elif defined BiBoard_V1_0
 byte servoPin[] = {
-  18, 5, 14, 27,   // head or shoulder roll
-  23, 15, 12, 33,  // shoulder pitch
-  19, 4, 13, 32    // knee
+  18, 5, 14, 27,  // head or shoulder roll
+  23, 4, 12, 33,  // shoulder pitch
+  19, 15, 13, 32  // knee
 };
 #endif
 int baseShift = 30;
@@ -79,14 +79,14 @@ int shift[] = {
   0,
   0,
   0,
-  baseShift,
-  -baseShift,
-  baseShift,
-  -baseShift,
-  baseShift,
-  -baseShift,
-  -baseShift,
-  baseShift,
+  30,
+  -30,
+  60,
+  -60,
+  50,
+  -50,
+  -50,
+  50,
 };
 
 int rest[] = {
@@ -117,7 +117,7 @@ int stand[] = {
   15,
   -15,
 };
-
+char token = 'c';
 
 void testPosture() {
   for (byte s = 0; s < 12; s++)
@@ -149,6 +149,7 @@ void testGait() {
   }
 }
 void setup() {
+  Serial.begin(115200);
   // Allow allocation of all timers
   ESP32PWM::allocateTimer(0);
   ESP32PWM::allocateTimer(1);
@@ -164,5 +165,22 @@ void setup() {
 }
 
 void loop() {
-  testGait();
+  if (Serial.available()) {
+    token = Serial.read();
+    Serial.println(token);
+    if (token == 'z')
+      for (byte s = 0; s < 12; s++)
+        myservo[s].write(zero[s]);
+    else if (token == 'c')
+      for (byte s = 0; s < 12; s++)
+        myservo[s].write(zero[s] + shift[s]);
+    else if (token == 'd')
+      for (byte s = 0; s < 12; s++)
+        myservo[s].writeMicroseconds(0);
+    else if (token == 't')
+      for (byte s = 0; s < 12; s++)
+        myservo[s].write(stand[s]);
+  }
+  if (token == 'k')
+    testGait();
 }

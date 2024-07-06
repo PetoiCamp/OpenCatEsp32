@@ -1,4 +1,6 @@
 void calibratedPWM(byte i, float angle, float speedRatio = 0) {
+  if (PWM_NUM == 12 && WALKING_DOF == 8 && i > 3 && i < 8)  //there's no such joint in this configuration
+    return;
   int actualServoIndex = (PWM_NUM == 12 && i > 3) ? i - 4 : i;
   angle = max(float(angleLimit[i][0]), min(float(angleLimit[i][1]), angle));
   int duty0 = calibratedZeroPosition[i] + currentAng[i] * rotationDirection[i];

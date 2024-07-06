@@ -393,7 +393,7 @@ Skill* skill;
 void loadBySkillName(const char* skillName) {  //get lookup information from on-board EEPROM and read the data array from storage
   char lr = skillName[strlen(skillName) - 1];
   int skillIndex;
-#ifdef ROBOT_ARM
+#ifdef ROBOT_ARM //use the altered Arm gait
   char* nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
   if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {

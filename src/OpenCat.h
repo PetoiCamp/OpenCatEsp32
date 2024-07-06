@@ -62,6 +62,9 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
+
+#define RevB
+// #define RevD
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
@@ -141,10 +144,16 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 2
 // #define IR_PIN 23
-#define VOLTAGE 35
+
 #define LOW_VOLTAGE 6.8
+#ifdef RevB
+#define VOLTAGE 35  //rev B
+#define ANALOG2 32  //rev B
+#elif defined RevD
+#define VOLTAGE 37  //rev D
+#define ANALOG2 35  //rev D
+#endif
 #define ANALOG1 34
-#define ANALOG2 32
 #define ANALOG3 36
 #define ANALOG4 39
 #define VOICE_RX 26
@@ -225,17 +234,17 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'      // abort the calibration values
-#define T_BEEP 'b'       //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+#define T_ABORT 'a'                     // abort the calibration values
+#define T_BEEP 'b'                      //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'   //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+#define T_BEEP_BIN 'B'                  //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c'  //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_CALIBRATE 'c'                 //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'      //change the eye colors of the RGB ultrasonic sensor \
+#define T_COLOR 'C'                     //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'       //set the robot to rest posture and shut down all the servos \
+#define T_REST 'd'                      //set the robot to rest posture and shut down all the servos \
                          //"d index" can turn off a single servo
 #define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
@@ -256,7 +265,8 @@ bool newBoard = false;
 #define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
-#define T_PAUSE 'p'
+#define T_PAUSE 'p'  //pause
+#define T_POWER 'P'  //power, print the voltage
 #define T_TASK_QUEUE 'q'
 #define T_ROBOT_ARM 'r'
 #define T_SAVE 's'

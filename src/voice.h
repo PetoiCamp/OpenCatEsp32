@@ -32,12 +32,14 @@
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
 #ifdef ROBOT_ARM
-  "kpick",
-  "kdrop",
-  "khunt",
-  "kshowOff",
-  "kthro",
-  "kshoot",
+  "kpick",      //捡起来
+  "kdrop",      //放下
+  "khunt",      //捕猎
+  "kshowOff",   //展示
+  "kthro",      //丢出去
+  "kshoot",     //发射
+  "kclapping",  //鼓掌
+  "kputAway",   //收起来
 #else
   "F",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
@@ -51,9 +53,9 @@ String customizedCmdList[] = {
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
   "6th",
-#endif
   "7th",
   "8th",
+  #endif
   "9th",
   "10th"  // define up to 10 customized commands.
 };
@@ -78,14 +80,14 @@ void voiceSetup() {
 }
 
 void voiceStop() {
-  if(!SERIAL_VOICE){
+  if (!SERIAL_VOICE) {
 #ifdef BiBoard_V1_0
-      SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, VOICE_RX, VOICE_TX);
+    SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, VOICE_RX, VOICE_TX);
 #else
-      SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
+    SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
 #endif
-      SERIAL_VOICE.setTimeout(5);
-      delay(10);
+    SERIAL_VOICE.setTimeout(5);
+    delay(10);
   }
   SERIAL_VOICE.println("XAd");
   delay(10);

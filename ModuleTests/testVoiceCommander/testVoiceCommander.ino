@@ -21,6 +21,18 @@
 // 说”清除数据“删除所有自定义口令（无法删除单条口令）
 // 下列自定义指令会依次作为新学习的口令的返回值
 
+#define BiBoard_V1_0
+
+#ifdef BiBoard_V1_0
+#define SERIAL_VOICE Serial1
+#define VOICE_RX 26
+#define VOICE_TX 25
+#else
+#define SERIAL_VOICE Serial2
+#endif
+
+#define SERIAL_VOICE_BAUD_RATE 9600
+
 String customizedCmdList[] = {
   "first", "second", "third", "4th", "5th", "6th", "7th", "8th", "9th", "10th"  //define up to ten customized commands.
 };
@@ -30,8 +42,14 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(5);
-  Serial2.begin(SERIAL2_BAUD_RATE);
-  Serial2.setTimeout(5);
+  #ifdef BiBoard_V1_0
+  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE, SERIAL_8N1, VOICE_RX, VOICE_TX);
+#else
+  SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
+#endif
+
+  SERIAL_VOICE.begin(SERIAL2_BAUD_RATE);
+  SERIAL_VOICE.setTimeout(5);
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
   Serial.print("Number of customized commands on the main board: ");
   Serial.println(listLength);
@@ -50,12 +68,12 @@ void loop() {
     String cmd = Serial.readStringUntil('\n');
     int idx = 0;
     Serial.println(cmd);  //the user input
-    Serial2.print(cmd);   //send the user input to the voice module through serial 2
+    SERIAL_VOICE.print(cmd);   //send the user input to the voice module through serial 2
   }
 
-  if (Serial2.available()) {
+  if (SERIAL_VOICE.available()) {
     Serial.print("-----\nReturned value: ");
-    String cmd = Serial2.readStringUntil('\n');
+    String cmd = SERIAL_VOICE.readStringUntil('\n');
 
     Serial.print(cmd[0]);  //It should be X
     Serial.print(' ');
