@@ -280,6 +280,7 @@ void reaction() {
             shutServos();
           break;
         }
+#ifdef VOLTAGE
       case T_POWER:
         {
           float voltage = analogRead(VOLTAGE);
@@ -292,6 +293,7 @@ void reaction() {
           printToAllPorts(message + voltage + " V");
           break;
         }
+#endif
       case T_ACCELERATE:
         {
           runDelay = max(0, runDelay - 1);
@@ -458,7 +460,7 @@ void reaction() {
                 }
 
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)//there's no such joint in this configuration
+                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  //there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM

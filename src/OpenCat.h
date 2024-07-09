@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240627"  // YYMMDD
+#define DATE "240709"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -590,8 +590,12 @@ void initRobot() {
   pinMode(PWM_LED_PIN, OUTPUT);
 #endif
 #ifdef VOLTAGE
-  while (lowBattery())
-    ;
+  while (lowBattery()) {  //if the battery is low
+    if (Serial.available()) {
+      Serial.read();  // allow breaking the loop with any serial input
+      break;
+    }
+  }
 #endif
 
 #ifdef IR_PIN
