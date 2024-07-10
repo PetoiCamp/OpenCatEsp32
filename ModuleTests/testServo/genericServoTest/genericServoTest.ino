@@ -1,6 +1,7 @@
 #include "src/servo.h"
 
 int amplitude = 5;
+int offset = 5;
 int pos = 0;
 char token = 'c';
 
@@ -70,15 +71,15 @@ void testAllRotate() {
 void testGait() {
   for (pos = -amplitude; pos <= +amplitude; pos += 1) {
     for (byte s = 8; s < DOF; s++)
-      setJoint(s, pos * (s % 4 / 2 ? 1 : -1) * (s % 2 ? 1 : -1)
-                    + stand[s]);  // tell servo to go to position in variable 'pos'
-    delay(10);                    // waits 15ms for the servo to reach the position
+      setJoint(s, pos * (s % 4 / 2 ? 1 : -1) * (s % 2 ? -1 : 1)
+                    + stand[s] + offset);  // tell servo to go to position in variable 'pos'
+    delay(10);                             // waits 15ms for the servo to reach the position
   }
   for (pos = +amplitude; pos >= -amplitude; pos -= 1) {
     for (byte s = 8; s < DOF; s++)
-      setJoint(s, pos * (s % 4 / 2 ? 1 : -1) * (s % 2 ? 1 : -1)
-                    + stand[s]);  // tell servo to go to position in variable 'pos'
-    delay(10);                    // waits 15ms for the servo to reach the position
+      setJoint(s, pos * (s % 4 / 2 ? 1 : -1) * (s % 2 ? -1 : 1)
+                    + stand[s] + offset);  // tell servo to go to position in variable 'pos'
+    delay(10);                             // waits 15ms for the servo to reach the position
   }
 }
 void loop() {
@@ -97,8 +98,17 @@ void loop() {
       for (byte s = 8; s < DOF; s++)
         setJoint(s, stand[s]);
   }
-  if (token == 'k')  //make the robot walk (simple walk)
+  if (token == 'k') {  //make the robot walk (simple walk)
+    if (Serial.available()) {
+      offset = Serial.parseInt();
+      if (Serial.available())
+        amplitude = Serial.parseInt();
+      Serial.print("Offset: ");
+      Serial.print(offset);
+      Serial.print("\tAmplitude: ");
+      Serial.println(amplitude);
+    }
     testGait();
-  else if (token == 'a')  //rotate all the servos around the zero position
+  } else if (token == 'a')  //rotate all the servos around the zero position
     testAllRotate();
 }
