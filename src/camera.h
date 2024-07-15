@@ -85,7 +85,7 @@ int8_t initPars[] = {
   60, 90, 10, -20
 #elif defined GROVE_VISION_AI_V2
   20, 20, 4, 12, 12,
-  58 * adjustmentFactor, 76 * adjustmentFactor, 16 * adjustmentFactor, 76 * adjustmentFactor,
+  int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(16 * adjustmentFactor), int8_t(76 * adjustmentFactor),
   18, 26, 8, 26,
   60, 90, 10, -20
 #endif

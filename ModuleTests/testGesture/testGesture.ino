@@ -44,19 +44,19 @@ void loop() {
 
     switch (gesture) {
       case GESTURE_UP:
-        Serial.println("Detected UP gesture");
+        Serial.println("↑ Detected UP gesture");
         break;
 
       case GESTURE_DOWN:
-        Serial.println("Detected DOWN gesture");
+        Serial.println("↓ Detected DOWN gesture");
         break;
 
       case GESTURE_LEFT:
-        Serial.println("Detected LEFT gesture");
+        Serial.println("← Detected LEFT gesture");
         break;
 
       case GESTURE_RIGHT:
-        Serial.println("Detected RIGHT gesture");
+        Serial.println("→ Detected RIGHT gesture");
         break;
 
       default:
