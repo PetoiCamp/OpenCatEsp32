@@ -63,8 +63,8 @@
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
 
-#define RevB
-// #define RevD
+// #define RevB
+#define RevD
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
@@ -589,14 +589,15 @@ void initRobot() {
 #ifdef PWM_LED_PIN
   pinMode(PWM_LED_PIN, OUTPUT);
 #endif
-#ifdef VOLTAGE
-  while (lowBattery()) {  //if the battery is low
-    if (Serial.available()) {
-      Serial.read();  // allow breaking the loop with any serial input
-      break;
-    }
-  }
-#endif
+// #ifdef VOLTAGE
+//   do {
+//     PTL("Check battery. You can skip by entering any characters in the Serial Monitor.");
+//     if (Serial.available()) {
+//       Serial.read();  // allow breaking the loop with any serial input
+//       break;
+//     }
+//   } while (lowBattery());  //if the battery is low
+// #endif
 
 #ifdef IR_PIN
   irrecv.enableIRIn();
