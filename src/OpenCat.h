@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240709"  // YYMMDD
+#define DATE "240721"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -95,11 +95,14 @@ String SoftwareVersion = "";
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
+#ifdef ROBOT_ARM
+#define MODEL "Hunter"
+#else
 #define MODEL "Bittle"
+#endif
+
 #define HEAD
-// #ifdef ROBOT_ARM
-#define TAIL
-// #endif
+#define TAIL // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
 #define REGULAR P1S
 #define KNEE P1S
