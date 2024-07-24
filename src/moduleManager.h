@@ -171,6 +171,7 @@ void stopModule(char moduleCode) {
     case EXTENSION_ULTRASONIC:
       {
         // ultrasonicStop();   // Todo
+        ultrasonicLEDinitializedQ = false;
         break;
       }
 #endif
@@ -256,6 +257,12 @@ void initModuleManager() {
 #ifdef VOICE
     else if (moduleList[i] == EXTENSION_VOICE) {
       voiceStop();
+    }
+#endif
+#ifdef NYBBLE
+    else if (moduleList[i] == EXTENSION_ULTRASONIC) {
+      rgbUltrasonicSetup();
+      // initModule(moduleList[i]);
     }
 #endif
   }

@@ -27,10 +27,9 @@ int feedbackDirection = -1;
 bool ultrasonicLEDinitializedQ = false;
 void rgbUltrasonicSetup() {
   ultrasonic.SetupLED();
+  long color = ((long)(uint8_t(0)) << 16) + ((long)(uint8_t(0)) << 8) + (long)(uint8_t(255));
+  ultrasonic.SetRgbEffect(E_RGB_ALL, color, E_EFFECT_FLASH);
   ultrasonicLEDinitializedQ = true;
-  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_RED, E_EFFECT_FLASH);
-  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_BLUE, E_EFFECT_BREATHING);
-  ultrasonic.SetRgbEffect(E_RGB_ALL, RGB_YELLOW, E_EFFECT_ROTATE);
 }
 
 void readRGBultrasonic() {

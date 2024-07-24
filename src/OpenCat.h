@@ -64,7 +64,7 @@
 */
 
 // #define RevB
-#define RevD
+#define RevDE
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240722"  // YYMMDD
+#define DATE "240724"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -102,7 +102,7 @@ String SoftwareVersion = "";
 #endif
 
 #define HEAD
-#define TAIL // the robot arm's clip is assigned to the tail joint
+#define TAIL  // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
 #define REGULAR P1S
 #define KNEE P1S
@@ -152,7 +152,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef RevB
 #define VOLTAGE 35  //rev B
 #define ANALOG2 32  //rev B
-#elif defined RevD
+#elif defined RevDE
 #define VOLTAGE 37  //rev D
 #define ANALOG2 35  //rev D
 #endif
@@ -585,22 +585,21 @@ void initRobot() {
   for (byte i = 0; i < randomMindListLength; i++) {
     randomBase += choiceWeight[i];
   }
-
 #ifdef NEOPIXEL_PIN
   ledSetup();
 #endif
 #ifdef PWM_LED_PIN
   pinMode(PWM_LED_PIN, OUTPUT);
 #endif
-// #ifdef VOLTAGE
-//   do {
-//     PTL("Check battery. You can skip by entering any characters in the Serial Monitor.");
-//     if (Serial.available()) {
-//       Serial.read();  // allow breaking the loop with any serial input
-//       break;
-//     }
-//   } while (lowBattery());  //if the battery is low
-// #endif
+  // #ifdef VOLTAGE
+  //   do {
+  //     PTL("Check battery. You can skip by entering any characters in the Serial Monitor.");
+  //     if (Serial.available()) {
+  //       Serial.read();  // allow breaking the loop with any serial input
+  //       break;
+  //     }
+  //   } while (lowBattery());  //if the battery is low
+  // #endif
 
 #ifdef IR_PIN
   irrecv.enableIRIn();

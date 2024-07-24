@@ -16,7 +16,7 @@ void dealWithExceptions() {
         }
       case -2:
         {
-          PTL("EXCEPTION 2");
+          PTL("EXCEPTION: Fall over");
           soundFallOver();
           //  for (int m = 0; m < 2; m++)
           //    meow(30 - m * 12, 42 - m * 12, 20);
@@ -29,9 +29,25 @@ void dealWithExceptions() {
         }
       case -3:
         {
-          PTL("EXCEPTION 3");
-          if (  // skill->period == 1 &&
-            strncmp(lastCmd, "vt", 2)) {
+          PTL("EXCEPTION: Knocked");
+          if (tQueue->cleared() && skill->period == 1) {
+            tQueue->addTask('k', "knock");
+#if defined NYBBLE && defined ULTRASONIC
+            if (!moduleActivatedQ[0]) {  //serial2)
+              int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
+              int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
+              tQueue->addTask('C', clrRed, 1);
+              tQueue->addTask('C', clrBlue);
+            }
+#endif
+            tQueue->addTask('k', "up");
+          }
+          break;
+        }
+      case -4:
+        {
+          PTL("EXCEPTION: Pushed");
+          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
             char xSymbol[] = { '^', 'v' };
             char ySymbol[] = { '<', '>' };
             char xDirection = xSymbol[sign(ARX) > 0];
@@ -39,14 +55,14 @@ void dealWithExceptions() {
             float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
             if (tQueue->cleared()) {
               if (abs(forceAngle) < 70) {
-                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR");
-                tQueue->addTask('i', yDirection == '<' ? "0 -45" : "0 45", 1000);
-                tQueue->addTask('i', "");
+                // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
+                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
+                // tQueue->addTask('i', "");
               } else {
                 if (xDirection == '^') {
-                  tQueue->addTask('k', "wkF", 300);
-                  tQueue->addTask('i', yDirection == '<' ? "0 75" : "0 -75", 700);
-                  tQueue->addTask('i', "");
+                  // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
+                  tQueue->addTask('k', "wkF", 1000);
+                  // tQueue->addTask('i', "");
                 } else {
                   tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
                   tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
@@ -61,9 +77,9 @@ void dealWithExceptions() {
           }
           break;
         }
-      case -4:
+      case -5:
         {
-          PTL("EXCEPTION 4");
+          PTL("EXCEPTION: Turned");
           char *currentGait = skill->skillName;  // it may not be gait
           char gaitDirection = currentGait[strlen(currentGait) - 1];
           float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
@@ -611,7 +627,7 @@ void reaction() {
               if (token == T_INDEXED_SEQUENTIAL_BIN) {
                 transform(targetFrame, 1, transformSpeed);
                 delay(10);
-              } else if (token == T_WRITE) {
+              } else if (token == T_WRITE) {  //Write a/d pin value
                 pinMode(newCmd[i + 1], OUTPUT);
                 if (newCmd[i] == TYPE_ANALOG) {
                   analogWrite(newCmd[i + 1], uint8_t(newCmd[i + 2]));  // analog value can go up to 255.
@@ -619,7 +635,11 @@ void reaction() {
                                                                        // but casted by readSerial() as signed char and saved into newCmd.
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
-              } else if (token == T_READ) {
+              } else if (token == T_READ) {  // Read a/d pin
+                                             // 34 35 36 39 97 100
+                                             // "  #  $  '  a  d
+                                             // e.g. analogRead(35) = Ra# in the Serial Monitor
+                                             //                     = [R,a,35] in the Python API
                 printToAllPorts('=');
                 pinMode(newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
