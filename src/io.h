@@ -66,7 +66,7 @@ void BTAuthCompleteCallback(boolean success) {
 }
 
 void blueSspSetup() {
-  PTH("SSP: ", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
+  PTHL("SSP:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);

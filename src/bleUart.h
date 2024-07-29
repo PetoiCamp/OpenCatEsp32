@@ -51,11 +51,12 @@ class MyServerCallbacks : public BLEServerCallbacks {
 byte bleMessageShift = 1;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    String rxValue = pCharacteristic->getValue().c_str();
-    if (rxValue.length() > 0) {
+    std::string rxValue = pCharacteristic->getValue();
+    // String rxValue = String(pCharacteristic->getValue().c_str());//it will cause unkown bug when sending 'K'-token skill data via mobile app and break the main program.
+    int buffLen = rxValue.length();
+    if (buffLen > 0) {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
-      int buffLen = rxValue.length();
       // Serial.print("From BLE:");
       // Serial.println(rxValue.c_str());
       if (bleMessageShift) {
@@ -92,7 +93,7 @@ void bleSetup() {
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID);
   // Create the BLE Device
-  PTH("BLE: ", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
+  PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
   BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  //read BLE device name from EEPROM so it's static
 
   // Create the BLE Server

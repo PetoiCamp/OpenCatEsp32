@@ -63,8 +63,8 @@
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
 
-// #define RevB
-#define RevDE
+#define RevB
+// #define RevDE
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240724"  // YYMMDD
+#define DATE "240729"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -98,7 +98,7 @@ String SoftwareVersion = "";
 #ifdef ROBOT_ARM
 #define MODEL "Hunter"
 #else
-#define MODEL "Bittle"
+#define MODEL "BittleX"
 #endif
 
 #define HEAD
@@ -133,6 +133,7 @@ String SoftwareVersion = "";
 #define ANALOG4 39
 #define UART_RX2 16
 #define UART_TX2 17
+#define SERIAL_VOICE Serial2
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -163,6 +164,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define VOICE_TX 25
 #define UART_RX2 9
 #define UART_TX2 10
+#define SERIAL_VOICE Serial1
 
 #ifdef ROBOT_ARM
 const uint8_t PWM_pin[PWM_NUM] = {

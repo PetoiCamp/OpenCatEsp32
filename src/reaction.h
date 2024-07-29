@@ -731,11 +731,7 @@ void reaction() {
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           manualHeadQ = false;
-          // newCmdIdx = 0;
           strcpy(newCmd, "tmp");
-          if (skill->period > 0)
-            printToAllPorts(token);
-          token = T_SKILL;
           break;
         }
       case T_SKILL:
@@ -785,7 +781,7 @@ void reaction() {
 #endif
   }
 
-  if (token == T_SKILL) {
+  if (tolower(token) == T_SKILL) {
 #ifdef PWM_LED_PIN
     analogWrite(PWM_LED_PIN, abs(currentAng[8]));
 #endif

@@ -283,18 +283,22 @@ public:
           // source = "BT";
         } else
 #endif
+#ifdef VOICE
+          if (SERIAL_VOICE.available())
+          serialPort = &SERIAL_VOICE;
+        else
+#endif
           //the BT_BLE is unhandled here
           if (moduleActivatedQ[0] && Serial2.available()) {
             serialPort = &Serial2;
           } else if (Serial.available()) {
             serialPort = &Serial;
-            // source = "SER";
           }
         if (serialPort) {
           interruptedDuringBehavior = true;
           return;
         }
-        printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
+        // printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 #ifdef GYRO_PIN  //if opt out the gyro, the calculation can be really fast
@@ -323,7 +327,7 @@ public:
         delay(abs(dutyAngles[DOF + 1 + c * frameSize] * 50));
 
         if (repeat != 0 && c != 0 && c == loopCycle[1]) {
-          printToAllPorts("Loop remaining: " + String(repeat));
+          // printToAllPorts("Loop remaining: " + String(repeat));
           c = loopCycle[0] - 1;
           if (repeat > 0)  //if repeat <0, infinite loop. only reset button will break the loop
             repeat--;
@@ -393,7 +397,7 @@ Skill* skill;
 void loadBySkillName(const char* skillName) {  //get lookup information from on-board EEPROM and read the data array from storage
   char lr = skillName[strlen(skillName) - 1];
   int skillIndex;
-#ifdef ROBOT_ARM //use the altered Arm gait
+#ifdef ROBOT_ARM  //use the altered Arm gait
   char* nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
   if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {

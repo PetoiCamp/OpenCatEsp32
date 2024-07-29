@@ -6,11 +6,7 @@
 // Rongzhong Li
 // Petoi LLC
 // Jan 12, 2023
-#ifdef BiBoard_V1_0
-#define SERIAL_VOICE Serial1
-#else
-#define SERIAL_VOICE Serial2
-#endif
+
 
 #define SERIAL_VOICE_BAUD_RATE 9600
 #define MAX_CUSTOMIZED_CMD 10
@@ -32,14 +28,14 @@
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
 #ifdef ROBOT_ARM
-  "kpick",      //捡起来
-  "kdrop",      //放下
-  "khunt",      //捕猎
-  "kshowOff",   //展示
-  "kthro",      //丢出去
-  "kshoot",     //发射
-  "kclapping",  //鼓掌
-  "kputAway",   //收起来
+  "kpickUp",     //捡起来
+  "kdropDown",   //放下
+  "khunt",       //捕猎
+  "kshowOff",    //展示
+  "kthrowAway",  //丢出去
+  "kshoot",      //发射
+  "kclap",       //鼓掌
+  "kputAway",    //收起来
 #else
   "T",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
@@ -55,7 +51,7 @@ String customizedCmdList[] = {
   "6th",
   "7th",
   "8th",
-  #endif
+#endif
   "9th",
   "10th"  // define up to 10 customized commands.
 };
