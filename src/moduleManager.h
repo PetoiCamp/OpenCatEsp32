@@ -333,7 +333,7 @@ void read_serial() {
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     newCmdIdx = 2;
-    PTH("read_serial, cmdLen = ", cmdLen);
+    // PTH("read_serial, cmdLen = ", cmdLen);
     // printCmdByType(token, newCmd, cmdLen);
   }
 }
