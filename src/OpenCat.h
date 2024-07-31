@@ -63,8 +63,8 @@
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
 
-#define RevB
-// #define RevDE
+// #define RevB
+#define RevDE
 #define SERIAL_TIMEOUT 10  // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240729"  // YYMMDD
+#define DATE "240731"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -95,18 +95,23 @@ String SoftwareVersion = "";
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
-#ifdef ROBOT_ARM
-#define MODEL "Hunter"
-#else
-#define MODEL "BittleX"
-#endif
+#define MODEL "Bittle"
+// #ifdef ROBOT_ARM
+// #define MODEL "Hunter"
+// #else
+// #define MODEL "BittleX"
+// #endif
 
 #define HEAD
 #define TAIL  // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
 #define REGULAR P1S
 #define KNEE P1S
+#ifdef ROBOT_ARM
+#include "InstinctBittleESP_arm.h"
+#else
 #include "InstinctBittleESP.h"
+#endif
 
 #elif defined CUB
 #define MODEL "DoF16"
@@ -149,7 +154,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define BUZZER 2
 // #define IR_PIN 23
 
-#define LOW_VOLTAGE 6.8
+#define LOW_VOLTAGE 7.0
 #ifdef RevB
 #define VOLTAGE 35  //rev B
 #define ANALOG2 32  //rev B
@@ -188,7 +193,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define INTERRUPT_PIN 27  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 14
 #define VOLTAGE 4
-#define LOW_VOLTAGE 6.8
+#define LOW_VOLTAGE 7.0
 #define NEOPIXEL_PIN 15
 #define PWM_LED_PIN 5
 #define IR_PIN 23
@@ -432,7 +437,7 @@ int angleLimit[][2] = {
   { -66, 100 },
 };
 #else
-int8_t rotationDirection[] = { 1, -1, 1, 1,
+int8_t rotationDirection[] = { 1, -1, -1, 1,
                                1, -1, 1, -1,
                                1, -1, -1, 1,
                                -1, 1, 1, -1 };

@@ -64,11 +64,12 @@ void dealWithExceptions() {
                   tQueue->addTask('k', "wkF", 1000);
                   // tQueue->addTask('i', "");
                 } else {
-                  tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                  // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                  tQueue->addTask('k', "bkF", 1000);
                   tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
                 }
               }
-              // tQueue->addTask('k', "up", 100);
+              tQueue->addTask('k', "up");
               delayPrevious = runDelay;
               runDelay = 3;
             }
@@ -118,12 +119,12 @@ void dealWithExceptions() {
       print6Axis();
     read_IMU();  // flush the IMU to avoid static readings and infinite loop
 
-    if (tQueue->lastTask == NULL) {
-      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
-        PTH("save last task ", lastCmd);
-        tQueue->lastTask = new Task('k', lastCmd);
-      }
-    }
+    // if (tQueue->lastTask == NULL) {
+    //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
+    //     PTH("save last task ", lastCmd);
+    //     tQueue->lastTask = new Task('k', lastCmd);
+    //   }
+    // }
   }
   // if (tQueue->cleared() && runDelay <= delayException)
   //   runDelay = delayPrevious;
@@ -163,7 +164,8 @@ bool lowBattery() {
       PT(voltage);
       PTL("V");
       PTLF("Long-press the battery's button to turn it on!");
-      if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE) && !batteryWarningCounter) {
+      if (!batteryWarningCounter
+          && i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE)) {
         playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
@@ -745,8 +747,8 @@ void reaction() {
               strcpy(newCmd, "bkF");
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             manualHeadQ = false;
-            if (skill->period > 0)
-              printToAllPorts(token);
+            // if (skill->period > 0)
+            //   printToAllPorts(token);
             // skill->info();
           }
           break;
@@ -816,13 +818,14 @@ void reaction() {
     // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')
     //     loadBySkillName(lastCmd);
-    if (tQueue->cleared() && tQueue->lastTask != NULL) {
-      PT("Use last task ");
-      tQueue->loadTaskInfo(tQueue->lastTask);
-      delete tQueue->lastTask;
-      tQueue->lastTask = NULL;
-      PTL(newCmd);
-    }
+
+    // if (tQueue->cleared() && tQueue->lastTask != NULL) {
+    //   PT("Use last task ");
+    //   tQueue->loadTaskInfo(tQueue->lastTask);
+    //   delete tQueue->lastTask;
+    //   tQueue->lastTask = NULL;
+    //   PTL(newCmd);
+    // }
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {

@@ -235,14 +235,14 @@ public:
     if (period > 1)
       offset = 0;
     for (int k = 0; k < abs(period); k++) {
-      printList(dutyAngles + k * frameSize, frameSize);
+      // printList(dutyAngles + k * frameSize, frameSize); //compare the angle change
       for (byte col = 0; col < 2; col++) {
         dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] + angle;
       }
       for (byte col = 4; col < 6; col++) {
         dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * 1.2;
       }
-      printList(dutyAngles + k * frameSize, frameSize);
+      // printList(dutyAngles + k * frameSize, frameSize);
     }
   }
   int nearestFrame() {
@@ -405,7 +405,7 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     strcat(nameStr, "Arm");
     nameStr[strlen(skillName) + 2] = lr;
     nameStr[strlen(skillName) + 3] = '\0';
-    PTHL("mod ", nameStr);
+    // PTHL("mod ", nameStr);
   }
   skillIndex = skillList->lookUp(nameStr);
   if (skillIndex == -1)

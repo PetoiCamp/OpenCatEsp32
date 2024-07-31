@@ -263,7 +263,7 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 };
 #else  // >> leg
 float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
-  { -panF, 0 }, { -panF / 2, -tiltF }, { -2 * panF, 0 }, { 0, -1 * tiltF }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { lRF, -0.5 * lPF }, { lRF, -0.5 * lPF }, { lRF, 0.5 * lPF }, { lRF, 0.5 * lPF }
+  { -panF, 0 }, { -panF / 2, -tiltF }, { 0, -1 * tiltF }, { -2 * panF, 0 }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { lRF, -0.5 * lPF }, { lRF, -0.5 * lPF }, { lRF, 0.5 * lPF }, { lRF, 0.5 * lPF }
 };
 #endif
 
