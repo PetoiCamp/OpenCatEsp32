@@ -31,11 +31,11 @@ String customizedCmdList[] = {
   "kpickUpL",     //捡起来
   "kdropDownL",   //放下
   "khuntL",       //捕猎
-  "kshowOff",    //展示
+  "kshowOff",     //展示
+  "kputAwayL",    //收起来
   "kthrowAwayL",  //丢出去
   "kshootL",      //发射
   "kclapL",       //鼓掌
-  "kputAwayL",    //收起来
 #else
   "T",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE

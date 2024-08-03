@@ -74,7 +74,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240731"  // YYMMDD
+#define DATE "240801"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -171,14 +171,14 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_TX2 10
 #define SERIAL_VOICE Serial1
 
-#ifdef ROBOT_ARM
-const uint8_t PWM_pin[PWM_NUM] = {
-  // swap the front left knee servo spot for better accessibility of the clip servo's cable
-  18, 5, 4, 23,    // head or shoulder roll
-  19, 15, 12, 33,  // shoulder pitch
-  32, 13, 14, 27   // knee
-};
-#else
+// #ifdef ROBOT_ARM
+// const uint8_t PWM_pin[PWM_NUM] = {
+//   // swap the front left knee servo spot for better accessibility of the clip servo's cable
+//   18, 5, 4, 23,    // head or shoulder roll
+//   19, 15, 12, 33,  // shoulder pitch
+//   32, 13, 14, 27   // knee
+// };
+// #else
 #define PWM_LED_PIN 27
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -186,7 +186,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
   23, 4, 12, 33,  // shoulder pitch
   19, 15, 13, 32  // knee
 };
-#endif
+// #endif
 
 #elif defined BiBoard2
 #define PWM_NUM 16
