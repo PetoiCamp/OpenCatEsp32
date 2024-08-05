@@ -2121,11 +2121,12 @@ const int8_t ts[] PROGMEM = {
    75,  75,  75,  75,  75,  75,  75,  75,  75,  75,  75,  75, -55, -55, -55, -55,	32, 0, 0, 0,
 };
 const int8_t wh[] PROGMEM = { 
--3, 0, 0, 1,
+-4, 0, 0, 1,
  0, 1, 2, 
    15,  20,   0,   0,   0,   0,  40,  40,  33,  20,  62,  59,  46,  70, -15, -15,	16, 0, 0, 0,
   -15,  20,   0,   0,   0,   0,  40,  40,  20,  33,  66,  62,  70,  46, -21, -15,	16, 0, 0, 0,
    26,   0,   0,   0,  -5,  -5,  20,  20,  45,  45, 105, 105,  45,  45, -45, -45,	16, 0, 0, 0,
+    0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
 };
 const int8_t zz[] PROGMEM = { 
 -1, 0, 0, 1,
@@ -2141,6 +2142,6 @@ const int8_t zz[] PROGMEM = {
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };
 #endif
-//the total byte of instincts is 19046
+//the total byte of instincts is 19066
 //the maximal array size is 933 bytes of wkF. 
 //Make sure to leave enough memory for SRAM to work properly. Any single skill should be smaller than 400 bytes for safety.
