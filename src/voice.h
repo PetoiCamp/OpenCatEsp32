@@ -36,6 +36,7 @@ String customizedCmdList[] = {
   "kthrowAwayL",  //丢出去
   "kshootL",      //发射
   "kclapL",       //鼓掌
+  "ktossL",       //抛出去
 #else
   "T",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
@@ -51,8 +52,8 @@ String customizedCmdList[] = {
   "6th",
   "7th",
   "8th",
-#endif
   "9th",
+#endif
   "10th"  // define up to 10 customized commands.
 };
 int listLength = 0;

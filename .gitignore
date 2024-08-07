@@ -5,3 +5,4 @@
 *.cfg
 *.svd
 debug_custom.json
+build/

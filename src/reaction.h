@@ -385,7 +385,7 @@ void reaction() {
         {
           PTLF("save offset");
           saveCalib(servoCalib);
-#ifdef VOICE
+#ifdef VOICE  
           if (newCmdIdx == 2)
             SERIAL_VOICE.println("XAc");
 #endif
@@ -462,7 +462,7 @@ void reaction() {
                   workingStiffness = false;
 #endif
 #ifdef VOICE
-                  if (newCmdIdx == 2)
+                  if (newCmdIdx == 2) //only deactivate the voice module via serial port 
                     SERIAL_VOICE.println("XAd");
 #endif
                   strcpy(newCmd, "calib");

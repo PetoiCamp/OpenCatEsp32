@@ -74,10 +74,10 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240801"  // YYMMDD
+#define DATE "240807"  // YYMMDD
 String SoftwareVersion = "";
 
-#define BIRTHMARK 'x'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
+#define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
@@ -95,12 +95,11 @@ String SoftwareVersion = "";
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
-#define MODEL "Bittle"
-// #ifdef ROBOT_ARM
-// #define MODEL "Hunter"
-// #else
-// #define MODEL "BittleX"
-// #endif
+#ifdef ROBOT_ARM
+#define MODEL "BittleR"
+#else
+#define MODEL "BittleX"
+#endif
 
 #define HEAD
 #define TAIL  // the robot arm's clip is assigned to the tail joint
@@ -139,6 +138,7 @@ String SoftwareVersion = "";
 #define UART_RX2 16
 #define UART_TX2 17
 #define SERIAL_VOICE Serial2
+#define IMU_MPU6050
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -170,6 +170,8 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_RX2 9
 #define UART_TX2 10
 #define SERIAL_VOICE Serial1
+#define IMU_MPU6050
+#define IMU_ICM42670
 
 // #ifdef ROBOT_ARM
 // const uint8_t PWM_pin[PWM_NUM] = {
@@ -201,6 +203,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH1 13
 #define TOUCH2 32
 #define TOUCH3 33
+#define IMU_MPU6050
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -379,6 +382,7 @@ int8_t moduleList[] = {
 
 String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
 bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+bool moduleDemoQ = false;
 byte moduleIndex;
 bool initialBoot = true;
 bool safeRest = true;

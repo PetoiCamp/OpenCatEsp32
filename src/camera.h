@@ -87,7 +87,7 @@ int8_t initPars[] = {
   20, 20, 4, 12, 12,
   int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(16 * adjustmentFactor), int8_t(76 * adjustmentFactor),
   18, 26, 8, 26,
-  60, 90, 10, -20
+  50, 90, 10, -20
 #endif
 };
 #endif

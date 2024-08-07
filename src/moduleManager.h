@@ -46,6 +46,8 @@
 // #define GYRO_PIN 0
 #endif
 
+#include "backTouch.h"
+
 int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleName == moduleList[i])
@@ -56,7 +58,7 @@ bool moduleActivatedQfunction(char moduleCode) {
   return moduleActivatedQ[indexOfModule(moduleCode)];
 }
 
-int8_t activeModuleIdx() {
+int8_t activeModuleIdx() {  //designed to work if only one active module is allowed
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleActivatedQ[i])
       return i;
@@ -225,11 +227,15 @@ void showModuleStatus() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
+  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) || moduleActivatedQfunction(EXTENSION_GESTURE) || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) || moduleActivatedQfunction(EXTENSION_CAMERA) || moduleActivatedQfunction(EXTENSION_ULTRASONIC) || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
 }
 
-void reconfigureTheActiveModule(char *moduleCode) {               // negative number will deactivate all the modules
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {  // disable unneeded modules
-    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {
+void reconfigureTheActiveModule(char *moduleCode) {
+  PTHL("mde", moduleCode);                                           // negative number will deactivate all the modules
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
+    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     //if the modules is active and different from the new module
+      if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  //it won't disable the voice
+        continue;
       PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
@@ -267,6 +273,7 @@ void initModuleManager() {
 #endif
   }
   showModuleStatus();
+  // backTouchSetup();
 }
 
 void read_serial() {
@@ -348,9 +355,8 @@ void readSignal() {
   detectBle();  //  newCmdIdx = 3;
   readBle();
 #endif
-
 #ifdef VOICE
-  if (moduleList[moduleIndex] == EXTENSION_VOICE)
+  if (moduleActivatedQ[indexOfModule(EXTENSION_VOICE)])
     read_voice();
 #endif
 
@@ -366,34 +372,32 @@ void readSignal() {
   else if (token != T_CALIBRATE && token != T_SERVO_FOLLOW && token != T_SERVO_FEEDBACK && current - idleTimer > 0) {
     if (moduleIndex == -1)  // no active module
       return;
-
 #ifdef CAMERA
-    if (moduleList[moduleIndex] == EXTENSION_CAMERA)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_CAMERA)])
       read_camera();
 #endif
 #ifdef ULTRASONIC
-    if (moduleList[moduleIndex] == EXTENSION_ULTRASONIC) {
-      readRGBultrasonic();
-    }
+    if (moduleActivatedQ[indexOfModule(EXTENSION_ULTRASONIC)])
+      read_RGBultrasonic();
 #endif
 #ifdef GESTURE
-    if (moduleList[moduleIndex] == EXTENSION_GESTURE)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_GESTURE)])
       read_gesture();
 #endif
 #ifdef PIR
-    if (moduleList[moduleIndex] == EXTENSION_PIR)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_PIR)])
       read_PIR();
 #endif
 #ifdef DOUBLE_TOUCH
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_TOUCH)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_TOUCH)])
       read_doubleTouch();
 #endif
 #ifdef DOUBLE_LIGHT
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_LIGHT)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_LIGHT)])
       read_doubleLight();
 #endif
 #ifdef DOUBLE_INFRARED_DISTANCE
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_IR_DISTANCE)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_IR_DISTANCE)])
       read_doubleInfraredDistance();  // has some bugs
 #endif
 #ifdef TOUCH0
@@ -402,7 +406,7 @@ void readSignal() {
     // powerSaver -> 4
     // other -> 5
     // randomMind -> 100
-
+    // read_backTouch();
     if (autoSwitch) {
       randomMind();             // make the robot do random demos
       powerSaver(POWER_SAVER);  // make the robot rest after a certain period, the unit is seconds

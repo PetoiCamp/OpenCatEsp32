@@ -32,7 +32,7 @@ void rgbUltrasonicSetup() {
   ultrasonicLEDinitializedQ = true;
 }
 
-void readRGBultrasonic() {
+void read_RGBultrasonic() {
   if (millis() - ultraTimer > ultraInterval) {  //|| token == T_SKILL && millis() - ultraTimer > 3000) {
     ultraTimer = millis();
     ultraInterval = 0;
