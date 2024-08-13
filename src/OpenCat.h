@@ -71,6 +71,8 @@
 #define BOARD "B01"
 #elif defined BiBoard_V0_2
 #define BOARD "B02"
+#elif defined BiBoard_V1_0
+#define BOARD "B10"
 #else
 #define BOARD "B"
 #endif
@@ -156,11 +158,11 @@ const uint8_t PWM_pin[PWM_NUM] = {
 
 #define LOW_VOLTAGE 7.0
 #ifdef RevB
-#define VOLTAGE 35  //rev B
-#define ANALOG2 32  //rev B
+#define VOLTAGE 35  // rev B
+#define ANALOG2 32  // rev B
 #elif defined RevDE
-#define VOLTAGE 37  //rev D
-#define ANALOG2 35  //rev D
+#define VOLTAGE 37  // rev D
+#define ANALOG2 35  // rev D
 #endif
 #define ANALOG1 34
 #define ANALOG3 36
@@ -278,8 +280,8 @@ bool newBoard = false;
 #define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
-#define T_PAUSE 'p'  //pause
-#define T_POWER 'P'  //power, print the voltage
+#define T_PAUSE 'p'  // pause
+#define T_POWER 'P'  // power, print the voltage
 #define T_TASK_QUEUE 'q'
 #define T_ROBOT_ARM 'r'
 #define T_SAVE 's'
@@ -521,14 +523,14 @@ int8_t servoCalib[DOF] = { 0, 0, 0, 0,
                            0, 0, 0, 0,
                            0, 0, 0, 0 };
 
-int16_t imuOffset[9] = { 0, 0, 0,
+int16_t mpuOffset[9] = { 0, 0, 0,
                          0, 0, 0,
                          0, 0, 0 };
 
 float expectedRollPitch[2];
 float RollPitchDeviation[2];
 float currentAdjust[DOF] = {};
-int balanceSlope[2] = { 1, 1 };  //roll, pitch
+int balanceSlope[2] = { 1, 1 };  // roll, pitch
 
 #include "tools.h"
 #include "QList/QList.h"
@@ -580,7 +582,7 @@ void initRobot() {
   i2cDetect();
   i2cEepromSetup();
 #ifdef GYRO_PIN
-  imuSetup();
+  mpu6050Setup();
 #endif
 #ifdef BT_BLE
   bleSetup();
@@ -639,7 +641,7 @@ void initRobot() {
 
   initModuleManager();
 #ifdef GYRO_PIN
-  // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  // read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif

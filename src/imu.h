@@ -278,7 +278,7 @@ void print6AxisMacro() {
   PTL();
 }
 
-bool read_IMU() {
+bool read_mpu6050() {
   if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {  // Get the Latest packet
     // display Euler angles in degrees
     mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -338,7 +338,7 @@ bool read_IMU() {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-void imuSetup() {
+void mpu6050Setup() {
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
   Wire.setClock(400000);  // 400kHz I2C clock. Comment this line if having compilation difficulties
@@ -382,14 +382,14 @@ void imuSetup() {
   devStatus = mpu.dmpInitialize();
 
   for (byte m = 0; m < 6; m++)
-    imuOffset[m] = i2c_eeprom_read_int16(EEPROM_IMU + m * 2);
+    mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
   // supply the gyro offsets here, scaled for min sensitivity
-  mpu.setXAccelOffset(imuOffset[0]);
-  mpu.setYAccelOffset(imuOffset[1]);
-  mpu.setZAccelOffset(imuOffset[2]);  // gravity
-  mpu.setXGyroOffset(imuOffset[3]);   // yaw
-  mpu.setYGyroOffset(imuOffset[4]);   // pitch
-  mpu.setZGyroOffset(imuOffset[5]);   // roll
+  mpu.setXAccelOffset(mpuOffset[0]);
+  mpu.setYAccelOffset(mpuOffset[1]);
+  mpu.setZAccelOffset(mpuOffset[2]);  // gravity
+  mpu.setXGyroOffset(mpuOffset[3]);   // yaw
+  mpu.setYGyroOffset(mpuOffset[4]);   // pitch
+  mpu.setZGyroOffset(mpuOffset[5]);   // roll
 
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {
@@ -410,12 +410,12 @@ void imuSetup() {
         beep(15, 500, 500, 1);
         mpu.CalibrateAccel(20);
         mpu.CalibrateGyro(20);
-        i2c_eeprom_write_int16(EEPROM_IMU, mpu.getXAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_IMU + 2, mpu.getYAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_IMU + 4, mpu.getZAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_IMU + 6, mpu.getXGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_IMU + 8, mpu.getYGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_IMU + 10, mpu.getZGyroOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU, mpu.getXAccelOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU + 2, mpu.getYAccelOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU + 4, mpu.getZAccelOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU + 6, mpu.getXGyroOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU + 8, mpu.getYGyroOffset());
+        i2c_eeprom_write_int16(EEPROM_MPU + 10, mpu.getZGyroOffset());
         beep(18, 50, 50, 6);
 #ifndef AUTO_INIT
       }
@@ -450,9 +450,9 @@ void imuSetup() {
   }
 
   delay(10);
-  read_IMU();
+  read_mpu6050();
   // for (byte t = 0; t < 100; t++) {
-  //   read_IMU();
+  //   read_mpu6050();
   //   print6Axis();
   //   delay(2);
   // }
@@ -469,6 +469,6 @@ void imuExample() {
   if (!dmpReady)
     return;
   // read a packet from FIFO
-  read_IMU();
+  read_mpu6050();
   print6Axis();
 }

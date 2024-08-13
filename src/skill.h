@@ -309,7 +309,7 @@ public:
           float previousYpr = currentYpr;
           long triggerTimer = millis();
           while (1) {
-            read_IMU();
+            read_mpu6050();
             print6Axis();
             currentYpr = ypr[abs(triggerAxis)];
             PT(currentYpr);

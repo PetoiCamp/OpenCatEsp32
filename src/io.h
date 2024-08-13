@@ -24,7 +24,7 @@ void read_touch() {
 void readEnvironment() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ && !(frame % imuSkip))
-    imuUpdated = read_IMU();
+    imuUpdated = read_mpu6050();
 #endif
   read_sound();
   read_GPS();

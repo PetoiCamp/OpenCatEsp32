@@ -20,7 +20,7 @@ byte mpuBad[] = { 19, 17, 16, 14, 12,
 #define STD_THRESHOLD 0.02
 
 #ifdef GYRO_PIN
-void testMPU() {
+void testMPU6050() {
   PTL("\nIMU test: both mean and standard deviation should be small on Pitch and Roll axis\n");
   delay(1000);
   int count = 100;
@@ -29,7 +29,7 @@ void testMPU() {
     history[a] = new float[count];
   for (int t = 0; t < count; t++) {
     delay(5);
-    read_IMU();
+    read_mpu6050();
     print6Axis();
     for (int a = 0; a < 2; a++)
       history[a][t] = ypr[a + 1];
@@ -119,7 +119,7 @@ void QA() {
       return;
 #endif
 #ifdef GYRO_PIN
-    testMPU();
+    testMPU6050();
 #endif
     //tests...
     PTL("\nServo test: all servos should rotate and in sync\n");

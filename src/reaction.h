@@ -33,7 +33,7 @@ void dealWithExceptions() {
           if (tQueue->cleared() && skill->period == 1) {
             tQueue->addTask('k', "knock");
 #if defined NYBBLE && defined ULTRASONIC
-            if (!moduleActivatedQ[0]) {  //serial2)
+            if (!moduleActivatedQ[0]) {  // serial2)
               int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
               int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
               tQueue->addTask('C', clrRed, 1);
@@ -117,7 +117,7 @@ void dealWithExceptions() {
 
     if (exceptions != -4)
       print6Axis();
-    read_IMU();  // flush the IMU to avoid static readings and infinite loop
+    read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
 
     // if (tQueue->lastTask == NULL) {
     //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
@@ -147,10 +147,10 @@ bool lowBattery() {
     voltage = voltage / 414;
 #endif
     if (voltage < 6 || voltage < LOW_VOLTAGE && abs(voltage - lastVoltage) < 0.2) {  // if battery voltage < threshold, it needs to be recharged
-                                                                                     // give the robot a break when voltage drops after sprint
-                                                                                     // adjust the thresholds according to your batteries' voltage
-                                                                                     // if set too high, the robot will stop working when the battery still has power.
-                                                                                     // If too low, the robot may not alarm before the battery shuts off
+      // give the robot a break when voltage drops after sprint
+      // adjust the thresholds according to your batteries' voltage
+      // if set too high, the robot will stop working when the battery still has power.
+      // If too low, the robot may not alarm before the battery shuts off
       lowBatteryQ = true;
       if (!safeRest) {
         // shutServos();
@@ -160,13 +160,14 @@ bool lowBattery() {
         shutServos();
         safeRest = true;
       }
-      PTF("Low power: ");
-      PT(voltage);
-      PTL("V");
-      PTLF("Long-press the battery's button to turn it on!");
-      if (!batteryWarningCounter
-          && i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE)) {
-        playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
+      if (!batteryWarningCounter) {
+        PTF("Low power: ");
+        PT(voltage);
+        PTL("V");
+        PTLF("Long-press the battery's button to turn it on!");
+        if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE)) {
+          playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
+        }
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
@@ -385,7 +386,7 @@ void reaction() {
         {
           PTLF("save offset");
           saveCalib(servoCalib);
-#ifdef VOICE  
+#ifdef VOICE
           if (newCmdIdx == 2)
             SERIAL_VOICE.println("XAc");
 #endif
@@ -462,7 +463,7 @@ void reaction() {
                   workingStiffness = false;
 #endif
 #ifdef VOICE
-                  if (newCmdIdx == 2) //only deactivate the voice module via serial port 
+                  if (newCmdIdx == 2)  // only deactivate the voice module via serial port
                     SERIAL_VOICE.println("XAd");
 #endif
                   strcpy(newCmd, "calib");
@@ -478,7 +479,7 @@ void reaction() {
                 }
 
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  //there's no such joint in this configuration
+                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
@@ -629,7 +630,7 @@ void reaction() {
               if (token == T_INDEXED_SEQUENTIAL_BIN) {
                 transform(targetFrame, 1, transformSpeed);
                 delay(10);
-              } else if (token == T_WRITE) {  //Write a/d pin value
+              } else if (token == T_WRITE) {  // Write a/d pin value
                 pinMode(newCmd[i + 1], OUTPUT);
                 if (newCmd[i] == TYPE_ANALOG) {
                   analogWrite(newCmd[i + 1], uint8_t(newCmd[i + 2]));  // analog value can go up to 255.
@@ -638,10 +639,10 @@ void reaction() {
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
               } else if (token == T_READ) {  // Read a/d pin
-                                             // 34 35 36 39 97 100
-                                             // "  #  $  '  a  d
-                                             // e.g. analogRead(35) = Ra# in the Serial Monitor
-                                             //                     = [R,a,35] in the Python API
+                // 34 35 36 39 97 100
+                // "  #  $  '  a  d
+                // e.g. analogRead(35) = Ra# in the Serial Monitor
+                //                     = [R,a,35] in the Python API
                 printToAllPorts('=');
                 pinMode(newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
@@ -672,7 +673,7 @@ void reaction() {
         {
           // PTH("cmdLen = ", cmdLen);
           if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
-                                                                        // and we don't want to change the activation status of the ultrasonic sensor behavior
+            // and we don't want to change the activation status of the ultrasonic sensor behavior
             reconfigureTheActiveModule(newCmd);
           }
 
@@ -741,8 +742,8 @@ void reaction() {
           if (!strcmp("x", newCmd)        // x for random skill
               || strcmp(lastCmd, newCmd)  // won't transform for the same gait.
               || skill->period <= 1) {    // skill->period can be NULL!
-                                          // it's better to compare skill->skillName and newCmd.
-                                          // but need more logics for non skill cmd in between
+            // it's better to compare skill->skillName and newCmd.
+            // but need more logics for non skill cmd in between
             if (!strcmp(newCmd, "bk"))
               strcpy(newCmd, "bkF");
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName

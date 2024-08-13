@@ -41,6 +41,8 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN);
 
 #ifdef GROVE_VISION_AI_V2
 #include <Seeed_Arduino_SSCMA.h>
+// You need to install Seeed_Arduino_SSCMA via Arduino's library manager
+// or download the library as a zip from https://github.com/Seeed-Studio/Seeed_Arduino_SSCMA
 #endif
 
 #define T_TUNER '>'
@@ -84,7 +86,7 @@ int8_t initPars[] = {
   20, 30, 12, 30,
   60, 90, 10, -20
 #elif defined GROVE_VISION_AI_V2
-  20, 20, 4, 12, 12,
+  20, 20, 1, 12, 12,
   int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(16 * adjustmentFactor), int8_t(76 * adjustmentFactor),
   18, 26, 8, 26,
   50, 90, 10, -20
@@ -421,7 +423,8 @@ SSCMA AI;
 int height;
 
 void groveVisionSetup() {
-  AI.begin();
+  Wire1.begin(10, 9, 400000);
+  AI.begin(&Wire1);
   cameraSetupSuccessful = true;
 }
 
