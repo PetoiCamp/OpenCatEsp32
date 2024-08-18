@@ -218,7 +218,7 @@ char *readLongByBytes(int address) {
 }
 
 bool newBoardQ(unsigned int eeaddress) {
-  // PTH("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
+  PTHL("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
   return i2c_eeprom_read_byte(eeaddress) != BIRTHMARK;
 }
 

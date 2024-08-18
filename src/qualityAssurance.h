@@ -115,29 +115,31 @@ void QA() {
     PTL("Run factory quality assurance program? (Y/n)");
     char choice = getUserInputChar(5);  //auto skip in 5 seconds
     PTL(choice);
-    if (choice != 'Y' && choice != 'y')
-      return;
+    if (choice == 'Y' || choice == 'y')
 #endif
+    {
 #ifdef GYRO_PIN
-    testMPU6050();
+      testMPU6050();
 #endif
-    //tests...
-    PTL("\nServo test: all servos should rotate and in sync\n");
-    loadBySkillName("ts");  //test EEPROM
-    while (1) {
-      skill->perform();
+      //tests...
+      PTL("\nServo test: all servos should rotate and in sync\n");
+      loadBySkillName("ts");  //test EEPROM
+      while (1) {
+        skill->perform();
 #ifdef IR_PIN
-      if (testIR()) {
+        if (testIR()) {
 #endif
-        PTL("Pass");
-        playMelody(melodyIRpass, sizeof(melodyIRpass) / 2);
-        break;
+          PTL("Pass");
+          break;
 #ifdef IR_PIN
-      } else {
-        PTL("Fail");
-        beep(8, 50);
+        } else {
+          PTL("Fail");
+          beep(8, 50);
+        }
+#endif
       }
-#endif
     }
+    i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
+    playMelody(melodyIRpass, sizeof(melodyIRpass) / 2);
   }
 }

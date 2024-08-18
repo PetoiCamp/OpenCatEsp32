@@ -27,8 +27,9 @@ int feedbackDirection = -1;
 bool ultrasonicLEDinitializedQ = false;
 void rgbUltrasonicSetup() {
   ultrasonic.SetupLED();
-  long color = ((long)(uint8_t(0)) << 16) + ((long)(uint8_t(0)) << 8) + (long)(uint8_t(255));
-  ultrasonic.SetRgbEffect(E_RGB_ALL, color, E_EFFECT_FLASH);
+  PTL("Show Petoi Logo color");
+  ultrasonic.SetRgbEffect(E_RGB_LEFT, ultrasonic.color(0, 28, 255), E_EFFECT_STEADY);
+  ultrasonic.SetRgbEffect(E_RGB_RIGHT, ultrasonic.color(255, 171, 0), E_EFFECT_STEADY);
   ultrasonicLEDinitializedQ = true;
 }
 

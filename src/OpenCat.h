@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240807"  // YYMMDD
+#define DATE "240818"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -619,7 +619,7 @@ void initRobot() {
 #endif
 
   QA();
-  i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
+  // i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
 
   tQueue = new TaskQueue();
 
