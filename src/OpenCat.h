@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240818"  // YYMMDD
+#define DATE "240819"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -142,12 +142,12 @@ String SoftwareVersion = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 
-// L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
-const uint8_t PWM_pin[PWM_NUM] = {
-  19, 4, 2, 27,   // head or shoulder roll
-  33, 5, 15, 14,  // shoulder pitch
-  32, 18, 13, 12  // knee
-};
+  // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
+  const uint8_t PWM_pin[PWM_NUM] = {
+    19, 4, 2, 27,   // head or shoulder roll
+    33, 5, 15, 14,  // shoulder pitch
+    32, 18, 13, 12  // knee
+  };
 
 #elif defined BiBoard_V1_0
 #define ESP_PWM
@@ -167,6 +167,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define ANALOG1 34
 #define ANALOG3 36
 #define ANALOG4 39
+#define BACKTOUCH_PIN 38
 #define VOICE_RX 26
 #define VOICE_TX 25
 #define UART_RX2 9
@@ -311,6 +312,7 @@ bool newBoard = false;
 #define EXTENSION_DOUBLE_LIGHT 'L'        // connect to ANALOG1, ANALOG2
 #define EXTENSION_DOUBLE_IR_DISTANCE 'D'  // connect to ANALOG3, ANALOG4
 #define EXTENSION_PIR 'I'                 // connect to ANALOG3
+#define EXTENSION_BACKTOUCH 'B'           // connect to BACKTOUCH_PIN
 #define EXTENSION_ULTRASONIC 'U'          // connect to Grove UART2
 #define EXTENSION_GESTURE 'G'             // connect to Grove I2C
 #define EXTENSION_CAMERA 'C'              // connect to Grove I2C
@@ -376,14 +378,15 @@ int8_t moduleList[] = {
   EXTENSION_DOUBLE_LIGHT,
   EXTENSION_DOUBLE_IR_DISTANCE,
   EXTENSION_PIR,
+  EXTENSION_BACKTOUCH,
   EXTENSION_ULTRASONIC,
   EXTENSION_GESTURE,
   EXTENSION_CAMERA,
   EXTENSION_QUICK_DEMO,
 };
 
-String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
-bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
+bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 bool moduleDemoQ = false;
 byte moduleIndex;
 bool initialBoot = true;
@@ -642,7 +645,8 @@ void initRobot() {
   initModuleManager();
 #ifdef GYRO_PIN
   // read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
+  // if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
+  if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");

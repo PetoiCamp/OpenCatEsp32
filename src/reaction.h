@@ -685,6 +685,7 @@ void reaction() {
                 break;
               }
 #endif
+#ifdef ULTRASONIC
             case EXTENSION_ULTRASONIC:
               {
                 if (cmdLen >= 3) {
@@ -693,6 +694,7 @@ void reaction() {
                 }
                 break;
               }
+#endif
           }
           break;
         }

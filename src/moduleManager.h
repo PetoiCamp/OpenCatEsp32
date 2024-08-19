@@ -34,6 +34,10 @@
 #include "doubleInfraredDistance.h"
 #endif
 
+#ifdef BACK_TOUCH
+#include "backTouch.h"
+#endif
+
 #ifdef ROBOT_ARM
 #include "robotArm.h"
 #endif
@@ -46,7 +50,6 @@
 // #define GYRO_PIN 0
 #endif
 
-#include "backTouch.h"
 
 int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
@@ -129,6 +132,13 @@ void initModule(char moduleCode) {
       {
         loadBySkillName("sit");
         gestureSetup();
+        break;
+      }
+#endif
+#ifdef BACK_TOUCH
+    case EXTENSION_BACKTOUCH:
+      {
+        backTouchSetup();
         break;
       }
 #endif
@@ -215,6 +225,12 @@ void stopModule(char moduleCode) {
         break;
       }
 #endif
+#ifdef BACK_TOUCH
+    case EXTENSION_BACKTOUCH:
+      {
+        break;
+      }
+#endif
 #ifdef QUICK_DEMO
     case EXTENSION_QUICK_DEMO:
       {
@@ -227,7 +243,7 @@ void showModuleStatus() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
-  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) || moduleActivatedQfunction(EXTENSION_GESTURE) || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) || moduleActivatedQfunction(EXTENSION_CAMERA) || moduleActivatedQfunction(EXTENSION_ULTRASONIC) || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
+  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) || moduleActivatedQfunction(EXTENSION_GESTURE) || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) || moduleActivatedQfunction(EXTENSION_CAMERA) || moduleActivatedQfunction(EXTENSION_PIR) || moduleActivatedQfunction(EXTENSION_BACKTOUCH) || moduleActivatedQfunction(EXTENSION_ULTRASONIC) || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
@@ -265,7 +281,7 @@ void initModuleManager() {
       voiceStop();
     }
 #endif
-#ifdef NYBBLE
+#ifdef ULTRASONIC
     else if (moduleList[i] == EXTENSION_ULTRASONIC) {
       rgbUltrasonicSetup();
       // initModule(moduleList[i]);
@@ -273,7 +289,6 @@ void initModuleManager() {
 #endif
   }
   showModuleStatus();
-  // backTouchSetup();
 }
 
 void read_serial() {
@@ -400,13 +415,12 @@ void readSignal() {
     if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_IR_DISTANCE)])
       read_doubleInfraredDistance();  // has some bugs
 #endif
-#ifdef TOUCH0
-    read_touch();
+#ifdef BACK_TOUCH
+    read_backTouch();
 #endif
     // powerSaver -> 4
     // other -> 5
     // randomMind -> 100
-    // read_backTouch();
     if (autoSwitch) {
       randomMind();             // make the robot do random demos
       powerSaver(POWER_SAVER);  // make the robot rest after a certain period, the unit is seconds
