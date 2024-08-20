@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240819"  // YYMMDD
+#define DATE "240820"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -98,9 +98,9 @@ String SoftwareVersion = "";
 
 #elif defined BITTLE
 #ifdef ROBOT_ARM
-#define MODEL "BittleR"
+#define MODEL "Bittle R"
 #else
-#define MODEL "BittleX"
+#define MODEL "Bittle X"
 #endif
 
 #define HEAD

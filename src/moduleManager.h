@@ -69,6 +69,8 @@ int8_t activeModuleIdx() {  //designed to work if only one active module is allo
 }
 
 void initModule(char moduleCode) {
+  bool successQ = true;
+  int8_t index = indexOfModule(moduleCode);
   switch (moduleCode) {
     case EXTENSION_GROVE_SERIAL:
       {
@@ -148,9 +150,8 @@ void initModule(char moduleCode) {
         loadBySkillName("sit");
         if (!cameraSetup()) {
           int i = indexOfModule(moduleCode);
-          PTHL("- disable", moduleNames[i]);
-          moduleActivatedQ[i] = false;
-          i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+          PTHL("*** Fail to start ", moduleNames[i]);
+          successQ = false;
         }
         break;
       }
@@ -162,6 +163,8 @@ void initModule(char moduleCode) {
       }
 #endif
   }
+  moduleActivatedQ[index] = successQ;
+  i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + index, successQ);
 }
 
 void stopModule(char moduleCode) {
@@ -262,8 +265,6 @@ void reconfigureTheActiveModule(char *moduleCode) {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
       PTHL("+  enable", moduleNames[i]);
       initModule(moduleList[i]);
-      moduleActivatedQ[i] = true;
-      i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
     }
   }
   showModuleStatus();
@@ -284,7 +285,6 @@ void initModuleManager() {
 #ifdef ULTRASONIC
     else if (moduleList[i] == EXTENSION_ULTRASONIC) {
       rgbUltrasonicSetup();
-      // initModule(moduleList[i]);
     }
 #endif
   }

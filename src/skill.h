@@ -401,14 +401,15 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
   char* nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
   if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {
-    nameStr[strlen(skillName) - 1] = '\0';
-    strcat(nameStr, "Arm");
-    nameStr[strlen(skillName) + 2] = lr;
+    //if the name contains L R F and doesn't contain "Arm"
+    nameStr[strlen(skillName) - 1] = '\0';  //remove the L R F in the end
+    strcat(nameStr, "Arm");                 //insert Arm
+    nameStr[strlen(skillName) + 2] = lr;    // append L R F
     nameStr[strlen(skillName) + 3] = '\0';
     // PTHL("mod ", nameStr);
   }
   skillIndex = skillList->lookUp(nameStr);
-  if (skillIndex == -1)
+  if (skillIndex == -1)  //if there's no special skillname with Arm, use the original skill
 #endif
     skillIndex = skillList->lookUp(skillName);
   if (skillIndex != -1) {
