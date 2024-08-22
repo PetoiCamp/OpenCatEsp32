@@ -29,8 +29,8 @@ void dealWithExceptions() {
         }
       case -3:
         {
-          PTL("EXCEPTION: Knocked");
           if (tQueue->cleared() && skill->period == 1) {
+            PTL("EXCEPTION: Knocked");
             tQueue->addTask('k', "knock");
 #if defined NYBBLE && defined ULTRASONIC
             if (!moduleActivatedQ[0]) {  // serial2)
@@ -47,33 +47,46 @@ void dealWithExceptions() {
       case -4:
         {
           PTL("EXCEPTION: Pushed");
+          // Acceleration Real
+          //      ^ head
+          //        ^ x+
+          //        |
+          //  y+ <------ y-
+          //        |
+          //        | x-
           if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
             char xSymbol[] = { '^', 'v' };
             char ySymbol[] = { '<', '>' };
             char xDirection = xSymbol[sign(ARX) > 0];
             char yDirection = ySymbol[sign(ARY) > 0];
             float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
+            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+            PTHL(" ForceAngle:", forceAngle);
             if (tQueue->cleared()) {
-              if (abs(forceAngle) < 70) {
-                // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
-                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
+              if (xDirection == '^') {
+                // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
+                if (abs(forceAngle) < 75)
+                  // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
+                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
                 // tQueue->addTask('i', "");
-              } else {
-                if (xDirection == '^') {
-                  // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
-                  tQueue->addTask('k', "wkF", 1000);
+                else {
+                  tQueue->addTask('k', "wkF", 700);
                   // tQueue->addTask('i', "");
-                } else {
-                  // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
-                  tQueue->addTask('k', "bkF", 1000);
-                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
+                  tQueue->addTask('k', "bkF", 500);
+                }
+              } else {
+                // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                if (abs(forceAngle) < 75)
+                  tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
+                else {
+                  tQueue->addTask('k', "bkF", 500);
+                  tQueue->addTask('k', "wkF", 700);
                 }
               }
-              tQueue->addTask('k', "up");
-              delayPrevious = runDelay;
-              runDelay = 3;
             }
-            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+            tQueue->addTask('k', "up");
+            delayPrevious = runDelay;
+            runDelay = 3;
             PTL();
           }
           break;
@@ -115,8 +128,8 @@ void dealWithExceptions() {
         }
     }
 
-    if (exceptions != -4)
-      print6Axis();
+    // if (exceptions != -4)
+    print6Axis();
     read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
 
     // if (tQueue->lastTask == NULL) {
@@ -126,8 +139,8 @@ void dealWithExceptions() {
     //   }
     // }
   }
-  // if (tQueue->cleared() && runDelay <= delayException)
-  //   runDelay = delayPrevious;
+// if (tQueue->cleared() && runDelay <= delayException)
+//   runDelay = delayPrevious;
 #endif
 }
 
@@ -837,5 +850,7 @@ void reaction() {
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
+  } else {
+    delay(1);  //avoid triggering WDT on BiBoard V0_2
   }
 }

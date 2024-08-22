@@ -364,6 +364,7 @@ void mpu6050Setup() {
     PTLF("Initializing MPU...");
 #if defined CONFIG_DISABLE_HAL_LOCKS && CONFIG_DISABLE_HAL_LOCKS == 1
     PTL("OK");
+    PTL("If the program stucks, reinstall Arduino ESP32 boards version 2.0.12. Newer version may cause bugs!");
 #else
     PTL("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
 #endif

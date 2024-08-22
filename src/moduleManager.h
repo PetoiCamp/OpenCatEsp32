@@ -416,7 +416,8 @@ void readSignal() {
       read_doubleInfraredDistance();  // has some bugs
 #endif
 #ifdef BACK_TOUCH
-    read_backTouch();
+    if (moduleActivatedQ[indexOfModule(EXTENSION_BACKTOUCH)])
+      read_backTouch();
 #endif
     // powerSaver -> 4
     // other -> 5

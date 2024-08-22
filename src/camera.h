@@ -4,6 +4,16 @@
 // #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
+#ifdef BiBoard_V1_0
+#define USE_WIRE1  //use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
+#endif
+
+#ifdef USE_WIRE1
+#define I2C_WIRE Wire1
+#else
+#define I2C_WIRE Wire
+#endif
+
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
 // Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
@@ -63,7 +73,7 @@ int imgRangeY = 240;
 #error "Please define the camera type"
 #endif
 
-int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, frontUp, backUp, frontDown, backDown;
+int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 
 #ifdef ROBOT_ARM
 float adjustmentFactor = 1.5;
@@ -76,20 +86,20 @@ int8_t initPars[] = {
   30, 11, 4, 10, 15,
   60, -50, 31, -50,
   45, -40, 40, -36,
-  25, -60, 60, 16
+  0, 25, -60, 60, 16
 };
 #else  // BITTLE or CUB
 int8_t initPars[] = {
 #ifdef MU_CAMERA
-  30, 11, 4, 10, 0,
-  60, 80, 20, 80,
-  20, 30, 12, 30,
-  60, 90, 10, -20
+  30, 10, 4, 15, 15,
+  60, 80, 30, 80,
+  60, 30, 30, 70,
+  40, 40, 60, 40, -30
 #elif defined GROVE_VISION_AI_V2
-  20, 20, 1, 12, 12,
-  int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(16 * adjustmentFactor), int8_t(76 * adjustmentFactor),
+  20, 20, 2, 12, 12,
+  int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(76 * adjustmentFactor),
   18, 26, 8, 26,
-  50, 90, 10, -20
+  45, 50, 60, 40, -30
 #endif
 };
 #endif
@@ -97,7 +107,7 @@ int8_t initPars[] = {
 int8_t *par[] = { &lensFactor, &proportion, &tranSpeed, &pan, &tilt,
                   &frontUpX, &backUpX, &frontDownX, &backDownX,
                   &frontUpY, &backUpY, &frontDownY, &backDownY,
-                  &frontUp, &backUp, &frontDown, &backDown };
+                  &tiltBase, &frontUp, &backUp, &frontDown, &backDown };
 
 #ifdef MU_CAMERA
 void muCameraSetup();
@@ -115,6 +125,9 @@ void read_GroveVision();
 #endif
 
 bool cameraSetup() {
+#ifdef USE_WIRE1
+  I2C_WIRE.begin(UART_TX2, UART_RX2, 400000);
+#endif
   for (byte i = 0; i < sizeof(initPars) / sizeof(int8_t); i++)
     *par[i] = initPars[i];
   transformSpeed = 0;
@@ -186,7 +199,7 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
       // PTL(currentY);
 
       // if (abs(currentX) < 60) {
-      int8_t base[] = { 0, 10, 0, 0,
+      int8_t base[] = { 0, tiltBase, 0, 0,
                         0, 0, 0, 0,
                         frontUp, frontUp, backUp, backUp,
                         frontDown, frontDown, backDown, backDown };
@@ -263,19 +276,19 @@ MuVisionType object[] = { VISION_BODY_DETECT, VISION_BALL_DETECT };
 String objectName[] = { "body", "ball" };
 int objectIdx = 0;
 int lastBallType;
-byte trial = 0;
 void muCameraSetup() {
+  PTL("Setup Mu3");
   uint8_t err;
   // initialized MU on the I2C port
+  byte trial = 0;
   do {
     MuVisionSensor *Mu0 = new MuVisionSensor(MU_ADDRESS);
-    err = Mu0->begin(&Wire);
-
+    err = Mu0->begin(&I2C_WIRE);
     if (err == MU_OK) {
       PTLF("MU initialized at 0x50");
       Mu = Mu0;
     } else {
-      PTH("Trial ", trial);
+      PTHL("Trial ", trial);
       if (!trial++) {  // only print once for the first time
         PTLF("Failed to initialize the camera!");
         PTLF("Set the four dial switches on the camera as v ^ v v (the second switch dialed up to I2C)");
@@ -284,7 +297,7 @@ void muCameraSetup() {
       }
       delete Mu0;
       MuVisionSensor *Mu1 = new MuVisionSensor(ALT_MU_ADDRESS);
-      err = Mu1->begin(&Wire);
+      err = Mu1->begin(&I2C_WIRE);
       if (err == MU_OK) {
         PTLF("MU initialized at 0x60");
         Mu = Mu1;
@@ -292,13 +305,12 @@ void muCameraSetup() {
         delete Mu1;
       }
     }
-    delay(1000);
-  } while (err != MU_OK && trial < 3);
+  } while (err != MU_OK && trial < 1);
   //  shutServos();
   //  counter = 0;
   //  motion.loadBySkillName("rest");
   //  transform(motion.dutyAngles);
-  cameraSetupSuccessful = err == MU_OK;
+  cameraSetupSuccessful = (err == MU_OK);
   if (cameraSetupSuccessful)
     (*Mu).VisionBegin(object[objectIdx]);
   noResultTime = millis();
@@ -351,31 +363,31 @@ void read_MuCamera() {
 #define SENTRY_ADDR 0x60  // 0x61 0x62 0x63
 
 char writeRegData(char reg_addr, char reg_data) {
-  Wire.beginTransmission(SENTRY_ADDR);
-  Wire.write(reg_addr);
-  Wire.write(reg_data);
-  Wire.endTransmission();
+  I2C_WIRE.beginTransmission(SENTRY_ADDR);
+  I2C_WIRE.write(reg_addr);
+  I2C_WIRE.write(reg_data);
+  I2C_WIRE.endTransmission();
   delay(1);
 }
 
 char readRegData(char reg_addr) {
-  Wire.beginTransmission(SENTRY_ADDR);
-  Wire.write(reg_addr);  // read label
-  Wire.endTransmission();
+  I2C_WIRE.beginTransmission(SENTRY_ADDR);
+  I2C_WIRE.write(reg_addr);  // read label
+  I2C_WIRE.endTransmission();
 
-  Wire.requestFrom(SENTRY_ADDR, 1);  // request 1 byte from slave device
+  I2C_WIRE.requestFrom(SENTRY_ADDR, 1);  // request 1 byte from slave device
   char ret = 0;
-  while (Wire.available()) {
-    ret = Wire.read();  // receive a byte
+  while (I2C_WIRE.available()) {
+    ret = I2C_WIRE.read();  // receive a byte
   }
   return ret;
   delay(1);
 }
 
 void sentry1CameraSetup() {
-  // Wire.begin();  // join i2c bus (address optional for master)
+  // I2C_WIRE.begin();  // join i2c bus (address optional for master)
   delay(2000);  // wait for sentry1 startup, not necessary
-  PTLF("Setup sentry1");
+  PTLF("Setup Sentry1");
   writeRegData(0x20, 0x07);  // set vision id: 7 (body for Sentry1)
   writeRegData(0x21, 0x01);  // enable vision
   // writeRegData(0x22, 0x10);  // set vision level: 0x10=Sensitive/Speed 0x20=balance(default if not set) 0x30=accurate ..........[UPDATE]
@@ -421,10 +433,10 @@ void read_Sentry1Camera() {
 #ifdef GROVE_VISION_AI_V2
 SSCMA AI;
 int height;
-
 void groveVisionSetup() {
-  Wire1.begin(10, 9, 400000);
-  AI.begin(&Wire1);
+  PTL("Setup Vision AI 2");
+  // I2C_WIRE.begin(10, 9, 400000);
+  AI.begin(&I2C_WIRE);
   cameraSetupSuccessful = true;
 }
 

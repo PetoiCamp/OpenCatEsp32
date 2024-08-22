@@ -310,15 +310,15 @@ public:
           long triggerTimer = millis();
           while (1) {
             read_mpu6050();
-            print6Axis();
+            // print6Axis();
             currentYpr = ypr[abs(triggerAxis)];
-            PT(currentYpr);
-            PTF("\t");
-            PTL(triggerAngle);
+            // PT(currentYpr);
+            // PTF("\t");
+            // PTL(triggerAngle);
             if (
               ((180 - fabs(currentYpr) > 2)                                                                                           //skip the angle when the reading jumps from 180 to -180
                && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  //the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
-              || millis() - triggerTimer > 10000)                                                                                     // if the robot stucks by the trigger for more than 10 seconds, it will break.
+              || millis() - triggerTimer > 3000)                                                                                      // if the robot stucks by the trigger for more than 3 seconds, it will break.
               break;
             previousYpr = currentYpr;
           }
@@ -366,13 +366,18 @@ public:
         if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-waling joints
             || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
         {
-#ifndef ROBOT_ARM
+
           if (!manualHeadQ && jointIndex < 4) {
-            duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
-                   + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
-          } else
+            duty =
+#ifndef ROBOT_ARM
+              (jointIndex != 1 ? offsetLR : 0)  //look left or right
+              + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+#else
+              0;
 #endif
-            duty = currentAng[jointIndex] + max(-5, min(5, (targetHead[jointIndex] - currentAng[jointIndex])));
+          } else
+
+            duty = currentAng[jointIndex] + max(-20, min(20, (targetHead[jointIndex] - currentAng[jointIndex])));
           //  - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
