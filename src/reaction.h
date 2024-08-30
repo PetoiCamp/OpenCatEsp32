@@ -159,7 +159,7 @@ bool lowBattery() {
 #else
     voltage = voltage / 414;
 #endif
-    if (voltage < 6 || voltage < LOW_VOLTAGE && abs(voltage - lastVoltage) < 0.2) {  // if battery voltage < threshold, it needs to be recharged
+    if (voltage < NO_BATTERY_VOLTAGE || voltage < LOW_VOLTAGE && abs(voltage - lastVoltage) < 0.2) {  // if battery voltage < threshold, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
       // if set too high, the robot will stop working when the battery still has power.

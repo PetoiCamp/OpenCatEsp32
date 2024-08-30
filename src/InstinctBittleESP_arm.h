@@ -1784,15 +1784,6 @@ const int8_t dg[] PROGMEM = {
     0,  95,   0,   0,   0,   0,   0,   0,  46,  46,  31,  31, -21, -21,  15,  15,	32, 1, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
 };
-const int8_t dropDown[] PROGMEM = { 
--5, 0, 0, 1,
- 0, 0, 0, 
-    0,  26,   0, -15,  15,  15, -30, -30,  30,  30,  25,  25,   3,   3,  37,  37,	 8, 0, 0, 0,
-    0,  26,  75,   0,  15,  15, -30, -30,  30,  30,  25,  25,   3,   3,  37,  37,	 8, 0, 0, 0,
-    0, -10,  75,   0,   0,   0,   0,   0,  13,  13,  24,  24,  40,  40,  35,  31,	 8, 2, 0, 0,
-    0, -10,   0,   0,   0,   0,   0,   0,  13,  13,  24,  24,  40,  40,  35,  31,	 8, 0, 0, 0,
-    0,   0,   0,   0,   0,   0,   0,   0,  20,  20,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
-};
 const int8_t fiv[] PROGMEM = { 
 -10, 0, 0, 1,
  0, 0, 0, 
@@ -1877,10 +1868,10 @@ const int8_t hu[] PROGMEM = {
 const int8_t hunt[] PROGMEM = { 
 -7, 0, 0, 1,
  0, 0, 0, 
-    0, -10,-120,   0,   0,   0,   0,   0,  16,  16,  30,  30,  30,  30,  30,  30,	16, 0, 0, 0,
-    0,  -5, -30, -10,  10,  10, -20, -20,   4,   4,  22,  22,  78,  78,  59,  59,	16, 0, 0, 0,
+    0, -10,  10,   0,   0,   0,   0,   0,  16,  16,  30,  30,  30,  30,  30,  30,	48, 0, 0, 0,
+    0,  -5,-120, -10,  10,  10, -20, -20,   4,   4,  22,  22,  78,  78,  59,  59,	16, 0, 0, 0,
     0,   0, -30, -10,  10,  10, -20, -20,  40,  40,  41,  41,  20,  20,  40,  40,	64, 0, 0, 0,
-    0,  40, -30, -10,  10,  10, -20, -20,  70,  70,  61,  61,  10,  10,  20,  20,	64, 1, 0, 0,
+    0,  40, -30, -10,  10,  10, -20, -20,  70,  70,  61,  61,  10,  10,  20,  20,	64, 0, 0, 0,
     0,  40,   0, -10,  10,  10, -20, -20,  70,  70,  61,  61,  10,  10,  20,  20,	 0, 0, 0, 0,
     0,  70,   0, -10,  10,  10, -20, -20,  16,  16,  40,  40, -13, -13,  -9,  -9,	 4, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  20,  20,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
@@ -1913,6 +1904,15 @@ const int8_t knock[] PROGMEM = {
    10,  20,   0,   0,   9,   9, -18, -18,  10,  10,  13,  13,  17,  17,  37,  37,	20, 0, 0, 0,
   -10,   9,   0,   0,   9,   9, -18, -18,  10,  10,  13,  13,  17,  17,  37,  37,	20, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  10,  10,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
+};
+const int8_t launch[] PROGMEM = { 
+-5, 0, 0, 2,
+ 0, 0, 0, 
+    0,   0,   0,   0,   0,   0,   0,   0,  15,  15,  15,  15,  -3,  -3,  15,  15,	 8, 0, 0, 0,
+    0,  90,   0,   0,  -3,  -3,  10,  10,  21,  21,  66,  66,  35,  35, -34, -34,	 0, 4, 0, 0,
+    0,  10,  40,   0,  -3,  -3,  10,  10,  -3,  -3,  32,  32,  12,  12,  15,  15,	 0, 1, 0, 0,
+    0,  41,   0,   0,   0,   0,   0,   0, -20, -20,  25,  25,  15,  15,  -9,  -9,	 8, 0, 0, 0,
+    0,  -1,   0,   0,   0,   0,   0,   0,   6,   6,  17,  17,  15,  15,  13,  13,	 8, 0, 0, 0,
 };
 const int8_t lpov[] PROGMEM = { 
 -37, 0, 0, 1,
@@ -2051,6 +2051,15 @@ const int8_t putAway[] PROGMEM = {
     0, 100,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,	12, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,	16, 0, 0, 0,
 };
+const int8_t putDown[] PROGMEM = { 
+-5, 0, 0, 1,
+ 0, 0, 0, 
+    0,  26,   0, -15,  15,  15, -30, -30,  30,  30,  25,  25,   3,   3,  37,  37,	 8, 0, 0, 0,
+    0,  26,  75,   0,  15,  15, -30, -30,  30,  30,  25,  25,   3,   3,  37,  37,	 8, 0, 0, 0,
+    0, -10,  75,   0,   0,   0,   0,   0,  13,  13,  24,  24,  40,  40,  35,  31,	 8, 2, 0, 0,
+    0, -10,   0,   0,   0,   0,   0,   0,  13,  13,  24,  24,  40,  40,  35,  31,	 8, 0, 0, 0,
+    0,   0,   0,   0,   0,   0,   0,   0,  20,  20,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
+};
 const int8_t rc[] PROGMEM = { 
 -6, 0, 0, 2,
  0, 0, 0, 
@@ -2070,15 +2079,6 @@ const int8_t scrh[] PROGMEM = {
    42,  -3,   0,   0,  -5,  -5,  20,  20,  30,  30, 105, -25,  78,  47, -27, -25,	32, 0, 0, 0,
    19,   0,   0,   0,  -5,  -5,  20,  20,  32,  26, 100,  71,  45,  26, -31, -22,	 8, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  20,  20,  30,  30,  30,  30,  30,  30,	 8, 0, 0, 0,
-};
-const int8_t shoot[] PROGMEM = { 
--5, 0, 0, 2,
- 0, 0, 0, 
-    0,   0,   0,   0,   0,   0,   0,   0,  15,  15,  15,  15,  -3,  -3,  15,  15,	 8, 0, 0, 0,
-    0,  90,   0,   0,  -3,  -3,  10,  10,  21,  21,  66,  66,  35,  35, -34, -34,	 0, 4, 0, 0,
-    0,  10,  40,   0,  -3,  -3,  10,  10,  -3,  -3,  32,  32,  12,  12,  15,  15,	 0, 1, 0, 0,
-    0,  41,   0,   0,   0,   0,   0,   0, -20, -20,  25,  25,  15,  15,  -9,  -9,	 8, 0, 0, 0,
-    0,  -1,   0,   0,   0,   0,   0,   0,   6,   6,  17,  17,  15,  15,  13,  13,	 8, 0, 0, 0,
 };
 const int8_t showOff[] PROGMEM = { 
 -5, 0, 0, 1,
@@ -2142,11 +2142,11 @@ const int8_t zz[] PROGMEM = {
  0, 0, 0, 
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,	 4, 0, 0, 0,
 };
-  const char* skillNameWithType[]={"bdFI","bkI","bkArmFI","bkArmLI","bkFI","bkLI","crArmFI","crArmLI","crFI","crLI","gpFI","gpLI","hlwI","jpFI","lftFI","lftLI","phFI","phLI","trArmFI","trArmLI","trFI","trLI","vtArmFI","vtFI","vtLI","wkArmFI","wkArmLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","lndI","restI","sitI","strI","upI","zeroN","angI","bxI","chrI","ckI","clapI","cmhI","dgI","dropDownI","fivI","gdbI","hdsI","hgI","hiI","hskI","huI","huntI","jmpI","kcI","knockI","lpovI","mwI","ndI","pdI","peeI","pickUpI","puI","pu1I","putAwayI","rcI","scrhI","shootI","showOffI","snfI","tblI","throwAwayI","tossI","tsI","whI","zzI",};
+  const char* skillNameWithType[]={"bdFI","bkI","bkArmFI","bkArmLI","bkFI","bkLI","crArmFI","crArmLI","crFI","crLI","gpFI","gpLI","hlwI","jpFI","lftFI","lftLI","phFI","phLI","trArmFI","trArmLI","trFI","trLI","vtArmFI","vtFI","vtLI","wkArmFI","wkArmLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","lndI","restI","sitI","strI","upI","zeroN","angI","bxI","chrI","ckI","clapI","cmhI","dgI","fivI","gdbI","hdsI","hgI","hiI","hskI","huI","huntI","jmpI","kcI","knockI","launchI","lpovI","mwI","ndI","pdI","peeI","pickUpI","puI","pu1I","putAwayI","putDownI","rcI","scrhI","showOffI","snfI","tblI","throwAwayI","tossI","tsI","whI","zzI",};
 #if !defined(MAIN_SKETCH) || !defined(I2C_EEPROM)
 		//if it's not the main sketch to save data or there's no external EEPROM, 
 		//the list should always contain all information.
-  const int8_t* progmemPointer[] = {bdF, bk, bkArmF, bkArmL, bkF, bkL, crArmF, crArmL, crF, crL, gpF, gpL, hlw, jpF, lftF, lftL, phF, phL, trArmF, trArmL, trF, trL, vtArmF, vtF, vtL, wkArmF, wkArmL, wkF, wkL, balance, buttUp, calib, dropped, lifted, lnd, rest, sit, str, up, zero, ang, bx, chr, ck, clap, cmh, dg, dropDown, fiv, gdb, hds, hg, hi, hsk, hu, hunt, jmp, kc, knock, lpov, mw, nd, pd, pee, pickUp, pu, pu1, putAway, rc, scrh, shoot, showOff, snf, tbl, throwAway, toss, ts, wh, zz, };
+  const int8_t* progmemPointer[] = {bdF, bk, bkArmF, bkArmL, bkF, bkL, crArmF, crArmL, crF, crL, gpF, gpL, hlw, jpF, lftF, lftL, phF, phL, trArmF, trArmL, trF, trL, vtArmF, vtF, vtL, wkArmF, wkArmL, wkF, wkL, balance, buttUp, calib, dropped, lifted, lnd, rest, sit, str, up, zero, ang, bx, chr, ck, clap, cmh, dg, fiv, gdb, hds, hg, hi, hsk, hu, hunt, jmp, kc, knock, launch, lpov, mw, nd, pd, pee, pickUp, pu, pu1, putAway, putDown, rc, scrh, showOff, snf, tbl, throwAway, toss, ts, wh, zz, };
 #else	//only need to know the pointers to newbilities, because the intuitions have been saved onto external EEPROM,
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };

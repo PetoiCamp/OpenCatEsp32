@@ -29,12 +29,12 @@
 String customizedCmdList[] = {
 #ifdef ROBOT_ARM
   "kpickUpL",     //捡起来
-  "kdropDownL",   //放下
+  "kputDownL",   //放下
   "khuntL",       //捕猎
   "kshowOff",     //展示
   "kputAwayL",    //收起来
   "kthrowAwayL",  //丢出去
-  "kshootL",      //发射
+  "klaunchL",      //发射
   "kclapL",       //鼓掌
   "ktossL",       //抛出去
 #else

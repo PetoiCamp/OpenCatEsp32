@@ -34,7 +34,7 @@
 #include "doubleInfraredDistance.h"
 #endif
 
-#ifdef BACK_TOUCH
+#ifdef BACKTOUCH_PIN
 #include "backTouch.h"
 #endif
 
@@ -137,7 +137,7 @@ void initModule(char moduleCode) {
         break;
       }
 #endif
-#ifdef BACK_TOUCH
+#ifdef BACKTOUCH_PIN
     case EXTENSION_BACKTOUCH:
       {
         backTouchSetup();
@@ -228,7 +228,7 @@ void stopModule(char moduleCode) {
         break;
       }
 #endif
-#ifdef BACK_TOUCH
+#ifdef BACKTOUCH_PIN
     case EXTENSION_BACKTOUCH:
       {
         break;
@@ -250,7 +250,7 @@ void showModuleStatus() {
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
-  PTHL("mde", moduleCode);                                           // negative number will deactivate all the modules
+  PTHL("mode", moduleCode);                                           // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     //if the modules is active and different from the new module
       if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  //it won't disable the voice
@@ -415,7 +415,7 @@ void readSignal() {
     if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_IR_DISTANCE)])
       read_doubleInfraredDistance();  // has some bugs
 #endif
-#ifdef BACK_TOUCH
+#ifdef BACKTOUCH_PIN
     if (moduleActivatedQ[indexOfModule(EXTENSION_BACKTOUCH)])
       read_backTouch();
 #endif

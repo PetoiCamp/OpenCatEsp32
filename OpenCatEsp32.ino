@@ -24,8 +24,7 @@
 #define DOUBLE_INFRARED_DISTANCE  // for double distance sensor
 #define GESTURE                   // for Gesture module
 #define CAMERA                    // for Mu Vision camera
-// #define BACK_TOUCH                // for back touch sensor
-#define QUICK_DEMO  // for quick demo
+#define QUICK_DEMO                // for quick demo
 // #define ROBOT_ARM                 // for attaching head clip arm
 #include "src/OpenCat.h"
 

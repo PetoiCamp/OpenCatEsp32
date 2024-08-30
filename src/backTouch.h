@@ -13,7 +13,7 @@ void read_backTouch() {
   int touchReading = analogRead(BACKTOUCH_PIN);
   if (touchReading < 3000) {
     int8_t touchPadIdx = touchPadMap[touchReading / 600];
-    if (prevTouch != touchPadIdx){// || millis() - lastTouchEvent > 500) {
+    if (prevTouch != touchPadIdx) {  //|| millis() - lastTouchEvent > 500) {  // if the touch is different or a repeatitive touch interval is longer than 0.5 second
       prevTouch = touchPadIdx;
       PTHL("Touched:", touchLocation[touchPadIdx]);
       beep(touchPadIdx * 2 + 15, 100);
@@ -23,8 +23,8 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,45,1,45,2,0");
 #else
-            tQueue->addTask('m', "0,120");
-            tQueue->addTask('m', "0,0");
+            tQueue->addTask('m', "0,120", 500);
+            tQueue->addTask('m', "0,0,1,40");
 #endif
             break;
           }
@@ -33,8 +33,8 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,-45,1,45,2,0", 1000);
 #else
-            tQueue->addTask('m', "0,-120", 1000);
-            tQueue->addTask('m', "0,0");
+            tQueue->addTask('m', "0,-120", 500);
+            tQueue->addTask('m', "0,0,1,40");
 #endif
             break;
           }

@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240823"  // YYMMDD
+#define DATE "240830"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -142,12 +142,12 @@ String SoftwareVersion = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 
-  // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
-  const uint8_t PWM_pin[PWM_NUM] = {
-    19, 4, 2, 27,   // head or shoulder roll
-    33, 5, 15, 14,  // shoulder pitch
-    32, 18, 13, 12  // knee
-  };
+// L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
+const uint8_t PWM_pin[PWM_NUM] = {
+  19, 4, 2, 27,   // head or shoulder roll
+  33, 5, 15, 14,  // shoulder pitch
+  32, 18, 13, 12  // knee
+};
 
 #elif defined BiBoard_V1_0
 #define ESP_PWM
@@ -157,6 +157,7 @@ String SoftwareVersion = "";
 // #define IR_PIN 23
 
 #define LOW_VOLTAGE 7.0
+#define NO_BATTERY_VOLTAGE 6.0
 #ifdef RevB
 #define VOLTAGE 35  // rev B
 #define ANALOG2 32  // rev B
@@ -480,7 +481,7 @@ int angleLimit[][2] = {
 #else
 int angleLimit[][2] = {
   { -120, 120 },
-  { -85, 45 },
+  { -75, 40 },
   { -120, 120 },
   { -120, 120 },
   { -90, 60 },
