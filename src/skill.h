@@ -405,7 +405,7 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
 #ifdef ROBOT_ARM  //use the altered Arm gait
   char* nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
-  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {
+  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {  //try to find the arm version
     //if the name contains L R F and doesn't contain "Arm"
     nameStr[strlen(skillName) - 1] = '\0';  //remove the L R F in the end
     strcat(nameStr, "Arm");                 //insert Arm

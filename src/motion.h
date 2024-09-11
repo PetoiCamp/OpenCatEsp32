@@ -297,3 +297,44 @@ float adjust(byte i) {
   currentAdjust[i] = max(float(-75), min(float(75), currentAdjust[i]));
   return currentAdjust[i];
 }
+
+int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
+  PTT("Try ", start);
+  PTT(" ~ ", end);
+  PTTL(" by ", step);
+  int angLag0 = *xyzReal[0];
+  int angLag1 = *xyzReal[1];
+  calibratedPWM(2, 20);
+  delay(300);
+  for (int a = start; a < end; a += step) {
+    calibratedPWM(2, -120);
+    for (int i = 0; i < 20; i++) {
+      read_mpu6050();
+      delay(20);
+    }
+    angLag0 = *xyzReal[0];
+    calibratedPWM(2, a);
+    long startTime = millis();
+    long after;
+    // int maxVibration = 0;
+    // int correspondingAng;
+    do {
+      after = millis() - startTime;
+      read_mpu6050();
+      int diff0 = angLag0 - *xyzReal[0];
+      if (diff0) {
+        // if (abs(diff0) > abs(maxVibration)) {
+        //   maxVibration = diff0;
+        //   correspondingAng = a;
+        // }
+        if (abs(diff0) > threshold) {
+          PTHL(a, abs(diff0));
+          return a;
+        }
+        angLag0 = *xyzReal[0];
+      }
+    } while (after <= 200);
+    // PTHL(a, maxVibration);
+  }
+  return end;
+}

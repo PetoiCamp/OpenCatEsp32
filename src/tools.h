@@ -10,6 +10,11 @@
     Serial.print(s); \
     Serial.print(delimeter); \
   }
+#define PTTL(s, delimeter) \
+  { \
+    Serial.print(s); \
+    Serial.println(delimeter); \
+  }
 #define PTH(head, value) \
   { \
     Serial.print(head); \
@@ -181,9 +186,9 @@ void FPS() {
   }
 }
 
-void leftTrimSpaces(char *s,int *len) {
+void leftTrimSpaces(char *s, int *len) {
   char *head = s;
-  while (*head == ' ' || *head == '\t'){
+  while (*head == ' ' || *head == '\t') {
     head++;
     (*len)--;
   }

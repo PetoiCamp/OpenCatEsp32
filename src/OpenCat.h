@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240830"  // YYMMDD
+#define DATE "240911"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -460,15 +460,14 @@ int angleLimit[][2] = {
   { -85, 85 },
 #endif
   { -120, 120 },
-#ifdef ROBOT_ARM
   { -120, 120 },
-#else
   { -120, 120 },
-#endif
+
   { -90, 60 },
   { -90, 60 },
   { -90, 90 },
   { -90, 90 },
+  
   { -200, 80 },
   { -200, 80 },
   { -80, 200 },

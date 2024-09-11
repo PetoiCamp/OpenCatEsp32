@@ -489,16 +489,33 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
                 if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
-#ifdef ESP_PWM
-                servo[actualServoIndex].write(duty);
-#else
-                pwm.writeAngle(actualServoIndex, duty);
+#ifdef ROBOT_ARM
+                if (actualServoIndex == -2)  //auto calibrate the robot arm's pincer
+                {
+                  // loadBySkillName("triStand");
+                  // shutServos();
+                  calibratedPWM(1, 90);
+                  delay(500);
+                  int criticalAngle = calibrateByVibration(-25, 25, 4);
+                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  servoCalib[2] = servoCalib[2] + criticalAngle + 14;
+                  PTHL("Pincer calibrate angle: ", servoCalib[2]);
+                  i2c_eeprom_write_byte(EEPROM_CALIB + 2, servoCalib[2]);
+                  calibratedZeroPosition[2] = zeroPosition[2] + float(servoCalib[2]) * rotationDirection[2];
+                  loadBySkillName("calib");
+                } else
 #endif
+                {
+#ifdef ESP_PWM
+                  servo[actualServoIndex].write(duty);
+#else
+                  pwm.writeAngle(actualServoIndex, duty);
+#endif
+                }
                 printToAllPorts(range2String(DOF));
                 printToAllPorts(list2String(servoCalib));
                 printToAllPorts(token);
