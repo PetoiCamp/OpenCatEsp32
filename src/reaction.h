@@ -502,7 +502,7 @@ void reaction() {
                   delay(500);
                   int criticalAngle = calibrateByVibration(-25, 25, 4);
                   criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
-                  servoCalib[2] = servoCalib[2] + criticalAngle + 14;
+                  servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
                   i2c_eeprom_write_byte(EEPROM_CALIB + 2, servoCalib[2]);
                   calibratedZeroPosition[2] = zeroPosition[2] + float(servoCalib[2]) * rotationDirection[2];
@@ -668,8 +668,8 @@ void reaction() {
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
               } else if (token == T_READ) {  // Read a/d pin
-                // 34 35 36 39 97 100
-                // "  #  $  '  a  d
+                // 34 35 36 37 38 39 97 100
+                // "  #  $  %  &  '  a  d
                 // e.g. analogRead(35) = Ra# in the Serial Monitor
                 //                     = [R,a,35] in the Python API
                 printToAllPorts('=');
