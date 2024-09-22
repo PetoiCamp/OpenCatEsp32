@@ -1,11 +1,13 @@
-/* Write and read long data string to I2C EEPROM
-   maximum is 65536 bit. i.e. address stops at 65535.
+/* Write and read parameters to the permanent memory. 
+   Maximum bytes of I2C EEPROM is 65536 bit. i.e. address stops at 65535.
    Extra data will wrap over to address 0
 
-   Rongzhong Li
-   August 2018
+   If there's no I2C EEPROM, use ESP32's flash to simulate the EEPROM.
 
-   Copyright (c) 2018 Petoi LLC.
+   Rongzhong Li
+   September 2024
+
+   Copyright (c) 2024 Petoi LLC.
 
   The MIT license
 
@@ -28,11 +30,12 @@
   SOFTWARE.
 */
 
-#include <Wire.h>
-#define DEVICE_ADDRESS 0x54  //Address of eeprom chip
-#define WIRE_BUFFER 30       //Arduino wire allows 32 byte buffer, with 2 byte for address.
-#define WIRE_LIMIT 16        //That leaves 30 bytes for data. use 16 to balance each writes
-#define PAGE_LIMIT 32        //AT24C32D 32-byte Page Write Mode. Partial Page Writes Allowed
+#include <Preferences.h>
+Preferences config;
+
+#define WIRE_BUFFER 30  //Arduino wire allows 32 byte buffer, with 2 byte for address.
+#define WIRE_LIMIT 16   //That leaves 30 bytes for data. use 16 to balance each writes
+#define PAGE_LIMIT 32   //AT24C32D 32-byte Page Write Mode. Partial Page Writes Allowed
 #define SIZE (65535 / 8)
 #define EEPROM_SIZE (65535 / 8)
 bool EEPROMOverflow = false;
@@ -48,43 +51,20 @@ bool EEPROMOverflow = false;
 #define EEPROM_RESERVED 82
 #define SERIAL_BUFF 100
 
-void i2cDetect() {
-  byte error, address;
-  int nDevices;
-
-  Serial.println("Scanning I2C network...");
-  nDevices = 0;
-  for (address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-
-    if (error == 0) {
-      Serial.print("- I2C device found at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.println("  !");
-
-      nDevices++;
-    } else if (error == 4) {
-      Serial.print("- Unknown error at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.println(address, HEX);
-    }
-  }
-  if (nDevices == 0)
-    Serial.println("- No I2C devices found");
-  else
-    Serial.println("- done");
+int dataLen(int8_t p) {
+  byte skillHeader = p > 0 ? 4 : 7;
+  int frameSize = p > 1 ? WALKING_DOF :  //gait
+                    p == 1 ? DOF
+                           :  //posture
+                    DOF + 4;  //behavior
+  int len = skillHeader + abs(p) * frameSize;
+  return len;
 }
 
+#ifdef I2C_EEPROM_ADDRESS
 void i2c_eeprom_write_byte(unsigned int eeaddress, byte data) {
   int rdata = data;
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.write(rdata);
@@ -94,11 +74,11 @@ void i2c_eeprom_write_byte(unsigned int eeaddress, byte data) {
 
 byte i2c_eeprom_read_byte(unsigned int eeaddress) {
   byte rdata = 0xFF;
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.endTransmission();
-  Wire.requestFrom(DEVICE_ADDRESS, 1);
+  Wire.requestFrom(I2C_EEPROM_ADDRESS, 1);
   if (Wire.available()) rdata = Wire.read();
   return rdata;
 }
@@ -107,7 +87,7 @@ byte i2c_eeprom_read_byte(unsigned int eeaddress) {
 void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
   byte lowByte = ((p_value >> 0) & 0xFF);
   byte highByte = ((p_value >> 8) & 0xFF);
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.write(lowByte);
@@ -121,11 +101,11 @@ void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
 
 //This function will read a 2-byte integer from the EEPROM at the specified address and address + 1
 int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.endTransmission();
-  Wire.requestFrom(DEVICE_ADDRESS, 2);
+  Wire.requestFrom(I2C_EEPROM_ADDRESS, 2);
   byte lowByte = Wire.read();
   byte highByte = Wire.read();
   return (int16_t((lowByte << 0) & 0xFF) + ((highByte << 8) & 0xFF00));
@@ -133,18 +113,17 @@ int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
 
 
 void i2c_eeprom_read_buffer(unsigned int eeaddress, byte *buffer, int length) {
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.endTransmission();
-  Wire.requestFrom(DEVICE_ADDRESS, length);
+  Wire.requestFrom(I2C_EEPROM_ADDRESS, length);
   int c = 0;
   for (c = 0; c < length; c++) {
     if (Wire.available()) buffer[c] = Wire.read();
     //    PT((char)buffer[c]);
   }
 }
-
 
 void writeLong(unsigned int eeAddress, char *data, int len) {
   //byte locationInPage = eeAddress % PAGE_LIMIT;
@@ -158,7 +137,7 @@ void writeLong(unsigned int eeAddress, char *data, int len) {
   //  PTL("write " + String(len) + " bytes");
   int writtenToEE = 0;
   while (len > 0) {
-    Wire.beginTransmission(DEVICE_ADDRESS);
+    Wire.beginTransmission(I2C_EEPROM_ADDRESS);
     Wire.write((int)((eeAddress) >> 8));  // MSB
     Wire.write((int)((eeAddress)&0xFF));  // LSB
     //    PT("* current address: ");
@@ -189,12 +168,12 @@ void readLong(unsigned int eeAddress, char *data) {
   int readFromEE = 0;
   int readToWire = 0;
 
-  Wire.beginTransmission(DEVICE_ADDRESS);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)((eeAddress) >> 8));  // MSB
   Wire.write((int)((eeAddress)&0xFF));  // LSB
   Wire.endTransmission();
   while (len > 0) {
-    Wire.requestFrom(DEVICE_ADDRESS, min(WIRE_BUFFER, len));
+    Wire.requestFrom(I2C_EEPROM_ADDRESS, min(WIRE_BUFFER, len));
     readToWire = 0;
     do {
       if (Wire.available()) data[readFromEE] = Wire.read();
@@ -217,9 +196,80 @@ char *readLongByBytes(int address) {
   return id;
 }
 
-bool newBoardQ(unsigned int eeaddress) {
-  PTHL("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
+void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
+  int len = dataLen(newCmd[0]) + 1;
+  if (eeAddress + len >= EEPROM_SIZE) {
+    PTL();
+    PTLF("I2C EEPROM overflow! Delete some skills!\n");
+    EEPROMOverflow = true;
+#ifdef BUZZER
+    beep(10, 100, 100, 2);
+#endif
+    return;
+  }
+  int writtenToEE = 0;
+  while (len > 0) {
+    Wire.beginTransmission(I2C_EEPROM_ADDRESS);
+    Wire.write((int)((eeAddress) >> 8));  // MSB
+    Wire.write((int)((eeAddress)&0xFF));  // LSB
+    byte writtenToWire = 0;
+    do {
+      Wire.write((byte)newCmd[writtenToEE++]);
+      writtenToWire++;
+      eeAddress++;
+    } while ((--len > 0) && (eeAddress % PAGE_LIMIT) && (writtenToWire < WIRE_LIMIT));  //be careful with the chained conditions
+    //self-increment may not work as expected
+    Wire.endTransmission();
+    delay(6);  // needs 5ms for page write
+    //    PTL("\nwrote " + String(writtenToWire) + " bytes.");
+  }
+  delay(6);
+  //  PTLF("finish copying to I2C EEPROM");
+}
+void loadDataFromI2cEeprom(unsigned int eeAddress) {
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
+  Wire.write((int)((eeAddress) >> 8));  // MSB
+  Wire.write((int)((eeAddress)&0xFF));  // LSB
+  Wire.endTransmission();
+  Wire.requestFrom((uint8_t)I2C_EEPROM_ADDRESS, (uint8_t)1);
+  newCmd[0] = Wire.read();
+  int bufferLen = dataLen(newCmd[0]);
+  //      int tail = bufferLen;
+  int readFromEE = 0;
+  int readToWire = 0;
+  while (bufferLen > 0) {
+    //PTL("request " + String(min(WIRE_BUFFER, len)));
+    Wire.requestFrom((uint8_t)I2C_EEPROM_ADDRESS, (uint8_t)min(WIRE_BUFFER, bufferLen));
+    readToWire = 0;
+    do {
+      if (Wire.available()) newCmd[1 + readFromEE++] = Wire.read();
+      //      PT( (int8_t)newCmd[readFromEE - 1]);
+      //      PT('\t');
+    } while (--bufferLen > 0 && ++readToWire < WIRE_BUFFER);
+    //    PTL();
+  }
+  //      newCmd[tail] = '\0';
+}
+#endif
+
+bool newBoardQ(unsigned int eeaddress = EEPROM_BIRTHMARK_ADDRESS) {
+// PTHL("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
+#ifdef I2C_EEPROM_ADDRESS
   return i2c_eeprom_read_byte(eeaddress) != BIRTHMARK;
+#else
+  return config.getChar("birthmark") != BIRTHMARK;
+#endif
+}
+
+void resetAsNewBoard(char mark) {
+#ifdef I2C_EEPROM_ADDRESS
+  i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, mark);  // esp_random() % 128); //mark the board as uninitialized
+#else
+  config.putChar("birthmark", mark);
+#endif
+  PTL("Alter the birthmark for reset!");
+  delay(5);
+  ESP.restart();
 }
 
 char data[] = " The quick brown fox jumps over the lazy dog. \
@@ -246,37 +296,30 @@ void genBleID(int suffixDigits = 2) {
     sprintf(id + prelen + i, "%X", temp);
   }
   id[prelen + suffixDigits] = '\0';
-  //  for (int i = 0; i < prelen + suffixDigits; i++) {
-  //    i2c_eeprom_write_byte(EEPROM_BLE_NAME + 1 + i, id[i]);
-  //  }
-  Serial.println(id);
+#ifdef I2C_EEPROM_ADDRESS
   writeLong(EEPROM_BLE_NAME, id, prelen + suffixDigits);
+#else
+  config.putString("ID", id);
+#endif
+  Serial.println(id);
 }
 
 void customBleID(char *customName, int8_t len) {
+#ifdef I2C_EEPROM_ADDRESS
   writeLong(EEPROM_BLE_NAME, customName, len + 1);
-}
-
-int dataLen(int8_t p) {
-  byte skillHeader = p > 0 ? 4 : 7;
-  int frameSize = p > 1 ? WALKING_DOF :  //gait
-                    p == 1 ? DOF
-                           :  //posture
-                    DOF + 4;  //behavior
-  int len = skillHeader + abs(p) * frameSize;
-  return len;
-}
-
-void resetAsNewBoard(char mark) {
-  i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, mark);  // esp_random() % 128); //mark the board as uninitialized
-  PTL("Alter the birthmark for reset!");
-  delay(5);
-  ESP.restart();
+#else
+  config.putString("ID", customName);
+#endif
 }
 
 void resetIfVersionOlderThan(String versionStr) {
+#ifdef I2C_EEPROM_ADDRESS
   char *savedVersionDate = readLongByBytes(EEPROM_VERSION_DATE);
   long savedDate = atoi(savedVersionDate + strlen(savedVersionDate) - 6);
+#else
+  String savedVersionDate = config.getString("versionDate", "P_000101");  //default YYMMDD: 00 01 01
+  long savedDate = savedVersionDate.substring(savedVersionDate.length() - 6).toInt();
+#endif
   long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
   if (savedDate < currentDate) {
     delay(1000);
@@ -285,22 +328,34 @@ void resetIfVersionOlderThan(String versionStr) {
     resetAsNewBoard('X');
   }
 }
-void i2cEepromSetup() {
-  newBoard = newBoardQ(EEPROM_BIRTHMARK_ADDRESS);
+
+void configSetup() {
+  newBoard = newBoardQ();
   if (newBoard) {
     PTLF("Set up the new board...");
     char tempStr[12];
     strcpy(tempStr, SoftwareVersion.c_str());
-    writeLong(EEPROM_VERSION_DATE, tempStr, SoftwareVersion.length());
-    i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
-    i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, 5);
     soundState = 1;
     buzzerVolume = 5;
     PTLF("Unmute and set volume to 5/10");
+
+#ifdef I2C_EEPROM_ADDRESS
+    writeLong(EEPROM_VERSION_DATE, tempStr, SoftwareVersion.length());
+    i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+    i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
+#else
+    config.putString("versionDate", tempStr);
+    config.putBool("bootSndState", soundState);
+    config.putChar("buzzerVolume", buzzerVolume);
+    config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+#endif
 #ifndef AUTO_INIT
-    playMelody(melodyInit, sizeof(melodyInit) / 2);
+#ifdef VOLTAGE
+    if (!lowBatteryQ)  // won't play sound if only powerd by USB. It avoid noise when developing codes
+#endif
+      playMelody(melodyInit, sizeof(melodyInit) / 2);
 #endif
     PTF("- Name the new robot as: ");
 #ifdef BT_BLE
@@ -314,76 +369,39 @@ void i2cEepromSetup() {
 #else
     PTL("- Reset the joints' calibration offsets...");
 #endif
+
+#ifdef I2C_EEPROM_ADDRESS
       for (byte c = 0; c < DOF; c++)
         i2c_eeprom_write_byte(EEPROM_CALIB + c, 0);
+#else
+    config.putBytes("calib", servoCalib, DOF);
+#endif
 #ifndef AUTO_INIT
     }
 #endif
   } else {
     resetIfVersionOlderThan(SoftwareVersion);
-    playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
+#ifdef VOLTAGE
+    if (!lowBatteryQ)  // won't play sound if only powerd by USB. It avoid noise when developing codes
+#endif
+      playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
+#ifdef I2C_EEPROM_ADDRESS
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
-  }
-}
-void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
-  int len = dataLen(newCmd[0]) + 1;
-  if (eeAddress + len >= EEPROM_SIZE) {
-    PTL();
-    PTLF("I2C EEPROM overflow! Delete some skills!\n");
-    EEPROMOverflow = true;
-#ifdef BUZZER
-    beep(10, 100, 100, 2);
+#else
+    config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
 #endif
-    return;
   }
-  int writtenToEE = 0;
-  while (len > 0) {
-    Wire.beginTransmission(DEVICE_ADDRESS);
-    Wire.write((int)((eeAddress) >> 8));  // MSB
-    Wire.write((int)((eeAddress)&0xFF));  // LSB
-    byte writtenToWire = 0;
-    do {
-      Wire.write((byte)newCmd[writtenToEE++]);
-      writtenToWire++;
-      eeAddress++;
-    } while ((--len > 0) && (eeAddress % PAGE_LIMIT) && (writtenToWire < WIRE_LIMIT));  //be careful with the chained conditions
-    //self-increment may not work as expected
-    Wire.endTransmission();
-    delay(6);  // needs 5ms for page write
-    //    PTL("\nwrote " + String(writtenToWire) + " bytes.");
-  }
-  delay(6);
-  //  PTLF("finish copying to I2C EEPROM");
-}
-void loadDataFromI2cEeprom(unsigned int eeAddress) {
-  Wire.beginTransmission(DEVICE_ADDRESS);
-  Wire.write((int)((eeAddress) >> 8));  // MSB
-  Wire.write((int)((eeAddress)&0xFF));  // LSB
-  Wire.endTransmission();
-  Wire.requestFrom((uint8_t)DEVICE_ADDRESS, (uint8_t)1);
-  newCmd[0] = Wire.read();
-  int bufferLen = dataLen(newCmd[0]);
-  //      int tail = bufferLen;
-  int readFromEE = 0;
-  int readToWire = 0;
-  while (bufferLen > 0) {
-    //PTL("request " + String(min(WIRE_BUFFER, len)));
-    Wire.requestFrom((uint8_t)DEVICE_ADDRESS, (uint8_t)min(WIRE_BUFFER, bufferLen));
-    readToWire = 0;
-    do {
-      if (Wire.available()) newCmd[1 + readFromEE++] = Wire.read();
-      //      PT( (int8_t)newCmd[readFromEE - 1]);
-      //      PT('\t');
-    } while (--bufferLen > 0 && ++readToWire < WIRE_BUFFER);
-    //    PTL();
-  }
-  //      newCmd[tail] = '\0';
 }
 
 void saveCalib(int8_t *var) {
+#ifndef I2C_EEPROM_ADDRESS
+  config.putBytes("calib", var, DOF);
+#endif
   for (byte s = 0; s < DOF; s++) {
+#ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_CALIB + s, var[s]);
+#endif
     calibratedZeroPosition[s] = zeroPosition[s] + float(var[s]) * rotationDirection[s];
   }
 }

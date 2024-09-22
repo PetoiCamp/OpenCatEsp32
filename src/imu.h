@@ -381,9 +381,16 @@ void mpu6050Setup() {
   PTLF("- Initializing DMP...");
 
   devStatus = mpu.dmpInitialize();
-
-  for (byte m = 0; m < 6; m++)
+  PT("MPU offsets: ");
+  for (byte m = 0; m < 6; m++) {
+#ifdef I2C_EEPROM_ADDRESS
     mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
+#else
+    mpuOffset[m] = config.getShort(("mpu" + String(m)).c_str());
+#endif
+    PTT(mpuOffset[m], '\t');
+  }
+  PTL();
   // supply the gyro offsets here, scaled for min sensitivity
   mpu.setXAccelOffset(mpuOffset[0]);
   mpu.setYAccelOffset(mpuOffset[1]);
@@ -411,12 +418,22 @@ void mpu6050Setup() {
         beep(15, 500, 500, 1);
         mpu.CalibrateAccel(20);
         mpu.CalibrateGyro(20);
+#ifdef I2C_EEPROM_ADDRESS
         i2c_eeprom_write_int16(EEPROM_MPU, mpu.getXAccelOffset());
         i2c_eeprom_write_int16(EEPROM_MPU + 2, mpu.getYAccelOffset());
         i2c_eeprom_write_int16(EEPROM_MPU + 4, mpu.getZAccelOffset());
         i2c_eeprom_write_int16(EEPROM_MPU + 6, mpu.getXGyroOffset());
         i2c_eeprom_write_int16(EEPROM_MPU + 8, mpu.getYGyroOffset());
         i2c_eeprom_write_int16(EEPROM_MPU + 10, mpu.getZGyroOffset());
+#else
+      config.putShort("mpu0", mpu.getXAccelOffset());
+      config.putShort("mpu1", mpu.getYAccelOffset());
+      config.putShort("mpu2", mpu.getZAccelOffset());
+      config.putShort("mpu3", mpu.getXGyroOffset());
+      config.putShort("mpu4", mpu.getYGyroOffset());
+      config.putShort("mpu5", mpu.getZGyroOffset());
+
+#endif
         beep(18, 50, 50, 6);
 #ifndef AUTO_INIT
       }

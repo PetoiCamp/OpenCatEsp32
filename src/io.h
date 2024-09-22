@@ -66,11 +66,17 @@ void BTAuthCompleteCallback(boolean success) {
 }
 
 void blueSspSetup() {
-  PTHL("SSP:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);
+#ifdef I2C_EEPROM_ADDRESS
+  PTHL("SSP:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
   SerialBT.begin(strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));  //Bluetooth device name
+#else
+  String blueID = "" + config.getString("ID", "P") + "_SSP";
+  PTHL("SSP:\t", blueID);
+  SerialBT.begin(blueID.c_str());  //Bluetooth device name
+#endif
   Serial.println("The SSP device is started, now you can pair it with Bluetooth!");
 }
 
@@ -117,7 +123,7 @@ template<typename T> void printToAllPorts(T text) {
   if (BTconnected)
     SerialBT.println(text);
 #endif
-  if (moduleActivatedQ[0])//serial2
+  if (moduleActivatedQ[0])  //serial2
     Serial2.println(text);
   PTL(text);
 }

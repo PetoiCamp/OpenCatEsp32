@@ -110,7 +110,11 @@ bool testIR() {
 #endif
 void QA() {
   if (newBoard) {
+#ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, 1);
+#else
+    config.putBool("bootSndState", 1);
+#endif
 #ifndef AUTO_INIT
     PTL("Run factory quality assurance program? (Y/n)");
     char choice = getUserInputChar(5);  //auto skip in 5 seconds
@@ -139,7 +143,11 @@ void QA() {
 #endif
       }
     }
+#ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
+#else
+    config.putChar("birthmark", BIRTHMARK);
+#endif
     playMelody(melodyIRpass, sizeof(melodyIRpass) / 2);
   }
 }

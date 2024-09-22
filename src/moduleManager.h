@@ -164,7 +164,11 @@ void initModule(char moduleCode) {
 #endif
   }
   moduleActivatedQ[index] = successQ;
+#ifdef I2C_EEPROM_ADDRESS
   i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + index, successQ);
+#else
+  config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+#endif
 }
 
 void stopModule(char moduleCode) {
@@ -250,7 +254,7 @@ void showModuleStatus() {
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
-  PTHL("mode", moduleCode);                                           // negative number will deactivate all the modules
+  PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     //if the modules is active and different from the new module
       if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  //it won't disable the voice
@@ -258,9 +262,14 @@ void reconfigureTheActiveModule(char *moduleCode) {
       PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
+#ifdef I2C_EEPROM_ADDRESS
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+#endif
     }
   }
+#ifndef I2C_EEPROM_ADDRESS
+  config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+#endif
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
       PTHL("+  enable", moduleNames[i]);
@@ -438,4 +447,39 @@ void readHuman() {
 // — generate behavior by fusing all sensors and instruction
 String decision() {
   return "";
+}
+
+
+void i2cDetect() {
+  byte error, address;
+  int nDevices;
+
+  Serial.println("Scanning I2C network...");
+  nDevices = 0;
+  for (address = 1; address < 127; address++) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("- I2C device found at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println("  !");
+
+      nDevices++;
+    } else if (error == 4) {
+      Serial.print("- Unknown error at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0)
+    Serial.println("- No I2C devices found");
+  else
+    Serial.println("- done");
 }

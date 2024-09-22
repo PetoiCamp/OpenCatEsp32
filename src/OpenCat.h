@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240913"  // YYMMDD
+#define DATE "240922"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -141,6 +141,7 @@ String SoftwareVersion = "";
 #define UART_TX2 17
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
+#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -156,8 +157,10 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define BUZZER 2
 // #define IR_PIN 23
 
-#define LOW_VOLTAGE 7.0
-#define NO_BATTERY_VOLTAGE 6.0
+#define LOW_VOLTAGE 7.0  //for 2S 7.4V power
+#define NO_BATTERY_VOLTAGE 6.8
+#define LOW_VOLTAGE2 5.0  //for 6V power
+#define NO_BATTERY_VOLTAGE2 4.8
 #ifdef RevB
 #define VOLTAGE 35  // rev B
 #define ANALOG2 32  // rev B
@@ -176,6 +179,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
 #define IMU_ICM42670
+// #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 // #ifdef ROBOT_ARM
 // const uint8_t PWM_pin[PWM_NUM] = {
@@ -208,6 +212,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH2 32
 #define TOUCH3 33
 #define IMU_MPU6050
+#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -467,7 +472,7 @@ int angleLimit[][2] = {
   { -90, 60 },
   { -90, 90 },
   { -90, 90 },
-  
+
   { -200, 80 },
   { -200, 80 },
   { -80, 200 },
@@ -540,6 +545,7 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #include "taskQueue.h"
 
 #include "sound.h"
+#include <Wire.h>
 #include "I2cEEPROM.h"
 #ifdef BT_BLE
 #include "bleUart.h"
@@ -565,6 +571,9 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 
 void initRobot() {
   beep(20);
+#ifdef VOLTAGE
+  lowBattery();
+#endif
   // #ifdef BiBoard_V1_0
   //   Wire.begin(22, 21);
   // #else
@@ -577,13 +586,20 @@ void initRobot() {
   printToAllPorts(MODEL);
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
+  i2cDetect();
+#ifdef I2C_EEPROM_ADDRESS
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
+#else
+  config.begin("config", false);  //false: read/write mode. true: read-only mode.
+  soundState = config.getBool("bootSndState");
+  buzzerVolume = config.getChar("buzzerVolume");
+#endif
+  configSetup();
   PTF("Buzzer volume: ");
   PT(buzzerVolume);
   PTL("/10");
-  i2cDetect();
-  i2cEepromSetup();
+
 #ifdef GYRO_PIN
   mpu6050Setup();
 #endif
@@ -626,30 +642,17 @@ void initRobot() {
 
   tQueue = new TaskQueue();
 
-  //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
-  //    strcpy(newCmd, "calib");
-  //    exceptions = 0;
-  //  }
-  //  else {// Otherwise start up normally
-  //    strcpy(newCmd, "rest");
-  //    token = 'd';
-  //    newCmdIdx = 6;
-  //  }
-  //  loadBySkillName(newCmd);
-  //
-
   loadBySkillName("rest");  // must have to avoid memory crash. need to check why.
                             // allCalibratedPWM(currentAng); alone will lead to crash
   delay(500);
 
   initModuleManager();
 #ifdef GYRO_PIN
-  // read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  // if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
+  read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
+
 #endif
-  PTL("Ready!");
   beep(24, 50);
   idleTimer = millis();
 }

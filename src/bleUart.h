@@ -93,9 +93,14 @@ void bleSetup() {
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID);
   // Create the BLE Device
+#ifdef I2C_EEPROM_ADDRESS
   PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
   BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  //read BLE device name from EEPROM so it's static
-
+#else
+  String blueID = "" + config.getString("ID", "P") + "_BLE";
+  PTHL("BLE:\t", blueID);
+  BLEDevice::init(blueID.c_str());  //read BLE device name from EEPROM so it's static
+#endif
   // Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());

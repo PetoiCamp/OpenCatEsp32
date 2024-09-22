@@ -68,7 +68,11 @@ void reAttachAllServos() {
 }
 
 void servoSetup() {
+#ifdef I2C_EEPROM_ADDRESS
   i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
+#else
+  config.getBytes("calib", servoCalib, DOF);
+#endif
 #ifdef INVERSE_SERVO_DIRECTION
   for (byte s = 0; s < DOF; s++)
     rotationDirection[s] *= -1;

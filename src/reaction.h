@@ -159,7 +159,11 @@ bool lowBattery() {
 #else
     voltage = voltage / 414;
 #endif
-    if (voltage < NO_BATTERY_VOLTAGE || voltage < LOW_VOLTAGE && abs(voltage - lastVoltage) < 0.2) {  // if battery voltage < threshold, it needs to be recharged
+    if (voltage < NO_BATTERY_VOLTAGE2
+        || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+            || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
+             && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
+    ) {                                                                // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
       // if set too high, the robot will stop working when the battery still has power.
@@ -178,9 +182,12 @@ bool lowBattery() {
         PT(voltage);
         PTL("V");
         PTLF("Long-press the battery's button to turn it on!");
-        if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE)) {
+#ifdef I2C_EEPROM_ADDRESS
+        if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
+#else
+        if (config.getBool("bootSndState", 1))
+#endif
           playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
-        }
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
@@ -207,7 +214,13 @@ bool lowBattery() {
       safeRest = false;
     }
     lastVoltage = voltage;
-    if (voltage > LOW_VOLTAGE && lowBatteryQ) {
+    if ((voltage > LOW_VOLTAGE                                         // powered by 7.4V
+         || (voltage > LOW_VOLTAGE2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+        && lowBatteryQ) {
+      if (voltage > LOW_VOLTAGE)
+        PTL("Got 7.4 V power");
+      else
+        PTL("Got 6.0 V power");
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
       batteryWarningCounter = 0;
@@ -271,7 +284,13 @@ void reaction() {
           else if (cmdLen)
             customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
                                           // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-          printToAllPorts(readLongByBytes(EEPROM_BLE_NAME));
+          printToAllPorts(
+#ifdef I2C_EEPROM_ADDRESS
+            readLongByBytes(EEPROM_BLE_NAME)
+#else
+            config.getString("ID")
+#endif
+          );
           break;
         }
       case T_GYRO_FINENESS:
@@ -407,7 +426,11 @@ void reaction() {
       case T_ABORT:
         {
           PTLF("aborted");
+#ifdef I2C_EEPROM_ADDRESS
           i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
+#else
+          config.getBytes("calib", servoCalib, DOF);
+#endif
 #ifdef VOICE
           if (newCmdIdx == 2)
             SERIAL_VOICE.println("XAc");
@@ -504,7 +527,11 @@ void reaction() {
                   criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
                   servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
+#ifdef I2C_EEPROM_ADDRESS
                   i2c_eeprom_write_byte(EEPROM_CALIB + 2, servoCalib[2]);
+#else
+                  config.putBytes("calib", servoCalib, DOF);
+#endif
                   calibratedZeroPosition[2] = zeroPosition[2] + float(servoCalib[2]) * rotationDirection[2];
                   loadBySkillName("calib");
                 } else
@@ -563,12 +590,22 @@ void reaction() {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
                 if (inLen == 0) {  // toggle on/off the bootup melody
+
+#ifdef I2C_EEPROM_ADDRESS
                   soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-                  printToAllPorts(soundState ? "Unmute" : "Muted");
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+#else
+                  soundState = !config.getBool("bootSndState");
+                  config.putBool("bootSndState", soundState);
+#endif
+                  printToAllPorts(soundState ? "Unmute" : "Muted");
                   if (soundState && !buzzerVolume) {  // if i want to unmute but the volume was set to 0
                     buzzerVolume = 5;                 // set the volume to 5/10
+#ifdef I2C_EEPROM_ADDRESS
                     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
+#else
+                    config.putChar("buzzerVolume", buzzerVolume);
+#endif
                     playMelody(volumeTest, sizeof(volumeTest) / 2);
                   }
                 } else if (inLen == 1) {                      // change the buzzer's volume
@@ -576,8 +613,13 @@ void reaction() {
                   if (soundState ^ (buzzerVolume > 0))
                     printToAllPorts(buzzerVolume ? "Unmute" : "Muted");  // only print if the soundState changes
                   soundState = buzzerVolume;
+#ifdef I2C_EEPROM_ADDRESS
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
                   i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
+#else
+                  config.putBool("bootSndState", soundState);
+                  config.putChar("buzzerVolume", buzzerVolume);
+#endif
                   PTF("Changing volume to ");
                   PT(buzzerVolume);
                   PTL("/10");
@@ -736,9 +778,14 @@ void reaction() {
       case T_BEEP_BIN:
         {
           if (cmdLen == 0) {  // toggle on/off the bootup melody
+#ifdef I2C_EEPROM_ADDRESS
             soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-            printToAllPorts(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+#else
+            soundState = !config.getBool("bootSndState");
+            config.putBool("bootSndState", soundState);
+#endif
+            printToAllPorts(soundState ? "Unmute" : "Muted");
           } else {
             for (byte b = 0; b < cmdLen / 2; b++) {
               if ((int8_t)newCmd[2 * b + 1] > 0)
@@ -749,7 +796,12 @@ void reaction() {
         }
       case T_TEMP:
         {  // call the last skill data received from the serial port
+#ifdef I2C_EEPROM_ADDRESS
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
+#else
+          int bufferLen = config.getInt("tempSkillLen");
+          config.getBytes("tempSkill", newCmd, bufferLen);
+#endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           printToAllPorts(token);
@@ -759,9 +811,15 @@ void reaction() {
         }
       case T_SKILL_DATA:  // takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
         {
+#ifdef I2C_EEPROM_ADDRESS
           unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
           i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
+#else
+          int bufferLen = dataLen(newCmd[0]);
+          config.putInt("tempSkillLen", bufferLen);
+          config.putBytes("tempSkill", newCmd, bufferLen);
+#endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           manualHeadQ = false;
