@@ -179,7 +179,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
 #define IMU_ICM42670
-// #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
+#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 // #ifdef ROBOT_ARM
 // const uint8_t PWM_pin[PWM_NUM] = {
@@ -546,7 +546,7 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 
 #include "sound.h"
 #include <Wire.h>
-#include "I2cEEPROM.h"
+#include "configConstants.h"
 #ifdef BT_BLE
 #include "bleUart.h"
 #endif
@@ -638,7 +638,6 @@ void initRobot() {
 #endif
 
   QA();
-  // i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized
 
   tQueue = new TaskQueue();
 
@@ -651,7 +650,6 @@ void initRobot() {
   read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
-
 #endif
   beep(24, 50);
   idleTimer = millis();

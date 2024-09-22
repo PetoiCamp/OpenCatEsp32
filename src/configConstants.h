@@ -386,9 +386,11 @@ void configSetup() {
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
+    PTL("Loading constants from I2C EEPROM");
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
 #else
+    PTL("Loading constants from on-board Flash");
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
 #endif
   }
