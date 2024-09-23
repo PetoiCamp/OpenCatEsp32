@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240922"  // YYMMDD
+#define DATE "240923"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -179,7 +179,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
 #define IMU_ICM42670
-#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
+// #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 // #ifdef ROBOT_ARM
 // const uint8_t PWM_pin[PWM_NUM] = {

@@ -331,6 +331,12 @@ void resetIfVersionOlderThan(String versionStr) {
 
 void configSetup() {
   newBoard = newBoardQ();
+  PT("Using constants from ");
+#ifdef I2C_EEPROM_ADDRESS
+  PTL("I2C EEPROM");
+#else
+  PTL("on-board Flash");
+#endif
   if (newBoard) {
     PTLF("Set up the new board...");
     char tempStr[12];
@@ -339,17 +345,29 @@ void configSetup() {
     buzzerVolume = 5;
     PTLF("Unmute and set volume to 5/10");
 
+    int bufferLen = dataLen(rest[0]);  //save a preset skill to the temp skill
+    arrayNCPY(newCmd, rest, bufferLen);
 #ifdef I2C_EEPROM_ADDRESS
+    PTL("Using constants from I2C EEPROM");
     writeLong(EEPROM_VERSION_DATE, tempStr, SoftwareVersion.length());
     i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
+    //save a preset skill to the temp skill in case its called before assignment
+    unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
+    i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
+    copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
+
 #else
+    PTL("Using constants from on-board Flash");
     config.putString("versionDate", tempStr);
     config.putBool("bootSndState", soundState);
     config.putChar("buzzerVolume", buzzerVolume);
     config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+    //save a preset skill to the temp skill in case its called before assignment
+    config.putInt("tmpLen", bufferLen);
+    config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
 #endif
 #ifndef AUTO_INIT
 #ifdef VOLTAGE
@@ -386,12 +404,12 @@ void configSetup() {
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
-    PTL("Loading constants from I2C EEPROM");
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
 #else
-    PTL("Loading constants from on-board Flash");
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+    PT(config.freeEntries());                                // show remaining entries of the preferences.
+    PTL(" entries are available in the namespace table.\n");  //this method works regardless of the mode in which the namespace is opened.
 #endif
   }
 }

@@ -799,8 +799,7 @@ void reaction() {
 #ifdef I2C_EEPROM_ADDRESS
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
 #else
-          int bufferLen = config.getInt("tempSkillLen");
-          config.getBytes("tempSkill", newCmd, bufferLen);
+          config.getBytes("tmp", newCmd, config.getBytesLength("tmp"));
 #endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
@@ -817,8 +816,7 @@ void reaction() {
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
 #else
           int bufferLen = dataLen(newCmd[0]);
-          config.putInt("tempSkillLen", bufferLen);
-          config.putBytes("tempSkill", newCmd, bufferLen);
+          config.putBytes("tmp", newCmd, bufferLen);
 #endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
