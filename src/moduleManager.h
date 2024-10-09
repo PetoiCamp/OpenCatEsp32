@@ -343,7 +343,7 @@ void read_serial() {
             return;
           }
           newCmd[cmdLen++] = serialPort->read();
-          PTL(int8_t(newCmd[cmdLen]));
+          // PTHL(newCmd[cmdLen - 1], int8_t(newCmd[cmdLen - 1]));
         } while (serialPort->available());
         lastSerialTime = millis();
       }

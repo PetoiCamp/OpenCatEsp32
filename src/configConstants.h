@@ -323,8 +323,8 @@ void resetIfVersionOlderThan(String versionStr) {
   long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
   if (savedDate < currentDate) {
     delay(1000);
-    PTH("\n* The previous version on the board is", savedVersionDate);
-    PTH("* The robot will reboot and upgrade to", versionStr);
+    PTTL("\n* The previous version on the board is ", savedVersionDate);
+    PTTL("* The robot will reboot and upgrade to ", versionStr);
     resetAsNewBoard('X');
   }
 }

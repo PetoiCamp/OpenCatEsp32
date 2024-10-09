@@ -76,13 +76,13 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "240923"  // YYMMDD
+#define DATE "241009"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
@@ -106,8 +106,14 @@ String SoftwareVersion = "";
 #define HEAD
 #define TAIL  // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
+
+#ifndef MINI
 #define REGULAR P1S
 #define KNEE P1S
+#else
+#define REGULAR P50
+#define KNEE P50
+#endif
 #ifdef ROBOT_ARM
 #include "InstinctBittleESP_arm.h"
 #else
@@ -242,7 +248,8 @@ double rate = 1.0 * MAX_READING / BASE_RANGE;
 enum ServoModel_t {
   G41 = 0,
   P1S,
-  P2K
+  P2K,
+  P50
 };
 
 ServoModel_t servoModelList[] = {
@@ -287,10 +294,11 @@ bool newBoard = false;
 #define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
+#define T_CPG 'r'    //Oscillator for Central Pattern Generator
 #define T_PAUSE 'p'  // pause
 #define T_POWER 'P'  // power, print the voltage
 #define T_TASK_QUEUE 'q'
-#define T_ROBOT_ARM 'r'
+#define T_ROBOT_ARM 'R'
 #define T_SAVE 's'
 #define T_TILT 't'
 #define T_TEMP 'T'  // call the last skill data received from the serial port
@@ -415,10 +423,18 @@ int8_t middleShift[] = { 0, 15, 0, 0,
                          10, 10, -10, -10,
                          -30, -30, 30, 30 };
 #elif defined BITTLE
+#ifndef MINI
 int8_t middleShift[] = { 0, -90, 0, 0,
                          -45, -45, -45, -45,
                          55, 55, -55, -55,
                          -55, -55, -55, -55 };
+#else
+int8_t middleShift[] = { 0, 0, 0, 0,
+                         0, 0, 0, 0,
+                         0, 0, 0, 0,
+                         -15, -15, -15, -15 };
+#endif
+
 
 #else  // CUB
 int8_t middleShift[] = { 0, 15, 0, 0,
@@ -466,7 +482,6 @@ int angleLimit[][2] = {
 #endif
   { -120, 120 },
   { -120, 120 },
-  { -120, 120 },
 
   { -90, 60 },
   { -90, 60 },
@@ -479,10 +494,10 @@ int angleLimit[][2] = {
   { -80, 200 },
   { -80, 200 },
   { -80, 200 },
-  { -70, 200 },
+  { -80, 200 },
   { -80, 200 },
 };
-#else
+#else //Nybble
 int angleLimit[][2] = {
   { -120, 120 },
   { -75, 40 },
@@ -498,7 +513,7 @@ int angleLimit[][2] = {
   { -80, 200 },
   { -80, 80 },
   { -80, 80 },
-  { -70, 80 },
+  { -80, 80 },
   { -80, 80 },
 };
 #endif
@@ -556,10 +571,11 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #ifdef IR_PIN
 #include "infrared.h"
 #endif
+#include "io.h"
 #include "espServo.h"
 #include "motion.h"
 #include "randomMind.h"
-#include "io.h"
+
 
 #include "skill.h"
 #include "moduleManager.h"
@@ -640,7 +656,6 @@ void initRobot() {
   QA();
 
   tQueue = new TaskQueue();
-
   loadBySkillName("rest");  // must have to avoid memory crash. need to check why.
                             // allCalibratedPWM(currentAng); alone will lead to crash
   delay(500);
@@ -651,6 +666,7 @@ void initRobot() {
   if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
+  PTL("Ready!");
   beep(24, 50);
   idleTimer = millis();
 }

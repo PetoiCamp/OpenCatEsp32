@@ -4,6 +4,7 @@
 ServoModel servoG41(180, SERVO_FREQ, 500, 2500);
 ServoModel servoP1S(270, SERVO_FREQ, 500, 2500);  // 1s/4 = 250ms 250ms/2500us=100Hz
 ServoModel servoP1L(270, SERVO_FREQ, 500, 2500);
+ServoModel servoP50(120, SERVO_FREQ, 900, 2100);
 #ifdef BiBoard2
 #include "pcaServo.h"
 #endif
@@ -46,6 +47,9 @@ void attachAllESPServos() {
         break;
       case P2K:
         modelObj[s] = &servoP1L;
+        break;
+      case P50:
+        modelObj[s] = &servoP50;
         break;
     }
     servo[s].attach(PWM_pin[s], modelObj[s]);

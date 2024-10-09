@@ -11,6 +11,10 @@ float sDev(float *a, float m, int n) {
     sum += (a[i] - m) * (a[i] - m);
   return sqrt(sum / n);
 }
+byte DcDcGood[] = { 12, 19,
+                    4, 4 };
+byte DcDcBad[] = { 19, 16, 12,
+                   16, 16, 16 };
 byte mpuGood[] = { 12, 16, 19,
                    4, 4, 4 };
 byte mpuBad[] = { 19, 17, 16, 14, 12,
@@ -81,7 +85,6 @@ bool testIR() {
       else
         return false;
     }
-
     if (millis() - timer > 11 && irrecv.decode(&results)) {
       timer = millis();
       current = IRkey();
@@ -108,6 +111,27 @@ bool testIR() {
   }
 }
 #endif
+void testDcDc() {
+  const int adcPin = 34;
+  const float R1 = 30000.0;
+  const float R2 = 51000.0;
+  const int adcMaxValue = 4095;
+  const float vRef = 3.3;
+  while (1) {
+    int adcValue = analogRead(adcPin);
+    float voltageMeasured = (adcValue / float(adcMaxValue)) * vRef;
+    float voltageInput = voltageMeasured * (R1 + R2) / R2;
+    if (voltageInput < 5.2) {
+      PTL("Wrong DcDc output!");
+      playMelody(DcDcBad, sizeof(DcDcBad) / 2);
+      delay(500);
+    } else {
+      PTL("\tDcDc Pass!");
+      playMelody(DcDcGood, sizeof(DcDcGood) / 2);
+      break;
+    }
+  }
+}
 void QA() {
   if (newBoard) {
 #ifdef I2C_EEPROM_ADDRESS
@@ -122,6 +146,9 @@ void QA() {
     if (choice == 'Y' || choice == 'y')
 #endif
     {
+#ifdef VOLTAGE
+      testDcDc();
+#endif
 #ifdef GYRO_PIN
       testMPU6050();
 #endif
