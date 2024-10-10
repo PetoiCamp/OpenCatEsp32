@@ -297,7 +297,7 @@ float adjust(byte i) {
   currentAdjust[i] = max(float(-75), min(float(75), currentAdjust[i]));
   return currentAdjust[i];
 }
-
+#ifdef GYRO_PIN
 int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
   PTT("Try ", start);
   PTT(" ~ ", end);
@@ -337,4 +337,170 @@ int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
     // PTHL(a, maxVibration);
   }
   return end;
+}
+#endif
+
+int8_t amplitude = 10;
+int8_t shift[] = { -4, 4 };
+int8_t loopDelay = 5;
+int8_t skipStep[] = { 1, 3 };  //support, swing
+int8_t phase[] = { 0, 30, 50, 80 };
+
+class CPG {
+private:
+  int _nSample;
+  float *precalcCos;
+  int *pick;
+  float *sample;  // shrinked sample after skipping points
+  int sampleLen;
+  int shiftIndex[5];
+  int edge;
+  int8_t _amplitude;
+  int8_t _loopDelay;
+  int8_t _phase[5];  //range 200. the first 100 is the support stage. The last one should always be 0.
+public:
+  int8_t _midShift[2];
+  int8_t _skipStep[2];
+  CPG(int nSample, int8_t skipStep[]) {
+    _nSample = nSample;
+    precalcCos = new float[_nSample + 1];
+    pick = new int[_nSample + 1];
+    _phase[4] = 0;  //range 200. the first 100 is the support stage. The last one should always be 0.
+    sampleLen = 0;
+    _skipStep[0] = skipStep[0];
+    _skipStep[1] = skipStep[1];
+    edge = _nSample * 0.05;
+    float step = 1;
+    int pickIndex = 0;
+    for (int i = 0; i < _nSample; i++) {
+      precalcCos[i] = -cos(i * 2 * 3.14159 / _nSample);
+      pick[i] = -1;
+      if (i > edge && i < _nSample / 2 - edge) {
+        step = _skipStep[0];  //support stage
+      } else
+        step = _skipStep[1];  //swing stage
+      if (i == pickIndex) {
+        pick[i] = sampleLen;
+        pickIndex += step;
+        sampleLen++;
+      }
+    }
+    PTHL("sampleLen", sampleLen);
+  }
+  void setPar(int8_t amplitude, int8_t loopDelay, int8_t midShift[], int8_t phase[]) {
+    _amplitude = amplitude;
+    _loopDelay = loopDelay;
+    _midShift[0] = midShift[0];
+    _midShift[1] = midShift[1];
+    for (byte i = 0; i < 4; i++)
+      _phase[i] = phase[i];
+    sample = new float[sampleLen];
+    sampleLen = 0;
+    float stateSwitchAngle = 5;
+    for (int8_t l = 0; l < 5; l++) {
+      shiftIndex[l] = _phase[l] / 100.0 * _nSample;
+      for (int i = 0; i < _nSample; i++) {
+        int j = (shiftIndex[l] + i) % _nSample;
+        if (pick[j] >= 0) {
+          if (l == 4) {  //calculate the 0 shift sample
+            sample[sampleLen++] = precalcCos[j] + ((i > edge && i < _nSample / 2 - edge) ? stateSwitchAngle / amplitude : 0);
+          } else {
+            shiftIndex[l] = pick[j];
+            Serial.print(shiftIndex[l]);
+            break;
+          }
+        }
+      }
+      Serial.println();
+    }
+  }
+  void sendSignal() {
+    int prevAngle[4];
+    for (int m = 0; m < sampleLen; m++) {
+      for (int8_t l = 0; l < 4; l++) {
+        calibratedPWM(8 + l, _amplitude * sample[(m + shiftIndex[l]) % sampleLen] + _midShift[l < 2 ? 0 : 1]);
+      }
+      delay(_loopDelay);
+    }
+  }
+  void printCPG() {
+    printToAllPorts("Amp\tShiftF\tShiftB\tdelay\tSupport\tSwing\tPhase");
+    char message[50];
+    sprintf(message, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
+            _amplitude, _midShift[0], _midShift[1], _loopDelay, _skipStep[0], _skipStep[1], _phase[0], _phase[1], _phase[2], _phase[3]);
+    printToAllPorts(message);
+  }
+};
+CPG *cpg;
+void updateCPG() {
+  char *pch;
+  char subToken = newCmd[0];
+  int8_t parsingShift = 1;
+  if (isdigit(subToken) || subToken == '-')  //followed by subtoken
+    parsingShift = 0;
+  pch = strtok(newCmd + parsingShift, " ,");
+  int pars[10] = {};
+  int p = 0;
+  while (pch != NULL) {
+    pars[p++] = atoi(pch);  //@@@ cast
+    pch = strtok(NULL, " ,\t");
+  }
+  if (subToken == 'g') {
+    int8_t gaits[][10] = {
+      { 20, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //small
+      { 36, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //large
+      { 20, -14, 4, 3, 1, 2, 70, 70, 1, 1 },    //bound
+      { 23, -10, 8, 3, 3, 1, 70, 70, 1, 1 },    //bound2
+      { 17, 0, 0, 3, 1, 3, 1, 75, 50, 25 },     //heng
+      { 15, -4, -4, 3, 1, 3, 36, 52, 52, 36 },  //heng2
+      { 18, 0, 0, 3, 1, 2, 35, 46, 35, 46 }     //turnR
+    };
+    for (byte i = 0; i < 7; i++)
+      tQueue->addTask('r', gaits[i], 3);
+  } else {
+    if (parsingShift == 0)  //shift
+    {
+      amplitude = pars[0];
+      shift[0] = pars[1];
+      shift[1] = pars[2];
+      loopDelay = pars[3];
+      skipStep[0] = pars[4];
+      skipStep[1] = pars[5];
+      phase[0] = pars[6];
+      phase[1] = pars[7];
+      phase[2] = pars[8];
+      phase[3] = pars[9];
+    } else if (subToken == 'k') {
+      skipStep[0] = pars[0];
+      skipStep[1] = pars[1];
+      if (cpg != NULL)
+        delete cpg;
+      CPG *cpg = new CPG(600, skipStep);
+    } else if (subToken == 'a')  //amplitude
+      amplitude = pars[0];
+    else if (subToken == 'd')
+      loopDelay = pars[0];
+    else if (subToken == 'p')
+      for (byte l = 0; l < 4; l++)
+        phase[l] = pars[l];
+    else if (subToken == 's')  //shift
+    {
+      shift[0] = pars[0];
+      shift[1] = pars[1];
+    }
+    if (cpg == NULL)
+      cpg = new CPG(300, skipStep);
+    else if (skipStep[0] != cpg->_skipStep[0] || skipStep[1] != cpg->_skipStep[1]) {
+      delete cpg;
+      CPG *cpg = new CPG(300, skipStep);
+    }
+    cpg->setPar(amplitude, loopDelay, shift, phase);
+    if (subToken == 'q') {
+      printToAllPorts('r');
+      token = T_REST;
+      gyroBalanceQ = true;
+    }
+    cpg->printCPG();
+    gyroBalanceQ = false;
+  }
 }

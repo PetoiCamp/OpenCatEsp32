@@ -516,7 +516,7 @@ void reaction() {
                 if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
-#ifdef ROBOT_ARM
+#if defined ROBOT_ARM && defined GYRO_PIN
                 if (actualServoIndex == -2)  //auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
@@ -630,7 +630,7 @@ void reaction() {
               }
 #ifdef T_TUNER
               else if (token == T_TUNER) {
-                if (inLen > 1) {
+                if (> 1) {
                   *par[target[0]] = target[1];
                   PT(target[0]);
                   PT('\t');
@@ -743,7 +743,9 @@ void reaction() {
       case EXTENSION:
         {
           // PTH("cmdLen = ", cmdLen);
-          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+          if (newCmd[0] == '?')
+            showModuleStatus();
+          else if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
             // and we don't want to change the activation status of the ultrasonic sensor behavior
             reconfigureTheActiveModule(newCmd);
           }
@@ -792,6 +794,24 @@ void reaction() {
                 beep((int8_t)newCmd[2 * b], 1000 / (int8_t)newCmd[2 * b + 1]);
             }
           }
+          break;
+        }
+      case T_CPG:
+        {
+          // a: amplitude
+          // t: loopStep
+          // d: delay
+          // p: phase
+          // s: shift
+// {20,-8,4,3,1,2,35,1,35,1},//small
+// {36,-8,4,3,1,2,35,1,35,1},//large
+// {16,-6,-4,3,1,3,21,51,31,1},//walk
+// {20,-14,4,3,1,2,70,70,1,1},//bound
+// {23,-10,8,3,3,1,70,70,1,1},//bound2
+// {17,0,0,3,1,3,1,75,50,25},//heng
+// {15,-4,-4,3,1,3,36,52,52,36},//heng2
+// {18,0,0,3,1,2,35,46,35,46}//turnR
+          updateCPG();
           break;
         }
       case T_TEMP:
@@ -923,7 +943,9 @@ void reaction() {
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
-  } else {
+  } else if (token == T_CPG)
+    cpg->sendSignal();
+  else {
     delay(1);  //avoid triggering WDT on BiBoard V0_2
   }
 }
