@@ -28,15 +28,15 @@
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
 #ifdef ROBOT_ARM
-  "kpickUpL",     //捡起来
-  "kputDownL",   //放下
-  "khuntL",       //捕猎
-  "kshowOff",     //展示
-  "kputAwayL",    //收起来
-  "kthrowAwayL",  //丢出去
-  "klaunchL",      //发射
-  "kclapL",       //鼓掌
-  "ktossL",       //抛出去
+  "kpickF",   //捡起来
+  "kputD",    //放下
+  "khuntL",    //捕猎
+  "kshowOff",  //展示
+  "kputL",    //收起来
+  "ktossL",     //左抛
+  "klaunchL",  //发射
+  "kclapL",    //鼓掌
+  "ktossF",   //前抛
 #else
   "T",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE

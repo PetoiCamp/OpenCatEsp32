@@ -313,10 +313,12 @@ bool read_mpu6050() {
     // else
     if (ARZ < 0 && fabs(ypr[2]) > 85)  //  exceptions = aaReal.z < 0;
       exceptions = -2;                 // flipped
+#ifndef ROBOT_ARM
     else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
       exceptions = -3;
     else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
       exceptions = -4;
+#endif
     // else if (  //keepDirectionQ &&
     //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
     //   exceptions = -5;

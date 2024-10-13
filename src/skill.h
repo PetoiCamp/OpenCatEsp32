@@ -221,7 +221,9 @@ public:
     for (int k = 0; k < abs(period); k++) {
       if (period <= 1) {                                         // behavior
         dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];  // head and tail panning angles
-        dutyAngles[k * frameSize + 2] = -dutyAngles[k * frameSize + 2];
+#ifndef ROBOT_ARM //avoid mirroring the pincers' movements
+        dutyAngles[k * frameSize + 2] = -dutyAngles[k * frameSize + 2]; 
+#endif
       }
       for (byte col = (period > 1) ? 0 : 2; col < ((period > 1) ? WALKING_DOF : DOF) / 2; col++) {
         int8_t temp = dutyAngles[k * frameSize + 2 * col];
@@ -349,6 +351,10 @@ public:
 
       for (int jointIndex = 0; jointIndex < DOF; jointIndex++) {
         //          PT(jointIndex); PT('\t');
+#ifdef ROBOT_ARM
+        if (abs(period) > 1 && jointIndex == 0)  //don't move the robot arm's joints for gaits
+          jointIndex = 4;
+#endif
 #ifndef HEAD
         if (jointIndex == 0)
           jointIndex = 2;
@@ -363,7 +369,7 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-waling joints
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-walking joints
             || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
         {
 
