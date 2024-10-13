@@ -341,6 +341,8 @@ int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
 #endif
 
 int8_t amplitude = 10;
+int8_t sideRatio = 0;
+int8_t stateSwitchAngle = 5;
 int8_t shift[] = { -4, 4 };
 int8_t loopDelay = 5;
 int8_t skipStep[] = { 1, 3 };  //support, swing
@@ -356,6 +358,8 @@ private:
   int shiftIndex[5];
   int edge;
   int8_t _amplitude;
+  int8_t _sideRatio;  //left/right x 10
+  int8_t _stateSwitchAngle;
   int8_t _loopDelay;
   int8_t _phase[5];  //range 200. the first 100 is the support stage. The last one should always be 0.
 public:
@@ -387,8 +391,10 @@ public:
     }
     PTHL("sampleLen", sampleLen);
   }
-  void setPar(int8_t amplitude, int8_t loopDelay, int8_t midShift[], int8_t phase[]) {
+  void setPar(int8_t amplitude, int8_t sideRatio, int8_t stateSwitchAngle, int8_t loopDelay, int8_t midShift[], int8_t phase[]) {
     _amplitude = amplitude;
+    _sideRatio = sideRatio;
+    _stateSwitchAngle = stateSwitchAngle;
     _loopDelay = loopDelay;
     _midShift[0] = midShift[0];
     _midShift[1] = midShift[1];
@@ -396,7 +402,7 @@ public:
       _phase[i] = phase[i];
     sample = new float[sampleLen];
     sampleLen = 0;
-    float stateSwitchAngle = 5;
+
     for (int8_t l = 0; l < 5; l++) {
       shiftIndex[l] = _phase[l] / 100.0 * _nSample;
       for (int i = 0; i < _nSample; i++) {
@@ -416,18 +422,24 @@ public:
   }
   void sendSignal() {
     int prevAngle[4];
+    float leftRatio = _sideRatio > 0 ? 1 : (10 + _sideRatio) / 10.0;
+    float rightRatio = _sideRatio > 0 ? (10 - _sideRatio) / 10.0 : 1;
+    PTHL(leftRatio, leftRatio);
     for (int m = 0; m < sampleLen; m++) {
       for (int8_t l = 0; l < 4; l++) {
-        calibratedPWM(8 + l, _amplitude * sample[(m + shiftIndex[l]) % sampleLen] + _midShift[l < 2 ? 0 : 1]);
+        calibratedPWM(8 + l,
+                      _amplitude * (l % 3 ? rightRatio : leftRatio)
+                          * sample[(m + shiftIndex[l]) % sampleLen]
+                        + _midShift[l < 2 ? 0 : 1]);
       }
       delay(_loopDelay);
     }
   }
   void printCPG() {
-    printToAllPorts("Amp\tShiftF\tShiftB\tdelay\tSupport\tSwing\tPhase");
+    printToAllPorts("Amp\tside\tswitch\tShiftF\tShiftB\tdelay\tSupport\tSwing\tPhase");
     char message[50];
-    sprintf(message, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
-            _amplitude, _midShift[0], _midShift[1], _loopDelay, _skipStep[0], _skipStep[1], _phase[0], _phase[1], _phase[2], _phase[3]);
+    sprintf(message, "%d\t%0.1f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
+            _amplitude, _sideRatio / 10.0, _stateSwitchAngle, _midShift[0], _midShift[1], _loopDelay, _skipStep[0], _skipStep[1], _phase[0], _phase[1], _phase[2], _phase[3]);
     printToAllPorts(message);
   }
 };
@@ -446,14 +458,14 @@ void updateCPG() {
     pch = strtok(NULL, " ,\t");
   }
   if (subToken == 'g') {
-    int8_t gaits[][10] = {
-      { 20, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //small
-      { 36, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //large
-      { 20, -14, 4, 3, 1, 2, 70, 70, 1, 1 },    //bound
-      { 23, -10, 8, 3, 3, 1, 70, 70, 1, 1 },    //bound2
-      { 17, 0, 0, 3, 1, 3, 1, 75, 50, 25 },     //heng
-      { 15, -4, -4, 3, 1, 3, 36, 52, 52, 36 },  //heng2
-      { 18, 0, 0, 3, 1, 2, 35, 46, 35, 46 }     //turnR
+    int8_t gaits[][12] = {
+      { 20, 10, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //small
+      { 36, 10, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //large
+      { 20, 10, 5, -14, 4, 3, 1, 2, 70, 70, 1, 1 },    //bound
+      { 23, 10, 5, -10, 8, 3, 3, 1, 70, 70, 1, 1 },    //bound2
+      { 17, 10, 5, 0, 0, 3, 1, 3, 1, 75, 50, 25 },     //heng
+      { 15, 10, 5, -4, -4, 3, 1, 3, 36, 52, 52, 36 },  //heng2
+      { 18, 10, 5, 0, 0, 3, 1, 2, 35, 46, 35, 46 }     //turnR
     };
     for (byte i = 0; i < 7; i++)
       tQueue->addTask('r', gaits[i], 3);
@@ -461,15 +473,17 @@ void updateCPG() {
     if (parsingShift == 0)  //shift
     {
       amplitude = pars[0];
-      shift[0] = pars[1];
-      shift[1] = pars[2];
-      loopDelay = pars[3];
-      skipStep[0] = pars[4];
-      skipStep[1] = pars[5];
-      phase[0] = pars[6];
-      phase[1] = pars[7];
-      phase[2] = pars[8];
-      phase[3] = pars[9];
+      sideRatio = pars[1];
+      stateSwitchAngle = pars[2],
+      shift[0] = pars[3];
+      shift[1] = pars[4];
+      loopDelay = pars[5];
+      skipStep[0] = pars[6];
+      skipStep[1] = pars[7];
+      phase[0] = pars[8];
+      phase[1] = pars[9];
+      phase[2] = pars[10];
+      phase[3] = pars[11];
     } else if (subToken == 'k') {
       skipStep[0] = pars[0];
       skipStep[1] = pars[1];
@@ -494,7 +508,7 @@ void updateCPG() {
       delete cpg;
       CPG *cpg = new CPG(300, skipStep);
     }
-    cpg->setPar(amplitude, loopDelay, shift, phase);
+    cpg->setPar(amplitude, sideRatio, stateSwitchAngle, loopDelay, shift, phase);
     if (subToken == 'q') {
       printToAllPorts('r');
       token = T_REST;

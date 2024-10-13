@@ -1647,7 +1647,7 @@ const int8_t wkL[] PROGMEM = {
   48,  54,  61,  51,  -2,  12,  -3,   2,
 };
 
-#ifndef CHAIR
+#ifndef VT
   const int8_t balance[] PROGMEM = { 
 1, 0, 0, 1,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,};

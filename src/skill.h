@@ -363,7 +363,7 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-waling joints
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-walking joints
             || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
         {
 

@@ -630,7 +630,7 @@ void reaction() {
               }
 #ifdef T_TUNER
               else if (token == T_TUNER) {
-                if (> 1) {
+                if (inLen> 1) {
                   *par[target[0]] = target[1];
                   PT(target[0]);
                   PT('\t');

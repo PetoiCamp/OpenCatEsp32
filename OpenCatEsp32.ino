@@ -2,7 +2,7 @@
 //***********************
 #define BITTLE  // Petoi 9 DOF robot dog: 1 on head + 8 on leg
 // #define NYBBLE  // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
-// #define CHAIR
+#define VT
 // #define CUB
 // #define MINI
 
