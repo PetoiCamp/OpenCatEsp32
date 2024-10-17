@@ -843,7 +843,11 @@ void reaction() {
         }
       case T_TASK_QUEUE:
         {
-          tQueue->createTask();
+          tQueue->createTask();  // use 'q' to start the sequence.
+                                 // add subToken followed by the subCommand
+                                 // use ':' to add the delay time (mandatory)
+                                 // add '~' to end the sub command
+                                 // example: qk sit:1000~m 8 0 8 -30 8 0:500~
           break;
         }
       default:

@@ -27,34 +27,46 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-#ifdef ROBOT_ARM
-  "kpickF",   //捡起来
-  "kputD",    //放下
-  "khuntL",    //捕猎
-  "kshowOff",  //展示
-  "kputL",    //收起来
-  "ktossL",     //左抛
-  "klaunchL",  //发射
-  "kclapL",    //鼓掌
-  "ktossF",   //前抛
-#else
-  "T",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
+#ifdef ROBOT_ARM
+  "kpickF",                                 //pick front 捡起来
+  "kputD",                                  //put down 放下
+  "khuntL",                                 //hunt 捕猎
+  "kshowOff",                               //show off 展示
+  "kputL",                                  //put left 收起来
+  "ktossL",                                 //toss left 左抛
+  "klaunchL",                               //launch 发射
+  "kclapL",                                 //clap 鼓掌
+  "ktossF",                                 //toss front 前抛
+  "qc2 0:0~c-2:0~kclap:1000~kpickF:1000~",  //calibrate arm (for QA) 校准(工厂用)
+#else
   "kpu1",                                                                  // single-handed pushups
-#elif defined NYBBLE
-  "kwsf",  // wash face
-#endif
   "m0 80 0 -80 0 0",                                                       // wave head
   "kmw",                                                                   // moonwalk
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
+  "T",                                                                     // call the last skill data sent by the Skill Composer
   "6th",
   "7th",
   "8th",
   "9th",
-#endif
   "10th"  // define up to 10 customized commands.
+#endif
+#elif defined NYBBLE
+  "kluckyL",                                                               //lucky cat 招财猫
+  "klkPawsL",                                                              //lick paws 舔爪子
+  "kwsfL",                                                                 //wash face 洗脸
+  "khuntL",                                                                //hunt 捕猎
+  "m0 80 0 -80 0 0",                                                       // wave head                                                                //
+  "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
+  21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
+  14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
+  "T",
+  "8th",
+  "9th",
+  "10th"  // define up to 10 customized commands.
+#endif
 };
 int listLength = 0;
 bool enableVoiceQ = true;
