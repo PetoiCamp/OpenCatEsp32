@@ -54,7 +54,7 @@ public:
       char subToken = *sub++;
       while (*sub == ' ' || *sub == '\t')  //remove the space between the subToken and the subCommand
         sub++;
-      if (*sub == NULL)
+      if (*sub == '\0')
         break;
       int subLen = strlen(sub);
       PTHL("sublen", subLen);

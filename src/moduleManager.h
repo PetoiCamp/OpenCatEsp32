@@ -254,7 +254,7 @@ void showModuleStatus() {
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
-  PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
+  // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     //if the modules is active and different from the new module
       if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  //it won't disable the voice
@@ -363,9 +363,11 @@ void read_serial() {
     }
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
+    if (token >= 'A' && token <= 'Z')
+      newCmd[cmdLen + 1] = '\0';
     newCmdIdx = 2;
     // PTH("read_serial, cmdLen = ", cmdLen);
-    // printCmdByType(token, newCmd, cmdLen);
+    // printCmdByType(token, newCmd);
   }
 }
 
