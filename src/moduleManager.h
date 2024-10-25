@@ -381,6 +381,9 @@ void readSignal() {
   detectBle();  //  newCmdIdx = 3;
   readBle();
 #endif
+#ifdef BT_CLIENT
+  readBleClient();
+#endif
 #ifdef VOICE
   if (moduleActivatedQ[indexOfModule(EXTENSION_VOICE)])
     read_voice();

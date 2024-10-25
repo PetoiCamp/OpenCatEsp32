@@ -76,13 +76,14 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241017"  // YYMMDD
+#define DATE "241025"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
@@ -565,6 +566,9 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #ifdef BT_BLE
 #include "bleUart.h"
 #endif
+#ifdef BT_CLIENT
+#include "bleClient.h"
+#endif
 #ifdef GYRO_PIN
 #include "imu.h"
 #endif
@@ -621,6 +625,9 @@ void initRobot() {
 #endif
 #ifdef BT_BLE
   bleSetup();
+#endif
+#ifdef BT_CLIENT
+  bleClientSetup();
 #endif
 #ifdef BT_SSP
   blueSspSetup();
