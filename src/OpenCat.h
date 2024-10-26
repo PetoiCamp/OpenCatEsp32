@@ -76,15 +76,15 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241025"  // YYMMDD
+#define DATE "241026"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
-#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE     // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP     // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_CLIENT  // toggle Bluetooth client (BLE） for Micro:Bit
+#define GYRO_PIN   // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -281,6 +281,7 @@ bool newBoard = false;
 #define T_SERVO_FOLLOW 'F'              // make the other legs follow the moved legs
 #define T_GYRO_FINENESS 'g'             // adjust the finess of gyroscope adjustment to accelerate motion
 #define T_GYRO_BALANCE 'G'              // toggle on/off the gyro adjustment
+#define T_HELP_INFO 'h'                 // print some help information
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'  // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
@@ -411,7 +412,7 @@ byte buzzerVolume;
 float amplifierFactor = 100.0;  // to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
-int delayMid = 8;
+int delayMid = 5;
 int delayException = 5;
 int delayShort = 3;
 int delayStep = 1;
@@ -498,7 +499,7 @@ int angleLimit[][2] = {
   { -80, 200 },
   { -80, 200 },
 };
-#else //Nybble
+#else  //Nybble
 int angleLimit[][2] = {
   { -120, 120 },
   { -75, 35 },

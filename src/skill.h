@@ -378,7 +378,7 @@ public:
               (jointIndex != 1 ? offsetLR : 0)  //look left or right
               + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
 #else
-            if (jointIndex == 1 && !strcmp(skillName, "bkF"))
+            if (jointIndex == 1 && strstr(skillName, "bk") != NULL)
               duty = 50;
             else
               duty = 0;
@@ -410,6 +410,7 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
   char lr = skillName[strlen(skillName) - 1];
   int skillIndex;
 #ifdef ROBOT_ARM  //use the altered Arm gait
+  bool optimizedForArm = false;
   char* nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
   if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {  //try to find the arm version
@@ -421,9 +422,15 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     // PTHL("mod ", nameStr);
   }
   skillIndex = skillList->lookUp(nameStr);
-  if (skillIndex == -1)  //if there's no special skillname with Arm, use the original skill
-#endif
+  if (skillIndex != -1)
+    optimizedForArm = true;
+  else {
+    optimizedForArm = false;  //if there's no special skillname with Arm, use the original skill
     skillIndex = skillList->lookUp(skillName);
+  }
+#else
+  skillIndex = skillList->lookUp(skillName);
+#endif
   if (skillIndex != -1) {
     // if (skill != NULL)
     //   delete[] skill;
@@ -449,7 +456,8 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
     if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
       skill->mirror();  //randomly mirror the direction of a behavior
 #ifdef ROBOT_ARM
-    if (skill->period == 1 && strcmp(newCmd, "calib"))
+    if (skill->period == 1 && strcmp(newCmd, "calib")  // postures
+        || skill->period > 1 && !optimizedForArm)      // gaits
       skill->shiftCenterOfMass(-10);
 #endif
     skill->transformToSkill(skill->nearestFrame());
