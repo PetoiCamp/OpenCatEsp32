@@ -191,19 +191,19 @@ bool lowBattery() {
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
-      int8_t bStep = 1;
-      for (byte brightness = 1; brightness > 0; brightness += bStep) {
-#ifdef NEOPIXEL_PIN
-        strip.setPixelColor(0, strip.Color(brightness, 0, 0));
-        strip.show();
-#endif
-#ifdef PWM_LED_PIN
-        analogWrite(PWM_LED_PIN, 255 - brightness);
-#endif
-        if (brightness == 255)
-          bStep = -1;
-        delay(5);
-      }
+//       int8_t bStep = 1;
+//       for (byte brightness = 1; brightness > 0; brightness += bStep) {
+// #ifdef NEOPIXEL_PIN
+//         strip.setPixelColor(0, strip.Color(brightness, 0, 0));
+//         strip.show();
+// #endif
+// #ifdef PWM_LED_PIN
+//         analogWrite(PWM_LED_PIN, 255 - brightness);
+// #endif
+//         if (brightness == 255)
+//           bStep = -1;
+//         delay(5);
+//       }
       lastVoltage = voltage;
       return true;
     }
