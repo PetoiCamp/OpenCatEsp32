@@ -275,6 +275,7 @@ public:
   }
   void perform() {
     if (period < 0) {  //behaviors
+      interruptedDuringBehavior = false;
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
         Stream* serialPort = NULL;
@@ -453,8 +454,11 @@ void loadBySkillName(const char* skillName) {  //get lookup information from on-
           skill->dutyAngles[i] += protectiveShift;  // add protective shift to reduce wearing at the same spot
     }
     // skill->info();
-    if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
-      skill->mirror();  //randomly mirror the direction of a behavior
+    if (lr == 'R'                                                // 'R' must mirror
+        || (lr == 'X' || lr != 'L')                              // 'L' should not mirror
+             && (random(10) > 7 && random(10) > 5 || coinFace))  //1/5 chance to random otherwise flip everytime
+      skill->mirror();                                           //mirror the direction of a behavior
+    coinFace = !coinFace;
 #ifdef ROBOT_ARM
     if (skill->period == 1 && strcmp(newCmd, "calib")  // postures
         || skill->period > 1 && !optimizedForArm)      // gaits
