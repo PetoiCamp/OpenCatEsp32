@@ -297,7 +297,7 @@ bool read_mpu6050() {
         *xyzReal[i] = -*xyzReal[i];
 #endif
     }
-    if (printGyro)
+    if (printGyroQ)
       print6Axis();
     // exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 

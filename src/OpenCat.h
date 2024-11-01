@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241029"  // YYMMDD
+#define DATE "241101"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -148,7 +148,7 @@ String SoftwareVersion = "";
 #define UART_TX2 17
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
-#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
+#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -164,9 +164,9 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define BUZZER 2
 // #define IR_PIN 23
 
-#define LOW_VOLTAGE 7.0  //for 2S 7.4V power
+#define LOW_VOLTAGE 7.0  // for 2S 7.4V power
 #define NO_BATTERY_VOLTAGE 6.8
-#define LOW_VOLTAGE2 5.0  //for 6V power
+#define LOW_VOLTAGE2 5.0  // for 6V power
 #define NO_BATTERY_VOLTAGE2 4.8
 #ifdef RevB
 #define VOLTAGE 35  // rev B
@@ -219,7 +219,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH2 32
 #define TOUCH3 33
 #define IMU_MPU6050
-#define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
+#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -264,23 +264,29 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'                     // abort the calibration values
-#define T_BEEP 'b'                      //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+#define T_ABORT 'a'              // abort the calibration values
+#define T_BEEP 'b'               //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'                  //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+#define T_BEEP_BIN 'B'           //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c'                 //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_CALIBRATE 'c'          //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'                     //change the eye colors of the RGB ultrasonic sensor \
+#define T_COLOR 'C'              //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'                      //set the robot to rest posture and shut down all the servos \
+#define T_REST 'd'               //set the robot to rest posture and shut down all the servos \
                          //"d index" can turn off a single servo
-#define T_SERVO_FEEDBACK 'f'            //return the servo's position info if the chip supports feedback. \
+#define T_SERVO_FEEDBACK 'f'     //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
-#define T_SERVO_FOLLOW 'F'              // make the other legs follow the moved legs
-#define T_GYRO_FINENESS 'g'             // adjust the finess of gyroscope adjustment to accelerate motion
-#define T_GYRO_BALANCE 'G'              // toggle on/off the gyro adjustment
+#define T_SERVO_FOLLOW 'F'       // make the other legs follow the moved legs
+#define T_GYRO 'g'               // gyro-related commands
+#define T_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
+#define T_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
+#define T_GYRO_BALANCE 'B'       // turn on the gyro balancing
+#define T_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
+#define T_GYRO_PRINT 'P'         // always print gyro data
+#define T_GYRO_PRINT_OFF 'p'     // print gyro data once then stop
+
 #define T_HELP_INFO 'h'                 // print some help information
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
@@ -296,7 +302,7 @@ bool newBoard = false;
 #define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
-#define T_CPG 'r'    //Oscillator for Central Pattern Generator
+#define T_CPG 'r'    // Oscillator for Central Pattern Generator
 #define T_PAUSE 'p'  // pause
 #define T_POWER 'P'  // power, print the voltage
 #define T_TASK_QUEUE 'q'
@@ -305,9 +311,7 @@ bool newBoard = false;
 #define T_TILT 't'
 #define T_TEMP 'T'  // call the last skill data received from the serial port
 #define T_MEOW 'u'
-#define T_PRINT_GYRO 'v'            // print Gyro data once
-#define T_VERBOSELY_PRINT_GYRO 'V'  // toggle verbosely print Gyro data
-#define T_SERVO_MICROSECOND 'w'     // PWM width modulation
+#define T_SERVO_MICROSECOND 'w'  // PWM width modulation
 #define T_XLEG 'x'
 #define T_RANDOM_MIND 'z'  // toggle random behaviors
 
@@ -369,9 +373,10 @@ long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
 bool lowBatteryQ = false;
-bool fineAdjust = true;
+bool gyroUpdateQ = true;
+bool fineAdjustQ = true;
 bool gyroBalanceQ = true;
-bool printGyro = false;
+bool printGyroQ = false;
 bool autoSwitch = false;
 bool walkingQ = false;
 bool manualHeadQ = false;
@@ -438,7 +443,6 @@ int8_t middleShift[] = { 0, 0, 0, 0,
                          -15, -15, -15, -15 };
 #endif
 
-
 #else  // CUB
 int8_t middleShift[] = { 0, 15, 0, 0,
                          -45, -45, -45, -45,
@@ -500,7 +504,7 @@ int angleLimit[][2] = {
   { -80, 200 },
   { -80, 200 },
 };
-#else  //Nybble
+#else  // Nybble
 int angleLimit[][2] = {
   { -120, 120 },
   { -75, 35 },
@@ -582,7 +586,6 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #include "motion.h"
 #include "randomMind.h"
 
-
 #include "skill.h"
 #include "moduleManager.h"
 #ifdef NEOPIXEL_PIN
@@ -613,7 +616,7 @@ void initRobot() {
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
 #else
-  config.begin("config", false);  //false: read/write mode. true: read-only mode.
+  config.begin("config", false);  // false: read/write mode. true: read-only mode.
   soundState = config.getBool("bootSndState");
   buzzerVolume = config.getChar("buzzerVolume");
 #endif
@@ -671,7 +674,7 @@ void initRobot() {
 
   initModuleManager();
 #ifdef GYRO_PIN
-  read_mpu6050();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  read_mpu6050();  // ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
