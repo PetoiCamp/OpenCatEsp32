@@ -10,7 +10,18 @@
     Serial.print(s); \
     Serial.print(delimeter); \
   }
+#define PTTL(s, delimeter) \
+  { \
+    Serial.print(s); \
+    Serial.println(delimeter); \
+  }
 #define PTH(head, value) \
+  { \
+    Serial.print(head); \
+    Serial.print('\t'); \
+    Serial.print(value); \
+  }
+#define PTHL(head, value) \
   { \
     Serial.print(head); \
     Serial.print('\t'); \
@@ -175,6 +186,15 @@ void FPS() {
   }
 }
 
+void leftTrimSpaces(char *s, int *len) {
+  char *head = s;
+  while (*head == ' ' || *head == '\t') {
+    head++;
+    (*len)--;
+  }
+  strcpy(s, head);
+}
+
 void printCmd() {
   PTF("lastT:");
   PT(lastToken);
@@ -191,7 +211,7 @@ void resetCmd() {
   // printCmd();
   lastToken = token;
   newCmdIdx = 0;
-  if (token != T_SKILL && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW)
+  if (token != T_SKILL && token != T_SKILL_DATA && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;

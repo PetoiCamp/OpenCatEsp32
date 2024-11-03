@@ -219,15 +219,32 @@ public:
     //such as failed fall-recovering against a wall.
     expectedRollPitch[0] = -expectedRollPitch[0];
     for (int k = 0; k < abs(period); k++) {
-      if (period <= 1) {
-        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];
+      if (period <= 1) {                                         // behavior
+        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];  // head and tail panning angles
+#ifndef ROBOT_ARM                                                //avoid mirroring the pincers' movements
         dutyAngles[k * frameSize + 2] = -dutyAngles[k * frameSize + 2];
+#endif
       }
       for (byte col = (period > 1) ? 0 : 2; col < ((period > 1) ? WALKING_DOF : DOF) / 2; col++) {
         int8_t temp = dutyAngles[k * frameSize + 2 * col];
         dutyAngles[k * frameSize + 2 * col] = dutyAngles[k * frameSize + 2 * col + 1];
         dutyAngles[k * frameSize + 2 * col + 1] = temp;
       }
+    }
+  }
+  void shiftCenterOfMass(int angle) {
+    int offset = 8;
+    if (period > 1)
+      offset = 0;
+    for (int k = 0; k < abs(period); k++) {
+      // printList(dutyAngles + k * frameSize, frameSize); //compare the angle change
+      for (byte col = 0; col < 2; col++) {
+        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] + angle;
+      }
+      for (byte col = 4; col < 6; col++) {
+        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * 1.2;
+      }
+      // printList(dutyAngles + k * frameSize, frameSize);
     }
   }
   int nearestFrame() {
@@ -258,6 +275,7 @@ public:
   }
   void perform() {
     if (period < 0) {  //behaviors
+      interruptedDuringBehavior = false;
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       for (byte c = 0; c < abs(period); c++) {  //the last two in the row are transition speed and delay
         Stream* serialPort = NULL;
@@ -268,18 +286,22 @@ public:
           // source = "BT";
         } else
 #endif
+#ifdef VOICE
+          if (SERIAL_VOICE.available())
+          serialPort = &SERIAL_VOICE;
+        else
+#endif
           //the BT_BLE is unhandled here
           if (moduleActivatedQ[0] && Serial2.available()) {
             serialPort = &Serial2;
           } else if (Serial.available()) {
             serialPort = &Serial;
-            // source = "SER";
           }
         if (serialPort) {
           interruptedDuringBehavior = true;
           return;
         }
-        printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
+        // printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
 #ifdef GYRO_PIN  //if opt out the gyro, the calculation can be really fast
@@ -290,16 +312,16 @@ public:
           float previousYpr = currentYpr;
           long triggerTimer = millis();
           while (1) {
-            read_IMU();
-            print6Axis();
+            read_mpu6050();
+            // print6Axis();
             currentYpr = ypr[abs(triggerAxis)];
-            PT(currentYpr);
-            PTF("\t");
-            PTL(triggerAngle);
+            // PT(currentYpr);
+            // PTF("\t");
+            // PTL(triggerAngle);
             if (
               ((180 - fabs(currentYpr) > 2)                                                                                           //skip the angle when the reading jumps from 180 to -180
                && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  //the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
-              || millis() - triggerTimer > 10000)                                                                                     // if the robot stucks by the trigger for more than 10 seconds, it will break.
+              || millis() - triggerTimer > 3000)                                                                                      // if the robot stucks by the trigger for more than 3 seconds, it will break.
               break;
             previousYpr = currentYpr;
           }
@@ -308,7 +330,7 @@ public:
         delay(abs(dutyAngles[DOF + 1 + c * frameSize] * 50));
 
         if (repeat != 0 && c != 0 && c == loopCycle[1]) {
-          printToAllPorts("Loop remaining: " + String(repeat));
+          // printToAllPorts("Loop remaining: " + String(repeat));
           c = loopCycle[0] - 1;
           if (repeat > 0)  //if repeat <0, infinite loop. only reset button will break the loop
             repeat--;
@@ -330,6 +352,10 @@ public:
 
       for (int jointIndex = 0; jointIndex < DOF; jointIndex++) {
         //          PT(jointIndex); PT('\t');
+// #ifdef ROBOT_ARM
+//         if (abs(period) > 1 && jointIndex == 0)  //don't move the robot arm's joints for gaits
+//           jointIndex = 4;
+// #endif
 #ifndef HEAD
         if (jointIndex == 0)
           jointIndex = 2;
@@ -344,22 +370,32 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint || abs(period) == 1 && jointIndex < 4 && manualHeadQ) {
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       //gait and non-walking joints
+            || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  //posture and head group and manually controlled head
+        {
           if (!manualHeadQ && jointIndex < 4) {
-            duty = (jointIndex != 1 ? offsetLR : 0)  //look left or right
-                   + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+#ifndef ROBOT_ARM
+            duty =
+              (jointIndex != 1 ? offsetLR : 0)  //look left or right
+              + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+#else
+            if (jointIndex == 1 && strstr(skillName, "bk") != NULL)
+              duty = 50;
+            else
+              duty = 0;
+#endif
           } else
-            duty = currentAng[jointIndex] + max(-10, min(10, (targetHead[jointIndex] - currentAng[jointIndex])))
-                   - gyroBalanceQ * currentAdjust[jointIndex];
+            duty = currentAng[jointIndex] + max(-20, min(20, (targetHead[jointIndex] - currentAng[jointIndex])));
+          //  - gyroBalanceQ * currentAdjust[jointIndex];
         } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
-        //          PT(duty); PT('\t');
-        calibratedPWM(jointIndex, duty
+        duty =
 #ifdef GYRO_PIN
-                                    + gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
+          +gyroBalanceQ * (!exceptions ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
-        );
+          + duty;
+        calibratedPWM(jointIndex, duty);
       }
       //        PTL();
       frame += tStep;
@@ -370,35 +406,69 @@ public:
 };
 Skill* skill;
 
+
 void loadBySkillName(const char* skillName) {  //get lookup information from on-board EEPROM and read the data array from storage
-  int skillIndex = skillList->lookUp(skillName);
+  char lr = skillName[strlen(skillName) - 1];
+  int skillIndex;
+#ifdef ROBOT_ARM  //use the altered Arm gait
+  bool optimizedForArm = false;
+  char* nameStr = new char[strlen(skillName) + 4];
+  strcpy(nameStr, skillName);
+  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {  //try to find the arm version
+    //if the name contains L R F and doesn't contain "Arm"
+    nameStr[strlen(skillName) - 1] = '\0';  //remove the L R F in the end
+    strcat(nameStr, "Arm");                 //insert Arm
+    nameStr[strlen(skillName) + 2] = lr;    // append L R F
+    nameStr[strlen(skillName) + 3] = '\0';
+    // PTHL("mod ", nameStr);
+  }
+  skillIndex = skillList->lookUp(nameStr);
+  if (skillIndex != -1)
+    optimizedForArm = true;
+  else {
+    optimizedForArm = false;  //if there's no special skillname with Arm, use the original skill
+    skillIndex = skillList->lookUp(skillName);
+  }
+#else
+  skillIndex = skillList->lookUp(skillName);
+#endif
   if (skillIndex != -1) {
     // if (skill != NULL)
     //   delete[] skill;
-    char lr = skillName[strlen(skillName) - 1];
+
     skill->offsetLR = (lr == 'L' ? 30 : (lr == 'R' ? -30 : 0));
     skill->buildSkill(skillList->get(skillIndex)->index);
     strcpy(newCmd, skill->skillName);
-    if (strcmp(newCmd, "calib") && skill->period == 1)
-      protectiveShift = esp_random() % 100 / 10.0 - 5;
-    else
-      protectiveShift = 0;
 #ifdef GYRO_PIN
     // keepDirectionQ = (skill->period > 1) ? false : true;
     thresX = (skill->period > 1) ? 12000 : 8000;
     thresY = (skill->period > 1) ? 10000 : 6000;
 // thresZ = (skill->period > 1) ? -8000 : -10000;
 #endif
-    for (byte i = 0; i < DOF; i++)
-      skill->dutyAngles[i] += protectiveShift;
+    if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
+      int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;
+      for (byte i = 0; i < DOF; i++)
+#ifdef ROBOT_ARM
+        if (i != 2)
+#endif
+          skill->dutyAngles[i] += protectiveShift;  // add protective shift to reduce wearing at the same spot
+    }
     // skill->info();
-    if (lr == 'R' || (lr == 'X' || lr != 'L') && random(100) % 2)
-      skill->mirror();  //randomly mirror the direction of a behavior
+    if (lr == 'R'                                                // 'R' must mirror
+        || (lr == 'X' || lr != 'L')                              // 'L' should not mirror
+             && (random(10) > 7 && random(10) > 5 || coinFace))  //1/5 chance to random otherwise flip everytime
+      skill->mirror();                                           //mirror the direction of a behavior
+    coinFace = !coinFace;
+#ifdef ROBOT_ARM
+    if (skill->period == 1 && strcmp(newCmd, "calib")  // postures
+        || skill->period > 1 && !optimizedForArm)      // gaits
+      skill->shiftCenterOfMass(-10);
+#endif
     skill->transformToSkill(skill->nearestFrame());
-#ifdef NYBBLE
+    // #ifdef NYBBLE
     for (byte i = 0; i < HEAD_GROUP_LEN; i++)
       targetHead[i] = currentAng[i] - currentAdjust[i];
-#endif
+    // #endif
     //    runDelay = delayMid + 2;
     // skill->info();
   }

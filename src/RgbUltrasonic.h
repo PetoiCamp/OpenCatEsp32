@@ -44,13 +44,16 @@ public:
   float FrontDistance;
   int measurementInterval;
   long lastMeasurementTime;
+  long color(uint8_t red, uint8_t green, uint8_t blue) {
+    return ((long)(red) << 16) + ((long)(green) << 8) + (long)(blue);
+  }
   RgbUltrasonic(byte signal_pin, byte rgb_pin) {
     SignalPin = signal_pin;
     RgbPin = rgb_pin;
     lastMeasurementTime = millis();
     measurementInterval = 20;
     Serial.println("set up ultrasonic sensor");
-    delay(2000);
+    delay(100);
   }
   float GetUltrasonicDistance(void) {  //in cm
     if (millis() - lastMeasurementTime >= measurementInterval) {
@@ -75,12 +78,13 @@ public:
     mRgb->begin();            // INITIALIZE NeoPixel strip object (REQUIRED)
     mRgb->show();             // Turn OFF all pixels ASAP
     mRgb->setBrightness(50);  // Set BRIGHTNESS to about 1/5 (max = 255)
+    delay(100);
   }
   void SetRgbColor(E_RGB_INDEX index, long Color) {
     if (index == E_RGB_ALL)
       for (byte i = 0; i < 6; i++) {
         mRgb->setPixelColor(i, 0);
-        mRgb->show(); //the light has to be refreshed
+        mRgb->show();  //the light has to be refreshed
         mRgb->setPixelColor(i, Color);
       }
     else if (index == E_RGB_RIGHT) {
@@ -106,26 +110,14 @@ public:
         for (byte c = 0; c < 3; c++) {
           rgb[c] = Color >> (2 - c) * 8 & 0x0000FF;
         }
-        for (byte i = 5; i < 255; i+=5) {
-          //                SetRgbColor(index, (i<<16)|(i<<8)|i);
-          long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));
-          SetRgbColor(index, color);
+        for (byte i = 5; i < 255; i += 5) {
+          SetRgbColor(index, color(max(rgb[0] - i, long(5)), max(rgb[1] - i, long(5)), max(rgb[2] - i, long(5))));
           delay((i < 20) ? 10 : (256 / i));
         }
-        for (byte i = 255; i >= 5; i-=5) {
-          //                SetRgbColor(index, (i<<16)|(i<<8)|i);
-          long color = (max(rgb[0] - i, long(5)) << 16) + (max(rgb[1] - i, long(5)) << 8) + max(rgb[2] - i, long(5));  //avoid the light completely turning off
-          SetRgbColor(index, color);
+        for (byte i = 255; i >= 5; i -= 5) {  //avoid the light completely turning off
+          SetRgbColor(index, color(max(rgb[0] - i, long(5)), max(rgb[1] - i, long(5)), max(rgb[2] - i, long(5))));
           delay((i < 20) ? 10 : (256 / i));
         }
-        // for (long i = 50; i >= 5; i--) {
-        //   SetRgbColor(index, (i << 16) | (i << 8) | i);
-        //   delay((i < 18) ? 18 : (256 / i));
-        // }
-        // for (long i = 5; i < 50; i++) {
-        //   SetRgbColor(index, (i << 16) | (i << 8) | i);
-        //   delay((i < 18) ? 18 : (256 / i));
-        // }
         break;
       case E_EFFECT_ROTATE:
         SetRgbColor(E_RGB_ALL, 0);

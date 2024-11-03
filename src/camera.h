@@ -5,6 +5,16 @@
 // #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
+#ifdef BiBoard_V1_0
+#define USE_WIRE1 // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
+#endif
+
+#ifdef USE_WIRE1
+#define I2C_WIRE Wire1
+#else
+#define I2C_WIRE Wire
+#endif
+
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
 // Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
@@ -42,9 +52,12 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN);
 
 #ifdef GROVE_VISION_AI_V2
 #include <Seeed_Arduino_SSCMA.h>
+// You need to install Seeed_Arduino_SSCMA via Arduino's library manager
+// or download the library as a zip from https://github.com/Seeed-Studio/Seeed_Arduino_SSCMA
 #endif
 
-#define T_TUNER '}'
+#define T_TUNER '>'
+bool cameraSetupSuccessful = false;
 int xCoord, yCoord, width, widthCounter; // the x y returned by the sensor
 int xDiff, yDiff;                        // the scaled distance from the center of the frame
 int currentX = 0, currentY = 0;          // the current x y of the camera's direction in the world coordinate
@@ -61,34 +74,40 @@ int imgRangeY = 240;
 #error "Please define the camera type"
 #endif
 
-int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, frontUp, backUp, frontDown, backDown;
+int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 
-#ifdef BITTLE
-int8_t initPars[] = {
-#ifdef MU_CAMERA
-    30, 11, 4, 10, 0,
-    60, 80, 20, 80,
-    20, 30, 12, 30,
-    60, 90, 10, -20
-#elif defined GROVE_VISION_AI_V2
-    20, 20, 4, 12, 0,
-    58, 76, 16, 76,
-    18, 26, 8, 26,
-    60, 90, 10, -20
+#ifdef ROBOT_ARM
+float adjustmentFactor = 1.5;
+#else
+float adjustmentFactor = 1;
 #endif
-};
-#elif defined NYBBLE
+
+#ifdef NYBBLE
 int8_t initPars[] = {
     30, 11, 4, 10, 15,
     60, -50, 31, -50,
     45, -40, 40, -36,
-    25, -60, 60, 16};
+    0, 25, -60, 60, 16};
+#else // BITTLE or CUB
+int8_t initPars[] = {
+#ifdef MU_CAMERA
+    30, 10, 4, 15, 15,
+    60, 80, 30, 80,
+    60, 30, 30, 70,
+    40, 40, 60, 40, -30
+#elif defined GROVE_VISION_AI_V2
+    20, 20, 2, 12, 12,
+    int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(76 * adjustmentFactor),
+    18, 26, 8, 26,
+    45, 50, 60, 40, -30
+#endif
+};
 #endif
 
 int8_t *par[] = {&lensFactor, &proportion, &tranSpeed, &pan, &tilt,
                  &frontUpX, &backUpX, &frontDownX, &backDownX,
                  &frontUpY, &backUpY, &frontDownY, &backDownY,
-                 &frontUp, &backUp, &frontDown, &backDown};
+                 &tiltBase, &frontUp, &backUp, &frontDown, &backDown};
 
 #ifdef MU_CAMERA
 void muCameraSetup();
@@ -105,8 +124,11 @@ void groveVisionSetup();
 void read_GroveVision();
 #endif
 
-void cameraSetup()
+bool cameraSetup()
 {
+#ifdef USE_WIRE1
+  I2C_WIRE.begin(UART_TX2, UART_RX2, 400000);
+#endif
   for (byte i = 0; i < sizeof(initPars) / sizeof(int8_t); i++)
     *par[i] = initPars[i];
   transformSpeed = 0;
@@ -124,6 +146,7 @@ void cameraSetup()
 #endif
   fps = 0;
   loopTimer = millis();
+  return cameraSetupSuccessful;
 }
 void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1)
 {
@@ -185,7 +208,7 @@ void cameraBehavior(int xCoord, int yCoord, int width)
       // PTL(currentY);
 
       // if (abs(currentX) < 60) {
-      int8_t base[] = {0, 0, 0, 0,
+      int8_t base[] = {0, tiltBase, 0, 0,
                        0, 0, 0, 0,
                        frontUp, frontUp, backUp, backUp,
                        frontDown, frontDown, backDown, backDown};
@@ -265,17 +288,16 @@ MuVisionType object[] = {VISION_BODY_DETECT, VISION_BALL_DETECT};
 String objectName[] = {"body", "ball"};
 int objectIdx = 0;
 int lastBallType;
-bool firstConnection = true;
-
 void muCameraSetup()
 {
+  PTL("Setup Mu3");
   uint8_t err;
   // initialized MU on the I2C port
+  byte trial = 0;
   do
   {
     MuVisionSensor *Mu0 = new MuVisionSensor(MU_ADDRESS);
-    err = Mu0->begin(&Wire);
-
+    err = Mu0->begin(&I2C_WIRE);
     if (err == MU_OK)
     {
       PTLF("MU initialized at 0x50");
@@ -283,9 +305,9 @@ void muCameraSetup()
     }
     else
     {
-      if (firstConnection)
-      {
-        firstConnection = false;
+      PTHL("Trial ", trial);
+      if (!trial++)
+      { // only print once for the first time
         PTLF("Failed to initialize the camera!");
         PTLF("Set the four dial switches on the camera as v ^ v v (the second switch dialed up to I2C)");
         PTLF("Then connect the camera to the I2C Grove socket with SDA and SCL pins!");
@@ -293,7 +315,7 @@ void muCameraSetup()
       }
       delete Mu0;
       MuVisionSensor *Mu1 = new MuVisionSensor(ALT_MU_ADDRESS);
-      err = Mu1->begin(&Wire);
+      err = Mu1->begin(&I2C_WIRE);
       if (err == MU_OK)
       {
         PTLF("MU initialized at 0x60");
@@ -304,60 +326,63 @@ void muCameraSetup()
         delete Mu1;
       }
     }
-    delay(1000);
-  } while (err != MU_OK);
+  } while (err != MU_OK && trial < 1);
   //  shutServos();
   //  counter = 0;
   //  motion.loadBySkillName("rest");
   //  transform(motion.dutyAngles);
-  (*Mu).VisionBegin(object[objectIdx]);
+  cameraSetupSuccessful = (err == MU_OK);
+  if (cameraSetupSuccessful)
+    (*Mu).VisionBegin(object[objectIdx]);
   noResultTime = millis();
 }
 
 void read_MuCamera()
 {
-  if ((*Mu).GetValue(object[objectIdx], kStatus))
-  { // update vision result and get status, 0: undetected, other:
-    // PTL(objectName[objectIdx]);
-    noResultTime = millis(); // update the timer
-    xCoord = (int)(*Mu).GetValue(object[objectIdx], kXValue);
-    yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
-    width = (int)(*Mu).GetValue(object[objectIdx], kWidthValue);
-    // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
-    // vvvvvvvvvvvv ball vvvvvvvvvvvvv
-    if (objectIdx == 1)
-    {
-      int ballType = (*Mu).GetValue(object[objectIdx], kLabel);
-      if (lastBallType != ballType)
+  if (cameraSetupSuccessful)
+  {
+    if ((*Mu).GetValue(object[objectIdx], kStatus))
+    { // update vision result and get status, 0: undetected, other:
+      // PTL(objectName[objectIdx]);
+      noResultTime = millis(); // update the timer
+      xCoord = (int)(*Mu).GetValue(object[objectIdx], kXValue);
+      yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
+      width = (int)(*Mu).GetValue(object[objectIdx], kWidthValue);
+      // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
+      // vvvvvvvvvvvv ball vvvvvvvvvvvvv
+      if (objectIdx == 1)
       {
-        switch ((*Mu).GetValue(object[objectIdx], kLabel))
-        { // get vision result: label value
-        case MU_BALL_TABLE_TENNIS:
-          PTLF("table tennis");
-          break;
-        case MU_BALL_TENNIS:
-          PTLF("tennis");
-          break;
-        default:
-          PTLF("unknow ball type");
-          break;
+        int ballType = (*Mu).GetValue(object[objectIdx], kLabel);
+        if (lastBallType != ballType)
+        {
+          switch ((*Mu).GetValue(object[objectIdx], kLabel))
+          { // get vision result: label value
+          case MU_BALL_TABLE_TENNIS:
+            PTLF("table tennis");
+            break;
+          case MU_BALL_TENNIS:
+            PTLF("tennis");
+            break;
+          default:
+            PTLF("unknow ball type");
+            break;
+          }
+          lastBallType = ballType;
         }
-        lastBallType = ballType;
       }
+      //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
+
+      cameraBehavior(xCoord, yCoord, width);
+      // FPS();
     }
-
-    //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
-
-    cameraBehavior(xCoord, yCoord, width);
-    // FPS();
-  }
-  else if (millis() - noResultTime > 2000)
-  { // if no object is detected for 2 seconds, switch object
-    (*Mu).VisionEnd(object[objectIdx]);
-    objectIdx = (objectIdx + 1) % (sizeof(object) / 2);
-    (*Mu).VisionBegin(object[objectIdx]);
-    PTL(objectName[objectIdx]);
-    noResultTime = millis();
+    else if (millis() - noResultTime > 2000)
+    { // if no object is detected for 2 seconds, switch object
+      (*Mu).VisionEnd(object[objectIdx]);
+      objectIdx = (objectIdx + 1) % (sizeof(object) / 2);
+      (*Mu).VisionBegin(object[objectIdx]);
+      PTL(objectName[objectIdx]);
+      noResultTime = millis();
+    }
   }
 }
 #endif
@@ -368,24 +393,24 @@ void read_MuCamera()
 
 char writeRegData(char reg_addr, char reg_data)
 {
-  Wire.beginTransmission(SENTRY_ADDR);
-  Wire.write(reg_addr);
-  Wire.write(reg_data);
-  Wire.endTransmission();
+  I2C_WIRE.beginTransmission(SENTRY_ADDR);
+  I2C_WIRE.write(reg_addr);
+  I2C_WIRE.write(reg_data);
+  I2C_WIRE.endTransmission();
   delay(1);
 }
 
 char readRegData(char reg_addr)
 {
-  Wire.beginTransmission(SENTRY_ADDR);
-  Wire.write(reg_addr); // read label
-  Wire.endTransmission();
+  I2C_WIRE.beginTransmission(SENTRY_ADDR);
+  I2C_WIRE.write(reg_addr); // read label
+  I2C_WIRE.endTransmission();
 
-  Wire.requestFrom(SENTRY_ADDR, 1); // request 1 byte from slave device
+  I2C_WIRE.requestFrom(SENTRY_ADDR, 1); // request 1 byte from slave device
   char ret = 0;
-  while (Wire.available())
+  while (I2C_WIRE.available())
   {
-    ret = Wire.read(); // receive a byte
+    ret = I2C_WIRE.read(); // receive a byte
   }
   return ret;
   delay(1);
@@ -393,9 +418,9 @@ char readRegData(char reg_addr)
 
 void sentry1CameraSetup()
 {
-  // Wire.begin();  // join i2c bus (address optional for master)
+  // I2C_WIRE.begin();  // join i2c bus (address optional for master)
   delay(2000); // wait for sentry1 startup, not necessary
-  PTLF("Setup sentry1");
+  PTLF("Setup Sentry1");
   writeRegData(0x20, 0x07); // set vision id: 7 (body for Sentry1)
   writeRegData(0x21, 0x01); // enable vision
   // writeRegData(0x22, 0x10);  // set vision level: 0x10=Sensitive/Speed 0x20=balance(default if not set) 0x30=accurate ..........[UPDATE]
@@ -405,6 +430,7 @@ void sentry1CameraSetup()
   proportion = 30; // default value is 20 ..........[UPDATE]
   pan = 20;        // default value is 15 ..........[UPDATE]
   tranSpeed = 1;
+  cameraSetupSuccessful = true;
 }
 
 char frame_cnt = 0;
@@ -412,28 +438,30 @@ char frame_cnt = 0;
 void read_Sentry1Camera()
 {
   //  Serial.println("loop...");
+  if (cameraSetupSuccessful)
+  {
+    char frame_new = readRegData(0x1F); // update frame count ..........[UPDATE]
+    if (frame_new == frame_cnt)
+    {            // if frame is unchanged, delay some time and return ..........[UPDATE]
+      delay(10); // ..........[UPDATE]
+      return;    //  ..........[UPDATE]
+    } //  ..........[UPDATE]
+    frame_cnt = frame_new; // update frame_cnt ..........[UPDATE]
 
-  char frame_new = readRegData(0x1F); // update frame count ..........[UPDATE]
-  if (frame_new == frame_cnt)
-  {                      // if frame is unchanged, delay some time and return ..........[UPDATE]
-    delay(10);           // ..........[UPDATE]
-    return;              //  ..........[UPDATE]
-  }                      //  ..........[UPDATE]
-  frame_cnt = frame_new; // update frame_cnt ..........[UPDATE]
-
-  char label = readRegData(0x89); // read label/ value Low Byte, 1=detected, 0=undetected
-  //  Serial.print("label: ");
-  //  Serial.println(label);//
-  if (label == 1)
-  {                             // have detected
-    xCoord = readRegData(0x81); // read x value Low Byte, 0~100, (LB is enought for sentry 1)
-    yCoord = readRegData(0x83); // read y value Low Byte, 0~100
-    width = readRegData(0x85);  // read width value Low Byte, 0~100
-                                //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
-                                // do something ......
-    cameraBehavior(xCoord, yCoord, width);
-    FPS();
-    delay(10);
+    char label = readRegData(0x89); // read label/ value Low Byte, 1=detected, 0=undetected
+    //  Serial.print("label: ");
+    //  Serial.println(label);//
+    if (label == 1)
+    {                             // have detected
+      xCoord = readRegData(0x81); // read x value Low Byte, 0~100, (LB is enought for sentry 1)
+      yCoord = readRegData(0x83); // read y value Low Byte, 0~100
+      width = readRegData(0x85);  // read width value Low Byte, 0~100
+                                  //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
+                                  // do something ......
+      cameraBehavior(xCoord, yCoord, width);
+      FPS();
+      delay(10);
+    }
   }
   // do something or delay some time
 }
@@ -442,15 +470,17 @@ void read_Sentry1Camera()
 #ifdef GROVE_VISION_AI_V2
 SSCMA AI;
 int height;
-
 void groveVisionSetup()
 {
-  AI.begin();
+  PTL("Setup Vision AI 2");
+  // I2C_WIRE.begin(10, 9, 400000);
+  AI.begin(&I2C_WIRE);
+  cameraSetupSuccessful = true;
 }
 
 void read_GroveVision()
 {
-  if (!AI.invoke())
+  if (cameraSetupSuccessful && !AI.invoke())
   {
     if (AI.boxes().size() >= 1)
     {

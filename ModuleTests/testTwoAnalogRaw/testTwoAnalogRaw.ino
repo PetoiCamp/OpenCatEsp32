@@ -1,8 +1,7 @@
 
 #define BUZZER 5
 
-#define SOUND_MAX 4095
-#define SOUND_THRESHOLD SOUND_MAX * 0.97
+#define MAX_READING 4096
 
 #define IN1 34
 #define IN2 35
@@ -50,6 +49,9 @@ int correctedReading(int light) {
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial.setTimeout(2);
+  pinMode(IN1, INPUT);
+  pinMode(IN2, INPUT);
   delay(100);
   Serial.println("start");
 }
@@ -58,8 +60,13 @@ void loop() {
   // put your main code here, to run repeatedly:
   //stats();
   //  sensorConnectedQ(READING_COUNT);
+
   Serial.print(analogRead(IN1));
   Serial.print('\t');
-  Serial.println(analogRead(IN2));
+  Serial.print(analogRead(IN2));
+  Serial.print('\t');
+  Serial.print(0);
+  Serial.print('\t');
+  Serial.println(MAX_READING);
   //  con ? beep(10, 200) : beep(20, 200);
 }

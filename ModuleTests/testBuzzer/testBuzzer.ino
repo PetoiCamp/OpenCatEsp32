@@ -33,7 +33,14 @@
   SOFTWARE.
 */
 
-#define BUZZER 25 //BiBoard
+#define BiBoard V0
+
+#ifdef BiBoard V0
+#define BUZZER 25
+#else
+#define BUZZER 2
+#endif
+
 // #define BUZZER 14 // BiBoard2
 #define BASE_PITCH 1046.50
 

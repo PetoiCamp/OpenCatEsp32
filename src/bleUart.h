@@ -35,9 +35,9 @@ bool oldDeviceConnected = false;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
-#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
-#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
+#define SERVICE_UUID_APP "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
+#define CHARACTERISTIC_UUID_RX_APP "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
+#define CHARACTERISTIC_UUID_TX_APP "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
 
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -52,10 +52,11 @@ byte bleMessageShift = 1;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
-    if (rxValue.length() > 0) {
+    // String rxValue = String(pCharacteristic->getValue().c_str());//it will cause unkown bug when sending 'K'-token skill data via mobile app and break the main program.
+    int buffLen = rxValue.length();
+    if (buffLen > 0) {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
-      int buffLen = rxValue.length();
       // Serial.print("From BLE:");
       // Serial.println(rxValue.c_str());
       if (bleMessageShift) {
@@ -90,29 +91,34 @@ void readBle() {
 
 void bleSetup() {
   //  Serial.print("UUID: ");
-  //  Serial.println(SERVICE_UUID);
+  //  Serial.println(SERVICE_UUID_APP);
   // Create the BLE Device
-  PTH("BLE: ", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
+#ifdef I2C_EEPROM_ADDRESS
+  PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
   BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  //read BLE device name from EEPROM so it's static
-
+#else
+  String blueID = "" + config.getString("ID", "P") + "_BLE";
+  PTHL("BLE:\t", blueID);
+  BLEDevice::init(blueID.c_str());  //read BLE device name from EEPROM so it's static
+#endif
   // Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
   // Create the BLE Service
-  BLEService *pService = pServer->createService(SERVICE_UUID);
+  BLEService *pService = pServer->createService(SERVICE_UUID_APP);
 
   // Create a BLE Characteristic
   pTxCharacteristic =
     pService->createCharacteristic(
-      CHARACTERISTIC_UUID_TX,
+      CHARACTERISTIC_UUID_TX_APP,
       BLECharacteristic::PROPERTY_NOTIFY);
 
   pTxCharacteristic->addDescriptor(new BLE2902());
 
   BLECharacteristic *pRxCharacteristic =
     pService->createCharacteristic(
-      CHARACTERISTIC_UUID_RX,
+      CHARACTERISTIC_UUID_RX_APP,
       BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
   pRxCharacteristic->setCallbacks(new MyCallbacks());

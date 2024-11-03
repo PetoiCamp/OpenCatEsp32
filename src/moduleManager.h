@@ -34,6 +34,14 @@
 #include "doubleInfraredDistance.h"
 #endif
 
+#ifdef BACKTOUCH_PIN
+#include "backTouch.h"
+#endif
+
+#ifdef ROBOT_ARM
+#include "robotArm.h"
+#endif
+
 #ifdef OTHER_MODULES
 #endif
 
@@ -55,7 +63,7 @@ bool moduleActivatedQfunction(char moduleCode)
 }
 
 int8_t activeModuleIdx()
-{
+{ // designed to work if only one active module is allowed
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleActivatedQ[i])
       return i;
@@ -64,6 +72,8 @@ int8_t activeModuleIdx()
 
 void initModule(char moduleCode)
 {
+  bool successQ = true;
+  int8_t index = indexOfModule(moduleCode);
   switch (moduleCode)
   {
   case EXTENSION_GROVE_SERIAL:
@@ -131,15 +141,39 @@ void initModule(char moduleCode)
     break;
   }
 #endif
+#ifdef BACKTOUCH_PIN
+  case EXTENSION_BACKTOUCH:
+  {
+    backTouchSetup();
+    break;
+  }
+#endif
 #ifdef CAMERA
   case EXTENSION_CAMERA:
   {
     loadBySkillName("sit");
-    cameraSetup();
+    if (!cameraSetup())
+    {
+      int i = indexOfModule(moduleCode);
+      PTHL("*** Fail to start ", moduleNames[i]);
+      successQ = false;
+    }
+    break;
+  }
+#endif
+#ifdef QUICK_DEMO
+  case EXTENSION_QUICK_DEMO:
+  {
     break;
   }
 #endif
   }
+  moduleActivatedQ[index] = successQ;
+#ifdef I2C_EEPROM_ADDRESS
+  i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + index, successQ);
+#else
+  config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+#endif
 }
 
 void stopModule(char moduleCode)
@@ -163,6 +197,7 @@ void stopModule(char moduleCode)
   case EXTENSION_ULTRASONIC:
   {
     // ultrasonicStop();   // Todo
+    ultrasonicLEDinitializedQ = false;
     break;
   }
 #endif
@@ -204,6 +239,18 @@ void stopModule(char moduleCode)
     break;
   }
 #endif
+#ifdef BACKTOUCH_PIN
+  case EXTENSION_BACKTOUCH:
+  {
+    break;
+  }
+#endif
+#ifdef QUICK_DEMO
+  case EXTENSION_QUICK_DEMO:
+  {
+    break;
+  }
+#endif
   }
 }
 void showModuleStatus()
@@ -211,28 +258,35 @@ void showModuleStatus()
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
+  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) || moduleActivatedQfunction(EXTENSION_GESTURE) || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) || moduleActivatedQfunction(EXTENSION_CAMERA) || moduleActivatedQfunction(EXTENSION_PIR) || moduleActivatedQfunction(EXTENSION_BACKTOUCH) || moduleActivatedQfunction(EXTENSION_ULTRASONIC) || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
 }
 
 void reconfigureTheActiveModule(char *moduleCode)
-{ // negative number will deactivate all the modules
+{
+  // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
   { // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0])
-    {
-      PTH("- disable", moduleNames[i]);
+    {                                                               // if the modules is active and different from the new module
+      if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~') // it won't disable the voice
+        continue;
+      PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
+#ifdef I2C_EEPROM_ADDRESS
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
+#endif
     }
   }
+#ifndef I2C_EEPROM_ADDRESS
+  config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+#endif
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
   {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i])
     {
-      PTH("+  enable", moduleNames[i]);
+      PTHL("+  enable", moduleNames[i]);
       initModule(moduleList[i]);
-      moduleActivatedQ[i] = true;
-      i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, true);
     }
   }
   showModuleStatus();
@@ -248,6 +302,18 @@ void initModuleManager()
     {
       initModule(moduleList[i]);
     }
+#ifdef VOICE
+    else if (moduleList[i] == EXTENSION_VOICE)
+    {
+      voiceStop();
+    }
+#endif
+#ifdef ULTRASONIC
+    else if (moduleList[i] == EXTENSION_ULTRASONIC)
+    {
+      rgbUltrasonicSetup();
+    }
+#endif
   }
   showModuleStatus();
 }
@@ -307,6 +373,7 @@ void read_serial()
             return;
           }
           newCmd[cmdLen++] = serialPort->read();
+          // PTHL(newCmd[cmdLen - 1], int8_t(newCmd[cmdLen - 1]));
         } while (serialPort->available());
         lastSerialTime = millis();
       }
@@ -315,10 +382,11 @@ void read_serial()
                                                                                                    // so it needs a timeout for the no line ending case
     // PTH("* " + source, long(millis() - lastSerialTime));
     if (!(token >= 'A' && token <= 'Z') || token == 'X' || token == 'R' || token == 'W')
-    { // serial monitor is used to send lower cased tokens by users
-      // delete the unexpected '\r' '\n' if the serial monitor sends line ending symbols
+    {                                  // serial monitor is used to send lower cased tokens by users
+                                       // delete the unexpected '\r' '\n' if the serial monitor sends line ending symbols
+      leftTrimSpaces(newCmd, &cmdLen); // allow space between token and parameters, such as "k sit"
       for (int i = cmdLen - 1; i >= 0; i--)
-      {
+      { // delete the '/r' and '/n' if the serial monitor is configured to send terminators
         if ((newCmd[i] == '\n') || (newCmd[i] == '\r'))
         {
           newCmd[i] = '\0';
@@ -328,15 +396,17 @@ void read_serial()
     }
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
+    if (token >= 'A' && token <= 'Z')
+      newCmd[cmdLen + 1] = '\0';
     newCmdIdx = 2;
     // PTH("read_serial, cmdLen = ", cmdLen);
-    // printCmdByType(token, newCmd, cmdLen);
+    // printCmdByType(token, newCmd);
   }
 }
 
 void readSignal()
 {
-  byte moduleIndex = activeModuleIdx();
+  moduleIndex = activeModuleIdx();
 #ifdef IR_PIN
   read_infrared(); //  newCmdIdx = 1
 #endif
@@ -345,9 +415,11 @@ void readSignal()
   detectBle(); //  newCmdIdx = 3;
   readBle();
 #endif
-
+#ifdef BT_CLIENT
+  readBleClient();
+#endif
 #ifdef VOICE
-  if (moduleList[moduleIndex] == EXTENSION_VOICE)
+  if (moduleActivatedQ[indexOfModule(EXTENSION_VOICE)])
     read_voice();
 #endif
 
@@ -364,45 +436,41 @@ void readSignal()
   {
     if (moduleIndex == -1) // no active module
       return;
-
 #ifdef CAMERA
-    if (moduleList[moduleIndex] == EXTENSION_CAMERA)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_CAMERA)])
       read_camera();
 #endif
 #ifdef ULTRASONIC
-    if (moduleList[moduleIndex] == EXTENSION_ULTRASONIC)
-    {
-      readRGBultrasonic();
-    }
-
+    if (moduleActivatedQ[indexOfModule(EXTENSION_ULTRASONIC)])
+      read_RGBultrasonic();
 #endif
 #ifdef GESTURE
-    if (moduleList[moduleIndex] == EXTENSION_GESTURE)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_GESTURE)])
       read_gesture();
 #endif
 #ifdef PIR
-    if (moduleList[moduleIndex] == EXTENSION_PIR)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_PIR)])
       read_PIR();
 #endif
 #ifdef DOUBLE_TOUCH
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_TOUCH)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_TOUCH)])
       read_doubleTouch();
 #endif
 #ifdef DOUBLE_LIGHT
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_LIGHT)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_LIGHT)])
       read_doubleLight();
 #endif
 #ifdef DOUBLE_INFRARED_DISTANCE
-    if (moduleList[moduleIndex] == EXTENSION_DOUBLE_IR_DISTANCE)
+    if (moduleActivatedQ[indexOfModule(EXTENSION_DOUBLE_IR_DISTANCE)])
       read_doubleInfraredDistance(); // has some bugs
 #endif
-#ifdef TOUCH0
-    read_touch();
+#ifdef BACKTOUCH_PIN
+    if (moduleActivatedQ[indexOfModule(EXTENSION_BACKTOUCH)])
+      read_backTouch();
 #endif
     // powerSaver -> 4
     // other -> 5
     // randomMind -> 100
-
     if (autoSwitch)
     {
       randomMind();            // make the robot do random demos
@@ -422,4 +490,43 @@ void readHuman()
 String decision()
 {
   return "";
+}
+
+void i2cDetect()
+{
+  byte error, address;
+  int nDevices;
+
+  Serial.println("Scanning I2C network...");
+  nDevices = 0;
+  for (address = 1; address < 127; address++)
+  {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0)
+    {
+      Serial.print("- I2C device found at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println("  !");
+
+      nDevices++;
+    }
+    else if (error == 4)
+    {
+      Serial.print("- Unknown error at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0)
+    Serial.println("- No I2C devices found");
+  else
+    Serial.println("- done");
 }

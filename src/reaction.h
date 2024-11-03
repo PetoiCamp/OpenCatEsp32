@@ -16,7 +16,7 @@ void dealWithExceptions() {
         }
       case -2:
         {
-          PTL("EXCEPTION 2");
+          PTL("EXCEPTION: Fall over");
           soundFallOver();
           //  for (int m = 0; m < 2; m++)
           //    meow(30 - m * 12, 42 - m * 12, 20);
@@ -29,41 +29,71 @@ void dealWithExceptions() {
         }
       case -3:
         {
-          PTL("EXCEPTION 3");
-          if (  // skill->period == 1 &&
-            strncmp(lastCmd, "vt", 2)) {
-            char xSymbol[] = { '^', 'v' };
-            char ySymbol[] = { '<', '>' };
-            char xDirection = xSymbol[sign(ARX) > 0];
-            char yDirection = ySymbol[sign(ARY) > 0];
-            float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
-            if (tQueue->cleared()) {
-              if (abs(forceAngle) < 70) {
-                tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR");
-                tQueue->addTask('i', yDirection == '<' ? "0 -45" : "0 45", 1000);
-                tQueue->addTask('i', "");
-              } else {
-                if (xDirection == '^') {
-                  tQueue->addTask('k', "wkF", 300);
-                  tQueue->addTask('i', yDirection == '<' ? "0 75" : "0 -75", 700);
-                  tQueue->addTask('i', "");
-                } else {
-                  tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
-                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 1000);
-                }
-              }
-              // tQueue->addTask('k', "up", 100);
-              delayPrevious = runDelay;
-              runDelay = 3;
+          if (tQueue->cleared() && skill->period == 1) {
+            PTL("EXCEPTION: Knocked");
+            tQueue->addTask('k', "knock");
+#if defined NYBBLE && defined ULTRASONIC
+            if (!moduleActivatedQ[0]) {  // serial2)
+              int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
+              int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
+              tQueue->addTask('C', clrRed, 1);
+              tQueue->addTask('C', clrBlue);
             }
-            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
-            PTL();
+#endif
+            tQueue->addTask('k', "up");
           }
           break;
         }
       case -4:
         {
-          PTL("EXCEPTION 4");
+          PTL("EXCEPTION: Pushed");
+          // Acceleration Real
+          //      ^ head
+          //        ^ x+
+          //        |
+          //  y+ <------ y-
+          //        |
+          //        | x-
+          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
+            char xSymbol[] = { '^', 'v' };
+            char ySymbol[] = { '<', '>' };
+            char xDirection = xSymbol[sign(ARX) > 0];
+            char yDirection = ySymbol[sign(ARY) > 0];
+            float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
+            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+            PTHL(" ForceAngle:", forceAngle);
+            if (tQueue->cleared()) {
+              if (xDirection == '^') {
+                // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
+                if (abs(forceAngle) < 75)
+                  // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
+                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
+                // tQueue->addTask('i', "");
+                else {
+                  tQueue->addTask('k', "wkF", 700);
+                  // tQueue->addTask('i', "");
+                  tQueue->addTask('k', "bkF", 500);
+                }
+              } else {
+                // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                if (abs(forceAngle) < 75)
+                  tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
+                else {
+                  tQueue->addTask('k', "bkF", 500);
+                  tQueue->addTask('k', "wkF", 700);
+                }
+              }
+            }
+            tQueue->addTask('k', "up");
+            delayPrevious = runDelay;
+            runDelay = 3;
+            PTL();
+          }
+          break;
+        }
+      case -5:
+        {
+          PTL("EXCEPTION: Turned");
           char *currentGait = skill->skillName;  // it may not be gait
           char gaitDirection = currentGait[strlen(currentGait) - 1];
           float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
@@ -98,62 +128,82 @@ void dealWithExceptions() {
         }
     }
 
-    if (exceptions != -4)
-      print6Axis();
-    read_IMU();  // flush the IMU to avoid static readings and infinite loop
+    // if (exceptions != -4)
+    print6Axis();
+    read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
 
-    if (tQueue->lastTask == NULL) {
-      if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
-        PTH("save last task ", lastCmd);
-        tQueue->lastTask = new Task('k', lastCmd);
-      }
-    }
+    // if (tQueue->lastTask == NULL) {
+    //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
+    //     PTH("save last task ", lastCmd);
+    //     tQueue->lastTask = new Task('k', lastCmd);
+    //   }
+    // }
   }
-  // if (tQueue->cleared() && runDelay <= delayException)
-  //   runDelay = delayPrevious;
+// if (tQueue->cleared() && runDelay <= delayException)
+//   runDelay = delayPrevious;
 #endif
 }
 
+// V_read / 4096 * 3.3 = V_real / ratio
+// V_real = V_read / 4096 * 3.3 * ratio
+// V_real = V_read / vFactor, vFactor = 4096 / 3.3 / ratio
+// a more accurate fitting for V1_0 is V_real = V_read / 515 + 1.95
 #ifdef VOLTAGE
-float vFactor = 4096 / 3.3 / 3;
-float low_voltage = LOW_VOLTAGE * vFactor;
 bool lowBattery() {
   long currentTime = millis() / CHECK_BATTERY_PERIOD;
   if (currentTime > uptime) {
     uptime = currentTime;
     float voltage = analogRead(VOLTAGE);
-    if (voltage == 0 || voltage < low_voltage && abs(voltage - lastVoltage) > 10) {  // if battery voltage < threshold, it needs to be recharged
-                                                                                     // give the robot a break when voltage drops after sprint
-                                                                                     // adjust the thresholds according to your batteries' voltage
-                                                                                     // if set too high, the robot will stop working when the battery still has power.
-                                                                                     // If too low, the robot may not alarm before the battery shuts off
+#ifdef BiBoard_V1_0
+    voltage = voltage / 515 + 1.9;
+#else
+    voltage = voltage / 414;
+#endif
+    if (voltage < NO_BATTERY_VOLTAGE2
+        || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+            || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
+             && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
+    ) {                                                                // if battery voltage is low, it needs to be recharged
+      // give the robot a break when voltage drops after sprint
+      // adjust the thresholds according to your batteries' voltage
+      // if set too high, the robot will stop working when the battery still has power.
+      // If too low, the robot may not alarm before the battery shuts off
       lowBatteryQ = true;
       if (!safeRest) {
+        // shutServos();
+        // delay(2000);
         strcpy(lastCmd, "rest");
         loadBySkillName(lastCmd);
         shutServos();
         safeRest = true;
       }
-      PTF("Low power: ");
-      PT(voltage / vFactor);
-      PTL("V");
-      PTLF("Long-press the battery's button to turn it on!");
-      if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
-        playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
-      //    strip.show();
-      int8_t bStep = 1;
-      for (byte brightness = 1; brightness > 0; brightness += bStep) {
-#ifdef NEOPIXEL_PIN
-        strip.setPixelColor(0, strip.Color(brightness, 0, 0));
-        strip.show();
+      if (!batteryWarningCounter) {
+        PTF("Low power: ");
+        PT(voltage);
+        PTL("V");
+        PTLF("Long-press the battery's button to turn it on!");
+#ifdef I2C_EEPROM_ADDRESS
+        if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
+#else
+        if (config.getBool("bootSndState", 1))
 #endif
-#ifdef PWM_LED_PIN
-        analogWrite(PWM_LED_PIN, 255 - brightness);
-#endif
-        if (brightness == 255)
-          bStep = -1;
-        delay(5);
+          playMelody(melodyLowBattery, sizeof(melodyLowBattery) / 2);
       }
+      batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
+      //    strip.show();
+//       int8_t bStep = 1;
+//       for (byte brightness = 1; brightness > 0; brightness += bStep) {
+// #ifdef NEOPIXEL_PIN
+//         strip.setPixelColor(0, strip.Color(brightness, 0, 0));
+//         strip.show();
+// #endif
+// #ifdef PWM_LED_PIN
+//         analogWrite(PWM_LED_PIN, 255 - brightness);
+// #endif
+//         if (brightness == 255)
+//           bStep = -1;
+//         delay(5);
+//       }
       lastVoltage = voltage;
       return true;
     }
@@ -164,9 +214,16 @@ bool lowBattery() {
       safeRest = false;
     }
     lastVoltage = voltage;
-    if (voltage > low_voltage && lowBatteryQ) {
+    if ((voltage > LOW_VOLTAGE                                         // powered by 7.4V
+         || (voltage > LOW_VOLTAGE2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+        && lowBatteryQ) {
+      if (voltage > LOW_VOLTAGE)
+        PTL("Got 7.4 V power");
+      else
+        PTL("Got 6.0 V power");
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
+      batteryWarningCounter = 0;
     }
   }
   return false;
@@ -183,6 +240,9 @@ void reaction() {
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
     }
+#ifdef PWM_LED_PIN
+    digitalWrite(PWM_LED_PIN, HIGH);
+#endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
     if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
@@ -224,7 +284,13 @@ void reaction() {
           else if (cmdLen)
             customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
                                           // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-          printToAllPorts(readLongByBytes(EEPROM_BLE_NAME));
+          printToAllPorts(
+#ifdef I2C_EEPROM_ADDRESS
+            readLongByBytes(EEPROM_BLE_NAME)
+#else
+            config.getString("ID")
+#endif
+          );
           break;
         }
       case T_GYRO_FINENESS:
@@ -232,7 +298,6 @@ void reaction() {
       case T_PRINT_GYRO:
       case T_VERBOSELY_PRINT_GYRO:
       case T_RANDOM_MIND:
-      case T_SLOPE:
         {
           if (token == T_RANDOM_MIND) {
             autoSwitch = !autoSwitch;
@@ -252,9 +317,6 @@ void reaction() {
           } else if (token == T_VERBOSELY_PRINT_GYRO) {
             printGyro = !printGyro;
             token = printGyro ? 'V' : 'v';  // V for verbosely print gyro data
-          } else if (token == T_SLOPE) {
-            slope = -slope;
-            token = slope > 0 ? 'R' : 'r';  // G for activated gyro
           }
 #endif
           break;
@@ -269,6 +331,20 @@ void reaction() {
             shutServos();
           break;
         }
+#ifdef VOLTAGE
+      case T_POWER:
+        {
+          float voltage = analogRead(VOLTAGE);
+#ifdef BiBoard_V1_0
+          voltage = voltage / 515 + 1.9;
+#else
+          voltage = voltage / 414;
+#endif
+          String message = "Voltage: ";
+          printToAllPorts(message + voltage + " V");
+          break;
+        }
+#endif
       case T_ACCELERATE:
         {
           runDelay = max(0, runDelay - 1);
@@ -281,14 +357,18 @@ void reaction() {
         }
       case T_REST:
         {
-          strcpy(newCmd, "rest");
-          if (strcmp(newCmd, lastCmd)) {
-            loadBySkillName(newCmd);
-          }
-          shutServos();
           gyroBalanceQ = false;
-          manualHeadQ = false;
           printToAllPorts('g');
+          if (cmdLen == 0) {
+            strcpy(newCmd, "rest");
+            if (strcmp(newCmd, lastCmd)) {
+              loadBySkillName(newCmd);
+            }
+            shutServos();
+            manualHeadQ = false;
+          } else if (cmdLen == 1) {  // allow turning off a single joint
+            shutServos(atoi(newCmd));
+          }
           break;
         }
       case T_JOINTS:
@@ -318,8 +398,7 @@ void reaction() {
             manualEyeColorQ = false;
           else {  // turn on the manual color mode
             manualEyeColorQ = true;
-            long color = ((long)(uint8_t(newCmd[0])) << 16) + ((long)(uint8_t(newCmd[1])) << 8) + (long)(uint8_t(newCmd[2]));
-            ultrasonic.SetRgbEffect(E_RGB_INDEX(uint8_t(newCmd[3])), color, uint8_t(newCmd[4]));
+            ultrasonic.SetRgbEffect(E_RGB_INDEX(uint8_t(newCmd[3])), ultrasonic.color(newCmd[0], newCmd[1], newCmd[2]), uint8_t(newCmd[4]));
           }
           break;
         }
@@ -347,7 +426,11 @@ void reaction() {
       case T_ABORT:
         {
           PTLF("aborted");
+#ifdef I2C_EEPROM_ADDRESS
           i2c_eeprom_read_buffer(EEPROM_CALIB, (byte *)servoCalib, DOF);
+#else
+          config.getBytes("calib", servoCalib, DOF);
+#endif
 #ifdef VOICE
           if (newCmdIdx == 2)
             SERIAL_VOICE.println("XAc");
@@ -375,6 +458,7 @@ void reaction() {
 #ifdef T_TUNER
       case T_TUNER:
 #endif
+      case T_BALANCE_SLOPE:
         {
           if (token == T_INDEXED_SIMULTANEOUS_ASC && cmdLen == 0)
             manualHeadQ = false;
@@ -414,7 +498,7 @@ void reaction() {
                   workingStiffness = false;
 #endif
 #ifdef VOICE
-                  if (newCmdIdx == 2)
+                  if (newCmdIdx == 2)  // only deactivate the voice module via serial port
                     SERIAL_VOICE.println("XAd");
 #endif
                   strcpy(newCmd, "calib");
@@ -428,14 +512,37 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
+                  continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
-#ifdef ESP_PWM
-                servo[actualServoIndex].write(duty);
+#ifdef ROBOT_ARM
+                if (actualServoIndex == -2)  //auto calibrate the robot arm's pincer
+                {
+                  // loadBySkillName("triStand");
+                  // shutServos();
+                  calibratedPWM(1, 90);
+                  delay(500);
+                  int criticalAngle = calibrateByVibration(-25, 25, 4);
+                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  servoCalib[2] = servoCalib[2] + criticalAngle + 16;
+                  PTHL("Pincer calibrate angle: ", servoCalib[2]);
+#ifdef I2C_EEPROM_ADDRESS
+                  i2c_eeprom_write_byte(EEPROM_CALIB + 2, servoCalib[2]);
 #else
-                pwm.writeAngle(actualServoIndex, duty);
+                  config.putBytes("calib", servoCalib, DOF);
 #endif
+                  calibratedZeroPosition[2] = zeroPosition[2] + float(servoCalib[2]) * rotationDirection[2];
+                  loadBySkillName("calib");
+                } else
+#endif
+                {
+#ifdef ESP_PWM
+                  servo[actualServoIndex].write(duty);
+#else
+                  pwm.writeAngle(actualServoIndex, duty);
+#endif
+                }
                 printToAllPorts(range2String(DOF));
                 printToAllPorts(list2String(servoCalib));
                 printToAllPorts(token);
@@ -483,12 +590,22 @@ void reaction() {
                 meow(random() % 2 + 1, (random() % 4 + 2) * 10);
               } else if (token == T_BEEP) {
                 if (inLen == 0) {  // toggle on/off the bootup melody
+
+#ifdef I2C_EEPROM_ADDRESS
                   soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-                  printToAllPorts(soundState ? "Unmute" : "Muted");
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+#else
+                  soundState = !config.getBool("bootSndState");
+                  config.putBool("bootSndState", soundState);
+#endif
+                  printToAllPorts(soundState ? "Unmute" : "Muted");
                   if (soundState && !buzzerVolume) {  // if i want to unmute but the volume was set to 0
                     buzzerVolume = 5;                 // set the volume to 5/10
+#ifdef I2C_EEPROM_ADDRESS
                     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
+#else
+                    config.putChar("buzzerVolume", buzzerVolume);
+#endif
                     playMelody(volumeTest, sizeof(volumeTest) / 2);
                   }
                 } else if (inLen == 1) {                      // change the buzzer's volume
@@ -496,8 +613,13 @@ void reaction() {
                   if (soundState ^ (buzzerVolume > 0))
                     printToAllPorts(buzzerVolume ? "Unmute" : "Muted");  // only print if the soundState changes
                   soundState = buzzerVolume;
+#ifdef I2C_EEPROM_ADDRESS
                   i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
                   i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
+#else
+                  config.putBool("bootSndState", soundState);
+                  config.putChar("buzzerVolume", buzzerVolume);
+#endif
                   PTF("Changing volume to ");
                   PT(buzzerVolume);
                   PTL("/10");
@@ -516,6 +638,12 @@ void reaction() {
                 }
               }
 #endif
+              else if (token == T_BALANCE_SLOPE) {
+                if (inLen == 2) {
+                  balanceSlope[0] = max(-2, min(2, target[0]));
+                  balanceSlope[1] = max(-2, min(2, target[1]));
+                }
+              }
               // delay(5);
             } while (pch != NULL);
 #ifdef T_TUNER
@@ -573,7 +701,7 @@ void reaction() {
               if (token == T_INDEXED_SEQUENTIAL_BIN) {
                 transform(targetFrame, 1, transformSpeed);
                 delay(10);
-              } else if (token == T_WRITE) {
+              } else if (token == T_WRITE) {  // Write a/d pin value
                 pinMode(newCmd[i + 1], OUTPUT);
                 if (newCmd[i] == TYPE_ANALOG) {
                   analogWrite(newCmd[i + 1], uint8_t(newCmd[i + 2]));  // analog value can go up to 255.
@@ -581,7 +709,11 @@ void reaction() {
                                                                        // but casted by readSerial() as signed char and saved into newCmd.
                 } else if (newCmd[i] == TYPE_DIGITAL)
                   digitalWrite(newCmd[i + 1], newCmd[i + 2]);
-              } else if (token == T_READ) {
+              } else if (token == T_READ) {  // Read a/d pin
+                // 34 35 36 37 38 39 97 100
+                // "  #  $  %  &  '  a  d
+                // e.g. analogRead(35) = Ra# in the Serial Monitor
+                //                     = [R,a,35] in the Python API
                 printToAllPorts('=');
                 pinMode(newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
@@ -611,8 +743,8 @@ void reaction() {
       case EXTENSION:
         {
           // PTH("cmdLen = ", cmdLen);
-          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen ==1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
-                                                                       // and we don't want to change the activation status of the ultrasonic sensor behavior
+          if (newCmd[0] != 'U' || (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+            // and we don't want to change the activation status of the ultrasonic sensor behavior
             reconfigureTheActiveModule(newCmd);
           }
 
@@ -625,6 +757,7 @@ void reaction() {
                 break;
               }
 #endif
+#ifdef ULTRASONIC
             case EXTENSION_ULTRASONIC:
               {
                 if (cmdLen >= 3) {
@@ -633,6 +766,7 @@ void reaction() {
                 }
                 break;
               }
+#endif
           }
           break;
         }
@@ -644,9 +778,14 @@ void reaction() {
       case T_BEEP_BIN:
         {
           if (cmdLen == 0) {  // toggle on/off the bootup melody
+#ifdef I2C_EEPROM_ADDRESS
             soundState = !i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-            printToAllPorts(soundState ? "Unmute" : "Muted");
             i2c_eeprom_write_byte(EEPROM_BOOTUP_SOUND_STATE, soundState);
+#else
+            soundState = !config.getBool("bootSndState");
+            config.putBool("bootSndState", soundState);
+#endif
+            printToAllPorts(soundState ? "Unmute" : "Muted");
           } else {
             for (byte b = 0; b < cmdLen / 2; b++) {
               if ((int8_t)newCmd[2 * b + 1] > 0)
@@ -657,7 +796,11 @@ void reaction() {
         }
       case T_TEMP:
         {  // call the last skill data received from the serial port
+#ifdef I2C_EEPROM_ADDRESS
           loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
+#else
+          config.getBytes("tmp", newCmd, config.getBytesLength("tmp"));
+#endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           printToAllPorts(token);
@@ -667,17 +810,18 @@ void reaction() {
         }
       case T_SKILL_DATA:  // takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
         {
+#ifdef I2C_EEPROM_ADDRESS
           unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
           i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
+#else
+          int bufferLen = dataLen(newCmd[0]);
+          config.putBytes("tmp", newCmd, bufferLen);
+#endif
           skill->buildSkill();
           skill->transformToSkill(skill->nearestFrame());
           manualHeadQ = false;
-          // newCmdIdx = 0;
           strcpy(newCmd, "tmp");
-          if (skill->period > 0)
-            printToAllPorts(token);
-          token = T_SKILL;
           break;
         }
       case T_SKILL:
@@ -687,17 +831,23 @@ void reaction() {
               || skill->period <= 1) {    // skill->period can be NULL!
             // it's better to compare skill->skillName and newCmd.
             // but need more logics for non skill cmd in between
+            if (!strcmp(newCmd, "bk"))
+              strcpy(newCmd, "bkF");
             loadBySkillName(newCmd);  // newCmd will be overwritten as dutyAngles then recovered from skill->skillName
             manualHeadQ = false;
-            if (skill->period > 0)
-              printToAllPorts(token);
+            // if (skill->period > 0)
+            //   printToAllPorts(token);
             // skill->info();
           }
           break;
         }
       case T_TASK_QUEUE:
         {
-          tQueue->createTask();
+          tQueue->createTask();  // use 'q' to start the sequence.
+                                 // add subToken followed by the subCommand
+                                 // use ':' to add the delay time (mandatory)
+                                 // add '~' to end the sub command
+                                 // example: qk sit:1000~m 8 0 8 -30 8 0:500~
           break;
         }
       default:
@@ -716,13 +866,19 @@ void reaction() {
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || token == T_JOINTS || token == T_RANDOM_MIND || token == T_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_PAUSE || token == T_TILT))
+      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();
+#ifdef PWM_LED_PIN
+    digitalWrite(PWM_LED_PIN, LOW);
+#endif
   }
 
-  if (token == T_SKILL) {
+  if (tolower(token) == T_SKILL) {
+#ifdef PWM_LED_PIN
+    analogWrite(PWM_LED_PIN, abs(currentAng[8]));
+#endif
     skill->perform();
     if (skill->period > 1)
       delay(delayShort + max(0, int(runDelay
@@ -754,13 +910,14 @@ void reaction() {
     // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')
     //     loadBySkillName(lastCmd);
-    if (tQueue->cleared() && tQueue->lastTask != NULL) {
-      PT("Use last task ");
-      tQueue->loadTaskInfo(tQueue->lastTask);
-      delete tQueue->lastTask;
-      tQueue->lastTask = NULL;
-      PTL(newCmd);
-    }
+
+    // if (tQueue->cleared() && tQueue->lastTask != NULL) {
+    //   PT("Use last task ");
+    //   tQueue->loadTaskInfo(tQueue->lastTask);
+    //   delete tQueue->lastTask;
+    //   tQueue->lastTask = NULL;
+    //   PTL(newCmd);
+    // }
   } else if (token == T_SERVO_FEEDBACK)
     servoFeedback(measureServoPin);
   else if (token == T_SERVO_FOLLOW) {
@@ -770,5 +927,7 @@ void reaction() {
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
+  } else {
+    delay(1);  //avoid triggering WDT on BiBoard V0_2
   }
 }

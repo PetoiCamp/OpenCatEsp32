@@ -51,15 +51,9 @@ void read_gesture() {
       case GESTURE_UP:
         {
           PTLF("UP\t↑");
+          tQueue->addTask(T_INDEXED_SEQUENTIAL_ASC, "1 90 1 0", 0);
           tQueue->addTask(T_BEEP_BIN, melody12345, 0);
           tQueue->addTask('k', "fiv", 2000);
-          tQueue->addTask('k',
-#ifdef BITTLE
-                                     "scrh"
-#elif defined NYBBLE
-                                     "wsf"
-#endif
-                                     );
           break;
         }
 
@@ -69,14 +63,20 @@ void read_gesture() {
           tQueue->addTask('i', "");
           tQueue->addTask(T_BEEP_BIN, melody54321, 0);
           tQueue->addTask('k', "sit");
-
+          tQueue->addTask('k',
+#ifdef NYBBLE
+                          "wsf"
+#else
+                          "scrh"
+#endif
+          );
           break;
         }
 
       case GESTURE_LEFT:
         {
           PTLF("LEFT\t←");
-          int8_t move[] = { 0, -70, 0, -65, '~' };
+          int8_t move[] = { 0, -60, 0, -55, '~' };
           tQueue->addTask(T_BEEP_BIN, melody32654, 0);
           tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 1000);
           tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");
@@ -85,7 +85,7 @@ void read_gesture() {
       case GESTURE_RIGHT:
         {
           PTLF("RIGHT\t→");
-          int8_t move[] = { 0, 70, 0, 65, '~' };
+          int8_t move[] = { 0, 60, 0, 55, '~' };
           tQueue->addTask(T_BEEP_BIN, melody67345, 0);
           tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 0);
           tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");

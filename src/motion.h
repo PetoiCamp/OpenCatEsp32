@@ -1,9 +1,19 @@
+#ifdef ROBOT_ARM
+bool pincerClosedQ = true;
+#endif
+
 void calibratedPWM(byte i, float angle, float speedRatio = 0) {
+  if (PWM_NUM == 12 && WALKING_DOF == 8 && i > 3 && i < 8)  //there's no such joint in this configuration
+    return;
   int actualServoIndex = (PWM_NUM == 12 && i > 3) ? i - 4 : i;
   angle = max(float(angleLimit[i][0]), min(float(angleLimit[i][1]), angle));
   int duty0 = calibratedZeroPosition[i] + currentAng[i] * rotationDirection[i];
   previousAng[i] = currentAng[i];
   currentAng[i] = angle;
+// #ifdef ROBOT_ARM
+//   if (actualServoIndex == 2 && currentAng[2] == 0 && pincerClosedQ)
+//     return;
+// #endif
   int duty = calibratedZeroPosition[i] + angle * rotationDirection[i];
   int steps = speedRatio > 0 ? int(round(abs(duty - duty0) / 1.0 /*degreeStep*/ / speedRatio)) : 0;
   //if default speed is 0, no interpolation will be used
@@ -23,6 +33,12 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
     }
     //    delayMicroseconds(1);
   }
+// #ifdef ROBOT_ARM
+//   if (actualServoIndex == 2 && currentAng[2] == 0 && !pincerClosedQ) {
+//     shutServos(2);  //release the power on the pincer to avoid stuck
+//     pincerClosedQ = true;
+//   }
+// #endif
 }
 
 void allCalibratedPWM(int *dutyAng, byte offset = 0) {
@@ -257,11 +273,11 @@ float levelTolerance[2] = { ROLL_LEVEL_TOLERANCE, PITCH_LEVEL_TOLERANCE };  //th
 
 #ifdef X_LEG  // >< leg
 float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
-  { -panF, 0 }, { -panF / 2, -tiltF }, { -2 * panF, 0 }, { 0, 0 }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { -uRF, uPF }, { -uRF, uPF }, { lRF, lPF }, { lRF, lPF }, { -lRF, lPF }, { -lRF, lPF }
+  { -panF / 2, 0 }, { -panF / 2, -tiltF }, { -2 * panF, 0 }, { 0, -1 * tiltF }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { -uRF, uPF }, { -uRF, uPF }, { lRF, lPF }, { lRF, lPF }, { -lRF, lPF }, { -lRF, lPF }
 };
 #else  // >> leg
 float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
-  { -panF, 0 }, { -panF / 2, -tiltF }, { -2 * panF, 0 }, { 0, 0 }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { lRF, -0.5 * lPF }, { lRF, -0.5 * lPF }, { lRF, 0.5 * lPF }, { lRF, 0.5 * lPF }
+  { -panF / 2, 0 }, { panF / 8, -tiltF / 3 }, { 0, 0 }, { -1 * panF, 0 }, { sRF, -sPF }, { -sRF, -sPF }, { -sRF, sPF }, { sRF, sPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { uRF, uPF }, { lRF, -0.5 * lPF }, { lRF, -0.5 * lPF }, { lRF, 0.5 * lPF }, { lRF, 0.5 * lPF }
 };
 #endif
 
@@ -272,9 +288,9 @@ float adjust(byte i) {
     //bool frontQ = i % 4 < 2 ? true : false;
     //bool upperQ = i / 4 < 3 ? true : false;
     float leftRightFactor = 1;
-    if ((leftQ && slope * RollPitchDeviation[0] > 0)  // operator * is higher than &&
-        || (!leftQ && slope * RollPitchDeviation[0] < 0))
-      leftRightFactor = LEFT_RIGHT_FACTOR * abs(slope);
+    if ((leftQ && balanceSlope[0] * RollPitchDeviation[0] > 0)  // operator * is higher than &&
+        || (!leftQ && balanceSlope[0] * RollPitchDeviation[0] < 0))
+      leftRightFactor = LEFT_RIGHT_FACTOR * abs(balanceSlope[0]);
     rollAdj = (i == 1 || i > 7 ? fabs(RollPitchDeviation[0]) : RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
     //    rollAdj = fabs(RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
 
@@ -285,12 +301,54 @@ float adjust(byte i) {
 #ifdef POSTURE_WALKING_FACTOR
                         (i > 3 ? POSTURE_WALKING_FACTOR : 1) *
 #endif
-                          rollAdj
-                        - slope * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
+                          balanceSlope[0] * rollAdj
+                        - balanceSlope[1] * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
 #ifdef ADJUSTMENT_DAMPER
   currentAdjust[i] += max(min(idealAdjust - currentAdjust[i], float(ADJUSTMENT_DAMPER)), -float(ADJUSTMENT_DAMPER));
 #else
   currentAdjust[i] = idealAdjust;
 #endif
+  currentAdjust[i] = max(float(-45), min(float(45), currentAdjust[i]));
   return currentAdjust[i];
+}
+
+int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
+  PTT("Try ", start);
+  PTT(" ~ ", end);
+  PTTL(" by ", step);
+  int angLag0 = *xyzReal[0];
+  int angLag1 = *xyzReal[1];
+  calibratedPWM(2, 20);
+  delay(300);
+  for (int a = start; a < end; a += step) {
+    calibratedPWM(2, -120);
+    for (int i = 0; i < 20; i++) {
+      read_mpu6050();
+      delay(20);
+    }
+    angLag0 = *xyzReal[0];
+    calibratedPWM(2, a);
+    long startTime = millis();
+    long after;
+    // int maxVibration = 0;
+    // int correspondingAng;
+    do {
+      after = millis() - startTime;
+      read_mpu6050();
+      int diff0 = angLag0 - *xyzReal[0];
+      if (diff0) {
+        // if (abs(diff0) > abs(maxVibration)) {
+        //   maxVibration = diff0;
+        //   correspondingAng = a;
+        // }
+        if (abs(diff0) > threshold) {
+          PTHL(a, abs(diff0));
+          return a;
+        }
+        angLag0 = *xyzReal[0];
+      }
+    } while (after <= 200);
+    // PTHL(a, maxVibration);
+  }
+  return end;
 }

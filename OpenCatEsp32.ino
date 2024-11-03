@@ -1,8 +1,9 @@
 // modify the model and board definitions
 //***********************
 #define BITTLE  // Petoi 9 DOF robot dog: 1 on head + 8 on leg
-// #define NYBBLE // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
+// #define NYBBLE  // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 // #define CUB
+
 
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
 #define BiBoard_V0_2
@@ -23,15 +24,8 @@
 #define DOUBLE_INFRARED_DISTANCE  // for double distance sensor
 #define GESTURE                   // for Gesture module
 #define CAMERA                    // for Mu Vision camera
-// You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
-// Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
-// The battery should be turned on to drive the servos.
-//
-// You can use these 3D printed structures to attach the camera module.
-// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/MuIntelligentCamera_mount.stl
-// https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/bone.stl
-// After uploading the code, you may need to press the reset buttons on the module and then the NyBoard.
-// The tracking demo works the best with a yellow tennis ball or some other round objects. Demo: https://www.youtube.com/watch?v=CxGI-MzCGWM
+#define QUICK_DEMO                // for quick demo
+// #define ROBOT_ARM                 // for attaching head clip arm
 #include "src/OpenCat.h"
 
 void setup() {
@@ -62,6 +56,10 @@ void loop() {
     tQueue->popTask();
   } else {
     readSignal();
+#ifdef QUICK_DEMO
+    if (moduleList[moduleIndex] == EXTENSION_QUICK_DEMO)
+      quickDemo();
+#endif
     //  readHuman();
   }
   //  //— generate behavior by fusing all sensors and instruction
@@ -74,3 +72,27 @@ void loop() {
 #endif
   reaction();
 }
+
+#ifdef QUICK_DEMO  // enter XQ in the serial monitor to activate the following section
+int prevReading = 0;
+void quickDemo() {  // this is an example that use the analog input pin ANALOG1 as a touch pad
+  // if the pin is not connected to anything, the reading will be noise
+  int currentReading = analogRead(ANALOG1);
+  if (abs(currentReading - prevReading) > 50)  // if the reading is significantly different from the previous reading
+  {
+    PT("Reading on pin ANALOG1:\t");
+    PTL(currentReading);
+    if (currentReading < 50) {                                        // touch and hold on the A2 pin until the condition is met
+      tQueue->addTask(T_BEEP, "12 4 14 4 16 2");                      // make melody
+      tQueue->addTask(T_INDEXED_SEQUENTIAL_ASC, "0 30 0 -30", 1000);  // move the neck, left shoulder, right shoulder one by one
+    } else if (abs(currentReading - prevReading) < 100) {
+      if (strcmp(lastCmd, "sit"))
+        tQueue->addTask(T_SKILL, "sit", 1000);  // make the robot sit. more tokens are defined in OpenCat.h
+    } else {
+      if (strcmp(lastCmd, "up"))
+        tQueue->addTask(T_SKILL, "up", 1000);  // make the robot stand up. more tokens are defined in OpenCat.h
+    }
+  }
+  prevReading = currentReading;
+}
+#endif

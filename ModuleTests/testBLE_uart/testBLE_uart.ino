@@ -24,24 +24,24 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
-#define CONNECTION_NAME "Bittle"
+#define CONNECTION_NAME "BittleTest"
 #define HOLD_TIME 1000
 #define CONNECTION_ATTEMPT 5
 BLEServer *pServer = NULL;
-BLECharacteristic * pTxCharacteristic;
+BLECharacteristic *pTxCharacteristic;
 bool deviceConnected = false;
 bool oldDeviceConnected = false;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID           "6E400001-B5A3-F393-E0A9-E50E24DCCA9E" // UART service UUID
-#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E" // receive
-#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E" // transmit
+#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
+#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
+#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
 
-char * genBleID(int suffixDigits = 2, char prefix[] = CONNECTION_NAME) {
+char *genBleID(int suffixDigits = 2, const char prefix[] = CONNECTION_NAME) {
   int prelen = strlen(prefix);
-  char * id = new char [prelen + suffixDigits + 1];
+  char *id = new char[prelen + suffixDigits + 1];
   strcpy(id, prefix);
   for (int i = prelen; i < prelen + suffixDigits; i++) {
     int temp = esp_random() % 16;
@@ -53,27 +53,30 @@ char * genBleID(int suffixDigits = 2, char prefix[] = CONNECTION_NAME) {
   return id;
 }
 
-class MyServerCallbacks: public BLEServerCallbacks {
-    void onConnect(BLEServer* pServer) {
-      deviceConnected = true;
-    };
-    void onDisconnect(BLEServer* pServer) {
-      deviceConnected = false;
-    }
+class MyServerCallbacks : public BLEServerCallbacks {
+  void onConnect(BLEServer *pServer) {
+    deviceConnected = true;
+  };
+  void onDisconnect(BLEServer *pServer) {
+    deviceConnected = false;
+  }
 };
 
-class MyCallbacks: public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string rxValue = pCharacteristic->getValue();
-      if (rxValue.length() > 0) {
-        //        Serial.println("*********");
-        //        Serial.print("Received Value: ");
-        for (int i = 0; i < rxValue.length(); i++)
-          Serial.print(rxValue[i]);
-        //        Serial.println();
-        //        Serial.println("*********");
-      }
+class MyCallbacks : public BLECharacteristicCallbacks {
+  void onWrite(BLECharacteristic *pCharacteristic) {
+    String rxValue = pCharacteristic->getValue().c_str();
+    if (rxValue.length() > 0) {
+      Serial.print(rxValue);
+      // Serial.println("*********");
+      // Serial.print("Received Value: ");
+      for (int i = 0; i < rxValue.length(); i++)
+        Serial.print(rxValue[i]);
+      // Serial.println();
+      // Serial.println("*********");
+    } else {
+      Serial.print(rxValue.length());
     }
+  }
 };
 
 void setup() {
@@ -82,8 +85,8 @@ void setup() {
   Serial.println(SERVICE_UUID);
   // Create the BLE Device
   //  std::string suffix = std::string(CONNECTION_NAME) + genBleID(3);
-  BLEDevice::init(genBleID());//using default parameters
-//  BLEDevice::init(genBleID(3, "OpenCat"));
+  BLEDevice::init(genBleID());  //using default parameters
+                                //  BLEDevice::init(genBleID(3, "OpenCat"));
 
   // Create the BLE Server
   pServer = BLEDevice::createServer();
@@ -96,16 +99,14 @@ void setup() {
   pTxCharacteristic =
     pService->createCharacteristic(
       CHARACTERISTIC_UUID_TX,
-      BLECharacteristic::PROPERTY_NOTIFY
-    );
+      BLECharacteristic::PROPERTY_NOTIFY);
 
   pTxCharacteristic->addDescriptor(new BLE2902());
 
-  BLECharacteristic * pRxCharacteristic =
+  BLECharacteristic *pRxCharacteristic =
     pService->createCharacteristic(
       CHARACTERISTIC_UUID_RX,
-      BLECharacteristic::PROPERTY_WRITE
-    );
+      BLECharacteristic::PROPERTY_WRITE);
 
   pRxCharacteristic->setCallbacks(new MyCallbacks());
 
@@ -133,8 +134,8 @@ void loop() {
 
   // disconnecting
   if (!deviceConnected && oldDeviceConnected) {
-    delay(50); // give the bluetooth stack the chance to get things ready
-    pServer->startAdvertising(); // restart advertising
+    delay(50);                    // give the bluetooth stack the chance to get things ready
+    pServer->startAdvertising();  // restart advertising
     Serial.println("Bluetooth disconnected!");
     oldDeviceConnected = deviceConnected;
   }

@@ -62,24 +62,77 @@
    BiBoard  (12)  skip 0~4  skip 0~4    12
    BiBoard2 (16)  skip 0~8  skip 0~8  skip0~4
 */
+
+// #define RevB
+#define RevDE
 #define SERIAL_TIMEOUT 10 // 5 may cut off the message
 #define SERIAL_TIMEOUT_LONG 150
 #ifdef BiBoard_V0_1
 #define BOARD "B01"
 #elif defined BiBoard_V0_2
 #define BOARD "B02"
+#elif defined BiBoard_V1_0
+#define BOARD "B10"
 #else
 #define BOARD "B"
 #endif
-#define DATE "240511" // YYMMDD
+#define DATE "241029" // YYMMDD
 String SoftwareVersion = "";
 
-#define BIRTHMARK 'x' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
+#define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE   // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP   // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
+#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
+
+// Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
+#ifdef NYBBLE
+#define MODEL "Nybble"
+#define HEAD
+#define TAIL
+#define X_LEG
+#define REGULAR P1S // G41
+#define KNEE P1S    // G41
+#include "InstinctNybbleESP.h"
+
+#elif defined BITTLE
+#ifdef ROBOT_ARM
+#define MODEL "Bittle R"
+#else
+#define MODEL "Bittle X"
+#endif
+
+#define HEAD
+#define TAIL // the robot arm's clip is assigned to the tail joint
+#define LL_LEG
+
+#ifndef MINI
+#define REGULAR P1S
+#define KNEE P1S
+#else
+#define REGULAR P50
+#define KNEE P50
+#endif
+#ifdef ROBOT_ARM
+#include "InstinctBittleESP_arm.h"
+#else
+#include "InstinctBittleESP.h"
+#endif
+
+#elif defined CUB
+#define MODEL "DoF16"
+#ifdef BiBoard2
+#define HEAD
+#define TAIL
+#endif
+#define LL_LEG
+#define REGULAR P1S
+#define KNEE P2K
+#include "InstinctCubESP.h"
+// #define MPU_YAW180
+#endif
 
 #if defined BiBoard_V0_1 || defined BiBoard_V0_2
 #define ESP_PWM
@@ -93,6 +146,9 @@ String SoftwareVersion = "";
 #define ANALOG4 39
 #define UART_RX2 16
 #define UART_TX2 17
+#define SERIAL_VOICE Serial2
+#define IMU_MPU6050
+#define I2C_EEPROM_ADDRESS 0x54 // Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -107,29 +163,54 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 2
 // #define IR_PIN 23
-#define VOLTAGE 35
-#define LOW_VOLTAGE 6.8
+
+#define LOW_VOLTAGE 7.0 // for 2S 7.4V power
+#define NO_BATTERY_VOLTAGE 6.8
+#define LOW_VOLTAGE2 5.0 // for 6V power
+#define NO_BATTERY_VOLTAGE2 4.8
+#ifdef RevB
+#define VOLTAGE 35 // rev B
+#define ANALOG2 32 // rev B
+#elif defined RevDE
+#define VOLTAGE 37 // rev D
+#define ANALOG2 35 // rev D
+#endif
 #define ANALOG1 34
-#define ANALOG2 2
 #define ANALOG3 36
 #define ANALOG4 39
+#define BACKTOUCH_PIN 38
 #define VOICE_RX 26
 #define VOICE_TX 25
-#define UART_RX2 10 // mistake in the pcb layout
-#define UART_TX2 9
+#define UART_RX2 9
+#define UART_TX2 10
+#define SERIAL_VOICE Serial1
+#define IMU_MPU6050
+#define IMU_ICM42670
+// #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
+
+// #ifdef ROBOT_ARM
+// const uint8_t PWM_pin[PWM_NUM] = {
+//   // swap the front left knee servo spot for better accessibility of the clip servo's cable
+//   18, 5, 4, 23,    // head or shoulder roll
+//   19, 15, 12, 33,  // shoulder pitch
+//   32, 13, 14, 27   // knee
+// };
+// #else
+#define PWM_LED_PIN 27
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
-    18, 5, 14, 27,  // head or shoulder roll
-    23, 15, 12, 33, // shoulder pitch
-    19, 4, 13, 32   // knee
+    18, 5, 14, 27, // head or shoulder roll
+    23, 4, 12, 33, // shoulder pitch
+    19, 15, 13, 32 // knee
 };
+// #endif
 
 #elif defined BiBoard2
 #define PWM_NUM 16
 #define INTERRUPT_PIN 27 // use pin 2 on Arduino Uno & most boards
 #define BUZZER 14
 #define VOLTAGE 4
-#define LOW_VOLTAGE 6.8
+#define LOW_VOLTAGE 7.0
 #define NEOPIXEL_PIN 15
 #define PWM_LED_PIN 5
 #define IR_PIN 23
@@ -137,6 +218,8 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH1 13
 #define TOUCH2 32
 #define TOUCH3 33
+#define IMU_MPU6050
+#define I2C_EEPROM_ADDRESS 0x54 // Address of i2c eeprom chip
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -167,39 +250,9 @@ enum ServoModel_t
 {
   G41 = 0,
   P1S,
-  P2K
+  P2K,
+  P50
 };
-
-// Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
-#ifdef NYBBLE
-#define MODEL "Nybble"
-#define HEAD
-#define TAIL
-#define X_LEG
-#define REGULAR P1S // G41
-#define KNEE P1S    // G41
-#include "InstinctNybbleESP.h"
-
-#elif defined BITTLE
-#define MODEL "Bittle"
-#define HEAD
-#define LL_LEG
-#define REGULAR P1S
-#define KNEE P1S
-#include "InstinctBittleESP.h"
-
-#elif defined CUB
-#define MODEL "DoF16"
-#ifdef BiBoard2
-#define HEAD
-#define TAIL
-#endif
-#define LL_LEG
-#define REGULAR P1S
-#define KNEE P2K
-#include "InstinctCubESP.h"
-// #define MPU_YAW180
-#endif
 
 ServoModel_t servoModelList[] = {
     REGULAR, REGULAR, REGULAR, REGULAR,
@@ -211,38 +264,43 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'     // abort the calibration values
-#define T_BEEP 'b'      //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+#define T_ABORT 'a'                    // abort the calibration values
+#define T_BEEP 'b'                     //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'  //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+#define T_BEEP_BIN 'B'                 //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c' //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_CALIBRATE 'c'                //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'     //change the eye colors of the RGB ultrasonic sensor \
+#define T_COLOR 'C'                    //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'
-
+#define T_REST 'd'                     //set the robot to rest posture and shut down all the servos \
+                         //"d index" can turn off a single servo
 #define T_SERVO_FEEDBACK 'f'           //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
 #define T_SERVO_FOLLOW 'F'             // make the other legs follow the moved legs
 #define T_GYRO_FINENESS 'g'            // adjust the finess of gyroscope adjustment to accelerate motion
 #define T_GYRO_BALANCE 'G'             // toggle on/off the gyro adjustment
+#define T_HELP_INFO 'h'                // print some help information
 #define T_INDEXED_SIMULTANEOUS_ASC 'i' //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I' // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
 #define T_JOINTS 'j'                   // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
-#define T_SLOPE 'l'                  // inverse the slope of the adjustment function
+#define T_BALANCE_SLOPE 'l'          // change the slope of the balancing adjustment in roll and pitch directions. \
+                                      // default "l 1 1". the numbers allows [-2,-1,0,1,2]
 #define T_LISTED_BIN 'L'             // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
 #define T_INDEXED_SEQUENTIAL_ASC 'm' // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
 #define T_INDEXED_SEQUENTIAL_BIN 'M' // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_NAME 'n'                   // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
-#define T_PAUSE 'p'
+#define T_CPG 'r'   // Oscillator for Central Pattern Generator
+#define T_PAUSE 'p' // pause
+#define T_POWER 'P' // power, print the voltage
 #define T_TASK_QUEUE 'q'
+#define T_ROBOT_ARM 'R'
 #define T_SAVE 's'
 #define T_TILT 't'
 #define T_TEMP 'T' // call the last skill data received from the serial port
@@ -270,9 +328,11 @@ bool newBoard = false;
 #define EXTENSION_DOUBLE_LIGHT 'L'       // connect to ANALOG1, ANALOG2
 #define EXTENSION_DOUBLE_IR_DISTANCE 'D' // connect to ANALOG3, ANALOG4
 #define EXTENSION_PIR 'I'                // connect to ANALOG3
+#define EXTENSION_BACKTOUCH 'B'          // connect to BACKTOUCH_PIN
 #define EXTENSION_ULTRASONIC 'U'         // connect to Grove UART2
 #define EXTENSION_GESTURE 'G'            // connect to Grove I2C
 #define EXTENSION_CAMERA 'C'             // connect to Grove I2C
+#define EXTENSION_QUICK_DEMO 'Q'         // activate the quick demo at the end of OpenCatEsp32.ino
 
 // bool updated[10];
 float degPerRad = 180 / M_PI;
@@ -281,7 +341,10 @@ float radPerDeg = M_PI / 180;
 // control related variables
 #define IDLE_TIME 3000
 long idleTimer = 0;
-#define CHECK_BATTERY_PERIOD 10000 // every 10 seconds. 60 mins -> 3600 seconds
+#define CHECK_BATTERY_PERIOD 1000 // every 1 seconds. 60 mins -> 3600 seconds
+#define BATTERY_WARNING_FREQ 10   // every 10 seconds
+byte batteryWarningCounter = 0;
+float lastVoltage;
 int uptime = -1;
 int frame = 0;
 int tStep = 1;
@@ -300,7 +363,6 @@ int8_t periodGlobal = 0;
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
 int serialTimeout;
-int lastVoltage;
 char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
@@ -332,20 +394,26 @@ int8_t moduleList[] = {
     EXTENSION_DOUBLE_LIGHT,
     EXTENSION_DOUBLE_IR_DISTANCE,
     EXTENSION_PIR,
+    EXTENSION_BACKTOUCH,
     EXTENSION_ULTRASONIC,
     EXTENSION_GESTURE,
     EXTENSION_CAMERA,
+    EXTENSION_QUICK_DEMO,
 };
-String moduleNames[] = {"Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "Ultrasonic", "Gesture", "Camera"};
-bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 0, 0, 0};
+
+String moduleNames[] = {"Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo"};
+bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+bool moduleDemoQ = false;
+byte moduleIndex;
 bool initialBoot = true;
+bool coinFace = true;
 bool safeRest = true;
 bool soundState;
 byte buzzerVolume;
 float amplifierFactor = 100.0; // to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
-int delayMid = 8;
+int delayMid = 5;
 int delayException = 5;
 int delayShort = 3;
 int delayStep = 1;
@@ -358,10 +426,17 @@ int8_t middleShift[] = {0, 15, 0, 0,
                         10, 10, -10, -10,
                         -30, -30, 30, 30};
 #elif defined BITTLE
-int8_t middleShift[] = {0, 15, 0, 0,
+#ifndef MINI
+int8_t middleShift[] = {0, -90, 0, 0,
                         -45, -45, -45, -45,
                         55, 55, -55, -55,
                         -55, -55, -55, -55};
+#else
+int8_t middleShift[] = {0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        -15, -15, -15, -15};
+#endif
 
 #else // CUB
 int8_t middleShift[] = {0, 15, 0, 0,
@@ -395,33 +470,39 @@ int angleLimit[][2] = {
     {-66, 100},
 };
 #else
-int8_t rotationDirection[] = {1, -1, 1, 1,
+int8_t rotationDirection[] = {1, -1, -1, 1,
                               1, -1, 1, -1,
                               1, -1, -1, 1,
                               -1, 1, 1, -1};
 #ifdef BITTLE
 int angleLimit[][2] = {
     {-120, 120},
+#ifdef ROBOT_ARM
+    {-10, 180},
+#else
     {-85, 85},
+#endif
     {-120, 120},
     {-120, 120},
+
     {-90, 60},
     {-90, 60},
     {-90, 90},
     {-90, 90},
+
     {-200, 80},
     {-200, 80},
     {-80, 200},
     {-80, 200},
     {-80, 200},
     {-80, 200},
-    {-70, 200},
+    {-80, 200},
     {-80, 200},
 };
-#else
+#else // Nybble
 int angleLimit[][2] = {
     {-120, 120},
-    {-85, 50},
+    {-75, 35},
     {-120, 120},
     {-120, 120},
     {-90, 60},
@@ -434,27 +515,27 @@ int angleLimit[][2] = {
     {-80, 200},
     {-80, 80},
     {-80, 80},
-    {-70, 80},
+    {-80, 80},
     {-80, 80},
 };
 #endif
 #endif
 
 #ifdef X_LEG
-int currentAng[DOF] = {-30, -80, -45, 0,
+int currentAng[DOF] = {0, 0, 0, 0,
                        0, 0, 0, 0,
                        75, 75, -75, -75,
                        -55, -55, 55, 55};
-int previousAng[DOF] = {-30, -80, -45, 0,
+int previousAng[DOF] = {0, 0, 0, 0,
                         0, 0, 0, 0,
                         75, 75, -75, -75,
                         -55, -55, 55, 55};
 #else
-int currentAng[DOF] = {-30, -80, -45, 0,
+int currentAng[DOF] = {0, 0, 0, 0,
                        0, 0, 0, 0,
                        75, 75, 75, 75,
                        -55, -55, -55, -55};
-int previousAng[DOF] = {-30, -80, -45, 0,
+int previousAng[DOF] = {0, 0, 0, 0,
                         0, 0, 0, 0,
                         75, 75, 75, 75,
                         -55, -55, -55, -55};
@@ -467,23 +548,27 @@ int8_t servoCalib[DOF] = {0, 0, 0, 0,
                           0, 0, 0, 0,
                           0, 0, 0, 0};
 
-int16_t imuOffset[9] = {0, 0, 0,
+int16_t mpuOffset[9] = {0, 0, 0,
                         0, 0, 0,
                         0, 0, 0};
 
 float expectedRollPitch[2];
 float RollPitchDeviation[2];
 float currentAdjust[DOF] = {};
-int slope = 1;
+int balanceSlope[2] = {1, 1}; // roll, pitch
 
 #include "tools.h"
 #include "QList/QList.h"
 #include "taskQueue.h"
 
 #include "sound.h"
-#include "I2cEEPROM.h"
+#include <Wire.h>
+#include "configConstants.h"
 #ifdef BT_BLE
 #include "bleUart.h"
+#endif
+#ifdef BT_CLIENT
+#include "bleClient.h"
 #endif
 #ifdef GYRO_PIN
 #include "imu.h"
@@ -491,10 +576,10 @@ int slope = 1;
 #ifdef IR_PIN
 #include "infrared.h"
 #endif
+#include "io.h"
 #include "espServo.h"
 #include "motion.h"
 #include "randomMind.h"
-#include "io.h"
 
 #include "skill.h"
 #include "moduleManager.h"
@@ -507,11 +592,14 @@ int slope = 1;
 void initRobot()
 {
   beep(20);
-#ifdef BiBoard_V1_0
-  Wire.begin(22, 21);
-#else
-  Wire.begin();
+#ifdef VOLTAGE
+  lowBattery();
 #endif
+  // #ifdef BiBoard_V1_0
+  //   Wire.begin(22, 21);
+  // #else
+  Wire.begin();
+  // #endif
   SoftwareVersion = SoftwareVersion + BOARD + "_" + DATE;
   PTL('k');
   PTLF("Flush the serial buffer...");
@@ -519,18 +607,28 @@ void initRobot()
   printToAllPorts(MODEL);
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
+  i2cDetect();
+#ifdef I2C_EEPROM_ADDRESS
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
+#else
+  config.begin("config", false); // false: read/write mode. true: read-only mode.
+  soundState = config.getBool("bootSndState");
+  buzzerVolume = config.getChar("buzzerVolume");
+#endif
+  configSetup();
   PTF("Buzzer volume: ");
   PT(buzzerVolume);
   PTL("/10");
-  i2cDetect();
-  i2cEepromSetup();
+
 #ifdef GYRO_PIN
-  imuSetup();
+  mpu6050Setup();
 #endif
 #ifdef BT_BLE
   bleSetup();
+#endif
+#ifdef BT_CLIENT
+  bleClientSetup();
 #endif
 #ifdef BT_SSP
   blueSspSetup();
@@ -544,47 +642,37 @@ void initRobot()
   {
     randomBase += choiceWeight[i];
   }
-
 #ifdef NEOPIXEL_PIN
   ledSetup();
 #endif
 #ifdef PWM_LED_PIN
   pinMode(PWM_LED_PIN, OUTPUT);
 #endif
-#ifdef VOLTAGE
-  while (lowBattery())
-    ;
-#endif
+  // #ifdef VOLTAGE
+  //   do {
+  //     PTL("Check battery. You can skip by entering any characters in the Serial Monitor.");
+  //     if (Serial.available()) {
+  //       Serial.read();  // allow breaking the loop with any serial input
+  //       break;
+  //     }
+  //   } while (lowBattery());  //if the battery is low
+  // #endif
 
 #ifdef IR_PIN
   irrecv.enableIRIn();
 #endif
 
   QA();
-  i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK); // finish the test and mark the board as initialized
 
   tQueue = new TaskQueue();
-
-  //  if (exceptions) {// Make the robot enter joint calibration state (different from initialization) if it is upside down.
-  //    strcpy(newCmd, "calib");
-  //    exceptions = 0;
-  //  }
-  //  else {// Otherwise start up normally
-  //    strcpy(newCmd, "rest");
-  //    token = 'd';
-  //    newCmdIdx = 6;
-  //  }
-  //  loadBySkillName(newCmd);
-  //
-
   loadBySkillName("rest"); // must have to avoid memory crash. need to check why.
                            // allCalibratedPWM(currentAng); alone will lead to crash
   delay(500);
 
   initModuleManager();
 #ifdef GYRO_PIN
-  // read_IMU();  //ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  if (!moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) && !moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) && !moduleActivatedQfunction(EXTENSION_GESTURE) && !moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) && !moduleActivatedQfunction(EXTENSION_CAMERA) && !moduleActivatedQfunction(EXTENSION_ULTRASONIC))
+  read_mpu6050(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  if (!moduleDemoQ)
     tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");
