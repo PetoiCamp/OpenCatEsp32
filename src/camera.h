@@ -1,8 +1,8 @@
 // #include <Wire.h>
 
-#define MU_CAMERA
+// #define MU_CAMERA
 // #define SENTRY1_CAMERA
-// #define GROVE_VISION_AI_V2
+#define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
 #ifdef BiBoard_V1_0
@@ -96,10 +96,10 @@ int8_t initPars[] = {
     60, 30, 30, 70,
     40, 40, 60, 40, -30
 #elif defined GROVE_VISION_AI_V2
-    20, 20, 2, 12, 12,
-    int8_t(58 * adjustmentFactor), int8_t(76 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(76 * adjustmentFactor),
-    18, 26, 8, 26,
-    45, 50, 60, 40, -30
+    20, 20, 6, 10, 12,
+    int8_t(60 * adjustmentFactor), int8_t(75 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(75 * adjustmentFactor),
+    20, 25, 10, 25,
+    0, 30, 60, 40, -10
 #endif
 };
 #endif
@@ -161,7 +161,7 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1)
     PT('\t');
     PT(height);
   }
-  PTL();
+  PT('\t');
 }
 
 // #define WALK  //let the robot move its body to follow people rather than sitting at the original position \
@@ -231,19 +231,19 @@ void cameraBehavior(int xCoord, int yCoord, int width)
           {(int8_t)-backDownX, (int8_t)-backDownY},
       };
       transformSpeed = tranSpeed;
-      for (int j = 0; j < DOF; j++)
+      for (int i = 0; i < DOF; i++)
       {
-        int i = j;
         float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
-        newCmd[j] = min(125, max(-125, int(adj)));
-        // if (i > 13) {
-        // PT(i);
-        // PT('\t');
-        // PT(adj);
-        // PT('\t');
-        // PT(int8_t(newCmd[j]));
-        // PTF(",\t");
-        // }
+        newCmd[i] = min(125, max(-125, int(adj)));
+        if (i == 0)
+        {
+          PT(i);
+          PT('\t');
+          PT(adj);
+          PT('\t');
+          PT(int8_t(newCmd[i]));
+          PTF(",\t");
+        }
       }
       // PTL();
       cmdLen = DOF;
@@ -490,23 +490,24 @@ void read_GroveVision()
       height = AI.boxes()[0].h; // read height value
 
       cameraBehavior(xCoord, yCoord, width);
-      // FPS();
-      // for (int i = 0; i < AI.boxes().size(); i++) {
-      //   Serial.print("Box[");
-      //   Serial.print(i);
-      //   Serial.print("] target=");
-      //   Serial.print(AI.boxes()[i].target);
-      //   Serial.print(", score=");
-      //   Serial.print(AI.boxes()[i].score);
-      //   Serial.print(", x=");
-      //   Serial.print(AI.boxes()[i].x);
-      //   Serial.print(", y=");
-      //   Serial.print(AI.boxes()[i].y);
-      //   Serial.print(", w=");
-      //   Serial.print(AI.boxes()[i].w);
-      //   Serial.print(", h=");
-      //   Serial.println(AI.boxes()[i].h);
-      // }
+      FPS();
+      for (int i = 0; i < AI.boxes().size(); i++)
+      {
+        Serial.print("Box[");
+        Serial.print(i);
+        Serial.print("] target=");
+        Serial.print(AI.boxes()[i].target);
+        Serial.print(", score=");
+        Serial.print(AI.boxes()[i].score);
+        Serial.print(", x=");
+        Serial.print(AI.boxes()[i].x);
+        Serial.print(", y=");
+        Serial.print(AI.boxes()[i].y);
+        Serial.print(", w=");
+        Serial.print(AI.boxes()[i].w);
+        Serial.print(", h=");
+        Serial.println(AI.boxes()[i].h);
+      }
     }
   }
 }
