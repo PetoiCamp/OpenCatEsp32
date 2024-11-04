@@ -265,10 +265,10 @@ void reaction() {
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
-      reAttachAllServos();
-      measureServoPin = -1;
       for (byte i = 0; i < DOF; i++)
         movedJoint[i] = 0;
+      reAttachAllServos();
+      measureServoPin = -1;
     }
 #endif
 
@@ -532,15 +532,31 @@ void reaction() {
                 if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
+                if (actualServoIndex == -1) {  //auto calibrate all body joints using servos' angle feedback
+                  strcpy(newCmd, "rest");
+                  loadBySkillName(newCmd);
+                  shutServos();
+                  PTLF("Push the robot tightly to the ground. Enter any character when ready.");
+                  while (!Serial.available())  //wait for user input
+                    ;
+                  while (Serial.available())
+                    Serial.read();
+                  autoCalibrate();
+                  saveCalib(servoCalib);
+                  tQueue->addTask(T_REST, "");
+                  tQueue->addTask(T_CALIBRATE, "");
+                  measureServoPin = 16;  // reattach the servos in the next reaction loop
+                  break;
+                }
 #ifdef ROBOT_ARM
-                if (actualServoIndex == -2)  // auto calibrate the robot arm's pincer
+                else if (actualServoIndex == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
                   calibratedPWM(1, 90);
                   delay(500);
-                  int criticalAngle = calibrateByVibration(-25, 25, 4);
-                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  int criticalAngle = calibratePincerByVibration(-25, 25, 4);
+                  criticalAngle = calibratePincerByVibration(criticalAngle - 4, criticalAngle + 4, 1);
                   servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
 #ifdef I2C_EEPROM_ADDRESS
@@ -552,7 +568,7 @@ void reaction() {
                   loadBySkillName("calib");
                 } else
 #endif
-                {
+                  if (actualServoIndex >= 0) {
 #ifdef ESP_PWM
                   servo[actualServoIndex].write(duty);
 #else

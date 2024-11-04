@@ -312,7 +312,7 @@ float adjust(byte i) {
   return currentAdjust[i];
 }
 
-int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
+int calibratePincerByVibration(int start, int end, int step, int threshold = 10000) {
   PTT("Try ", start);
   PTT(" ~ ", end);
   PTTL(" by ", step);
@@ -351,4 +351,22 @@ int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
     // PTHL(a, maxVibration);
   }
   return end;
+}
+
+int calibrationReference[] = {
+#ifdef NYBBLE
+  0, 42, 0, 0, 0, 0, 0, 0,
+  72, 72, -68, -68, -63, -63, 63, 63
+#else  //Bittle or Bittle R
+  0, 47, 0, 0, 0, 0, 0, 0,
+  70, 70, 70, 70, -63, -63, -63, -63
+#endif
+};
+void autoCalibrate() {
+  for (byte t = 0; t < 3; t++)
+    servoFeedback();
+  for (byte i = 0; i < DOF; i++) {
+    int diff = currentAng[i] - calibrationReference[i];
+    servoCalib[i] += diff;
+  }
 }
