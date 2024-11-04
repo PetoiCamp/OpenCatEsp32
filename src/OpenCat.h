@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241101"  // YYMMDD
+#define DATE "241104"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -575,13 +575,13 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #ifdef BT_CLIENT
 #include "bleClient.h"
 #endif
+#include "io.h"
 #ifdef GYRO_PIN
 #include "imu.h"
 #endif
 #ifdef IR_PIN
 #include "infrared.h"
 #endif
-#include "io.h"
 #include "espServo.h"
 #include "motion.h"
 #include "randomMind.h"
