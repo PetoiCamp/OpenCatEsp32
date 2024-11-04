@@ -6,8 +6,8 @@
 
 
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
-#define BiBoard_V0_2
-// #define BiBoard_V1_0
+// #define BiBoard_V0_2
+#define BiBoard_V1_0
 // #define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
@@ -49,7 +49,7 @@ void loop() {
   //
   //  }
   //  //— read environment sensors (low level)
-  readEnvironment();
+  readEnvironment();  //update the gyro data
   //  //— special behaviors based on sensor events
   dealWithExceptions();  // low battery, fall over, lifted, etc.
   if (!tQueue->cleared()) {

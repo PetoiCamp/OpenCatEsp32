@@ -530,3 +530,33 @@ void i2cDetect()
   else
     Serial.println("- done");
 }
+
+void read_sound() {
+}
+
+void read_GPS() {
+}
+#ifdef TOUCH0
+void read_touch() {
+  byte touchPin[] = {
+    TOUCH0,
+    TOUCH1,
+    TOUCH2,
+    TOUCH3,
+  };
+  for (byte t = 0; t < 4; t++) {
+    int touchValue = touchRead(touchPin[t]);  //do something with the touch?
+    //    PT(touchValue);
+    //    PT('\t');
+  }
+  //  PTL();
+}
+#endif
+void readEnvironment() {
+#ifdef GYRO_PIN
+  if (gyroUpdateQ && !(frame % imuSkip))
+    imuUpdated = read_mpu6050();
+#endif
+  read_sound();
+  read_GPS();
+}

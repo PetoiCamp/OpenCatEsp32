@@ -3,21 +3,21 @@ bool pincerClosedQ = true;
 #endif
 
 void calibratedPWM(byte i, float angle, float speedRatio = 0) {
-  if (PWM_NUM == 12 && WALKING_DOF == 8 && i > 3 && i < 8)  //there's no such joint in this configuration
+  if (PWM_NUM == 12 && WALKING_DOF == 8 && i > 3 && i < 8)  // there's no such joint in this configuration
     return;
   int actualServoIndex = (PWM_NUM == 12 && i > 3) ? i - 4 : i;
   angle = max(float(angleLimit[i][0]), min(float(angleLimit[i][1]), angle));
   int duty0 = calibratedZeroPosition[i] + currentAng[i] * rotationDirection[i];
   previousAng[i] = currentAng[i];
   currentAng[i] = angle;
-// #ifdef ROBOT_ARM
-//   if (actualServoIndex == 2 && currentAng[2] == 0 && pincerClosedQ)
-//     return;
-// #endif
+  // #ifdef ROBOT_ARM
+  //   if (actualServoIndex == 2 && currentAng[2] == 0 && pincerClosedQ)
+  //     return;
+  // #endif
   int duty = calibratedZeroPosition[i] + angle * rotationDirection[i];
   int steps = speedRatio > 0 ? int(round(abs(duty - duty0) / 1.0 /*degreeStep*/ / speedRatio)) : 0;
-  //if default speed is 0, no interpolation will be used
-  //otherwise the speed ratio is compared to 1 degree per second.
+  // if default speed is 0, no interpolation will be used
+  // otherwise the speed ratio is compared to 1 degree per second.
 
   for (int s = 0; s <= steps; s++) {
     int degree = duty + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * (duty0 - duty));
@@ -33,12 +33,12 @@ void calibratedPWM(byte i, float angle, float speedRatio = 0) {
     }
     //    delayMicroseconds(1);
   }
-// #ifdef ROBOT_ARM
-//   if (actualServoIndex == 2 && currentAng[2] == 0 && !pincerClosedQ) {
-//     shutServos(2);  //release the power on the pincer to avoid stuck
-//     pincerClosedQ = true;
-//   }
-// #endif
+  // #ifdef ROBOT_ARM
+  //   if (actualServoIndex == 2 && currentAng[2] == 0 && !pincerClosedQ) {
+  //     shutServos(2);  //release the power on the pincer to avoid stuck
+  //     pincerClosedQ = true;
+  //   }
+  // #endif
 }
 
 void allCalibratedPWM(int *dutyAng, byte offset = 0) {
@@ -113,7 +113,7 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
 
     for (int i = 0; i < steps; i++) {
       for (int j = 0; j < DOF - offset; j++) {
-        //interpolation
+        // interpolation
         float A = (float)(svel[j] + evel[j]) / pow(steps, 2) - 2 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 3);
         float B = (float)(-2 * svel[j] - evel[j]) / steps + 3 * (target_[j][j] * angleDataRatio - cAng_cp[j + offset]) / pow(steps, 2);
         calibratedPWM(j + offset, A * pow(i, 3) + B * pow(i, 2) + svel[j] * i + cAng_cp[j + offset]);
@@ -164,12 +164,16 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
       diff[i - offset] = currentAng[i] - target[i - offset] * angleDataRatio;
       maxDiff = max(maxDiff, abs(diff[i - offset]));
     }
-    int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;  //default speed is 1 degree per step
+    int steps = speedRatio > 0 ? int(round(maxDiff / 1.0 /*degreeStep*/ / speedRatio)) : 0;  // default speed is 1 degree per step
     // if (maxDiff == 0) {
     //   delete[] diff;
     //   return;
     // }
     for (int s = 0; s <= steps; s++) {
+      if (gyroUpdateQ && printGyroQ) {
+        read_mpu6050();
+        print6Axis();
+      }
       for (byte i = offset; i < DOF; i++) {
 #ifdef ESP_PWM
         if (movedJoint[i])  // don't drive the servo if it's being moved by hand in the follow function.
@@ -223,12 +227,10 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
 //             if (WALKING_DOF == 12 && j < 4)
 //             continue;
 
-
 //         ///////////////interpolation///////////////
 //         float A = (float)(svel[j - offset] + evel[j - offset])  / pow(steps, 2) - 2 * (target[j - offset] * angleDataRatio - cAng_cp[j]) / pow(steps, 3);
 //         float B = (float)(-2 * svel[j - offset]  - evel[j - offset] ) / steps + 3 * (target[j - offset] * angleDataRatio - cAng_cp[j]) / pow(steps, 2);
 //         float dutyAng = A * pow(s, 3) + B * pow(s, 2) + svel[j - offset]  * s + cAng_cp[j];
-
 
 //         calibratedPWM (j, dutyAng);
 //         delayMicroseconds(500);
@@ -243,33 +245,32 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
 //   }
 // }
 
-
 // balancing parameters
-#define ROLL_LEVEL_TOLERANCE 5  //the body is still considered as level, no angle adjustment
+#define ROLL_LEVEL_TOLERANCE 5  // the body is still considered as level, no angle adjustment
 #define PITCH_LEVEL_TOLERANCE 3
 #define NUM_ADAPT_PARAM 2                                                   // number of parameters for adaption
-float levelTolerance[2] = { ROLL_LEVEL_TOLERANCE, PITCH_LEVEL_TOLERANCE };  //the body is still considered as level, no angle adjustment
+float levelTolerance[2] = { ROLL_LEVEL_TOLERANCE, PITCH_LEVEL_TOLERANCE };  // the body is still considered as level, no angle adjustment
 
 #define LARGE_ROLL 90
 #define LARGE_PITCH 75
 
-//the following coefficients will be divided by radPerDeg in the adjust() function. so (float) 0.1 can be saved as (int8_t) 1
-//this trick allows using int8_t array insead of float array, saving 96 bytes and allows storage on EEPROM
+// the following coefficients will be divided by radPerDeg in the adjust() function. so (float) 0.1 can be saved as (int8_t) 1
+// this trick allows using int8_t array insead of float array, saving 96 bytes and allows storage on EEPROM
 #define panF 60
 #define tiltF 60
-#define sRF 50            //shoulder roll factor
-#define sPF 12            //shoulder pitch factor
-#define uRF 50            //upper leg roll factor
-#define uPF 50            //upper leg pitch factor
-#define lRF (-1.5 * uRF)  //lower leg roll factor
-#define lPF (-1.5 * uPF)  //lower leg pitch factor
+#define sRF 50            // shoulder roll factor
+#define sPF 12            // shoulder pitch factor
+#define uRF 50            // upper leg roll factor
+#define uPF 50            // upper leg pitch factor
+#define lRF (-1.5 * uRF)  // lower leg roll factor
+#define lPF (-1.5 * uPF)  // lower leg pitch factor
 #define LEFT_RIGHT_FACTOR 2
 #define FRONT_BACK_FACTOR 1.2
 #define POSTURE_WALKING_FACTOR 0.5
 #define ADJUSTMENT_DAMPER 5
-//#ifdef POSTURE_WALKING_FACTOR
-//float postureOrWalkingFactor = 1;
-//#endif
+// #ifdef POSTURE_WALKING_FACTOR
+// float postureOrWalkingFactor = 1;
+// #endif
 
 #ifdef X_LEG  // >< leg
 float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
@@ -283,17 +284,16 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 
 float adjust(byte i) {
   float rollAdj, pitchAdj, adj;
-  if (i == 1 || i > 3) {  //check idx = 1
+  if (i == 1 || i > 3) {  // check idx = 1
     bool leftQ = (i - 1) % 4 > 1 ? true : false;
-    //bool frontQ = i % 4 < 2 ? true : false;
-    //bool upperQ = i / 4 < 3 ? true : false;
+    // bool frontQ = i % 4 < 2 ? true : false;
+    // bool upperQ = i / 4 < 3 ? true : false;
     float leftRightFactor = 1;
     if ((leftQ && balanceSlope[0] * RollPitchDeviation[0] > 0)  // operator * is higher than &&
         || (!leftQ && balanceSlope[0] * RollPitchDeviation[0] < 0))
       leftRightFactor = LEFT_RIGHT_FACTOR * abs(balanceSlope[0]);
     rollAdj = (i == 1 || i > 7 ? fabs(RollPitchDeviation[0]) : RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
     //    rollAdj = fabs(RollPitchDeviation[0]) * adaptiveParameterArray[i][0] * leftRightFactor;
-
   } else
     rollAdj = RollPitchDeviation[0] * adaptiveParameterArray[i][0];
 

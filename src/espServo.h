@@ -194,7 +194,7 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
   pinMode(PWM_pin[s], INPUT);
   float mean = 0;
   int n = nPulse;
-  for (byte i = 0; i < nPulse; i++) {  // 测三次求平均值
+  for (byte i = 0; i < nPulse; i++) {  // measure three times to calculate the mean
     int temp = measurePulseWidth(PWM_pin[s]);
     if (temp < 400) {  //there can be noises to return a fake pulsewidth. it's usually smaller than the shortest possible signal (500ms)
       n--;

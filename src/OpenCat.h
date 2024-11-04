@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241029" // YYMMDD
+#define DATE "241104" // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -264,23 +264,29 @@ bool newBoard = false;
 
 #include <math.h>
 // token list
-#define T_ABORT 'a'                    // abort the calibration values
-#define T_BEEP 'b'                     //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+#define T_ABORT 'a'             // abort the calibration values
+#define T_BEEP 'b'              //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'                 //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+#define T_BEEP_BIN 'B'          //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c'                //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_CALIBRATE 'c'         //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'                    //change the eye colors of the RGB ultrasonic sensor \
+#define T_COLOR 'C'             //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'                     //set the robot to rest posture and shut down all the servos \
+#define T_REST 'd'              //set the robot to rest posture and shut down all the servos \
                          //"d index" can turn off a single servo
-#define T_SERVO_FEEDBACK 'f'           //return the servo's position info if the chip supports feedback. \
+#define T_SERVO_FEEDBACK 'f'    //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
-#define T_SERVO_FOLLOW 'F'             // make the other legs follow the moved legs
-#define T_GYRO_FINENESS 'g'            // adjust the finess of gyroscope adjustment to accelerate motion
-#define T_GYRO_BALANCE 'G'             // toggle on/off the gyro adjustment
+#define T_SERVO_FOLLOW 'F'      // make the other legs follow the moved legs
+#define T_GYRO 'g'              // gyro-related commands
+#define T_GYRO_FINENESS 'F'     // increase the frequency of gyroscope sampling
+#define T_GYRO_FINENESS_OFF 'f' // reduce the frequency of gyroscope sampling to accelerate motion
+#define T_GYRO_BALANCE 'B'      // turn on the gyro balancing
+#define T_GYRO_BALANCE_OFF 'b'  // turn off the gyro balancing
+#define T_GYRO_PRINT 'P'        // always print gyro data
+#define T_GYRO_PRINT_OFF 'p'    // print gyro data once then stop
+
 #define T_HELP_INFO 'h'                // print some help information
 #define T_INDEXED_SIMULTANEOUS_ASC 'i' //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
@@ -305,9 +311,7 @@ bool newBoard = false;
 #define T_TILT 't'
 #define T_TEMP 'T' // call the last skill data received from the serial port
 #define T_MEOW 'u'
-#define T_PRINT_GYRO 'v'           // print Gyro data once
-#define T_VERBOSELY_PRINT_GYRO 'V' // toggle verbosely print Gyro data
-#define T_SERVO_MICROSECOND 'w'    // PWM width modulation
+#define T_SERVO_MICROSECOND 'w' // PWM width modulation
 #define T_XLEG 'x'
 #define T_RANDOM_MIND 'z' // toggle random behaviors
 
@@ -369,9 +373,10 @@ long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
 bool lowBatteryQ = false;
-bool fineAdjust = true;
+bool gyroUpdateQ = true;
+bool fineAdjustQ = true;
 bool gyroBalanceQ = true;
-bool printGyro = false;
+bool printGyroQ = false;
 bool autoSwitch = false;
 bool walkingQ = false;
 bool manualHeadQ = false;
@@ -570,13 +575,13 @@ int balanceSlope[2] = {1, 1}; // roll, pitch
 #ifdef BT_CLIENT
 #include "bleClient.h"
 #endif
+#include "io.h"
 #ifdef GYRO_PIN
 #include "imu.h"
 #endif
 #ifdef IR_PIN
 #include "infrared.h"
 #endif
-#include "io.h"
 #include "espServo.h"
 #include "motion.h"
 #include "randomMind.h"
