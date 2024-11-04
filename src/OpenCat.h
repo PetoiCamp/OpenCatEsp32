@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241104" // YYMMDD
+#define DATE "241105" // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -301,7 +301,8 @@ bool newBoard = false;
 #define T_INDEXED_SEQUENTIAL_BIN 'M' // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_NAME 'n'                   // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-#define T_MELODY 'o'
+// #define T_MELODY 'o' 
+#define T_SIGNAL_GEN 'o'
 #define T_CPG 'r'   // Oscillator for Central Pattern Generator
 #define T_PAUSE 'p' // pause
 #define T_POWER 'P' // power, print the voltage

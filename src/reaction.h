@@ -400,11 +400,11 @@ void reaction() {
           }
           break;
         }
-      case T_MELODY:
-        {
-          playMelody(melody1, sizeof(melody1) / 2);
-          break;
-        }
+        // case T_MELODY:
+        //   {
+        //     playMelody(melody1, sizeof(melody1) / 2);
+        //     break;
+        //   }
 #ifdef ULTRASONIC
       case T_COLOR:
         {
@@ -826,6 +826,23 @@ void reaction() {
           }
           break;
         }
+      case T_SIGNAL_GEN://resolution, speed, jointIdx, midpoint, amp, freq,phase
+        {
+          char *pch = strtok(newCmd, " ,");
+          int inLen = 0;
+          int8_t pars[60];  // allows 12 joints 5*12 = 60
+          while (pch != NULL) {
+            pars[inLen++] = atoi(pch);  //@@@ cast
+            pch = strtok(NULL, " ,\t");
+          }
+          // for (int i = 0; i < inLen; i++)
+          //   PTT(pars[i], ' ');
+          // PTL();
+          int8_t resolution = pars[0];
+          int8_t speed = pars[1];
+          signalGenerator(resolution, speed, pars + 2, inLen, 1);
+          break;
+        }
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
@@ -878,8 +895,9 @@ void reaction() {
           tQueue->createTask();  // use 'q' to start the sequence.
                                  // add subToken followed by the subCommand
                                  // use ':' to add the delay time (mandatory)
-                                 // add '~' to end the sub command
-                                 // example: qk sit:1000~m 8 0 8 -30 8 0:500~
+                                 // add '>' to end the sub command
+                                 // example: qk sit:1000>m 8 0 8 -30 8 0:500>
+                                 // Nybble wash face: qksit:100>o 1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10 10 4 0, 15 10 0 4 0:100>
           break;
         }
       default:
