@@ -180,9 +180,10 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     //   return;
     // }
     for (int s = 0; s <= steps; s++) {
-      if (gyroUpdateQ && printGyroQ) {
+      if (gyroUpdateQ) { 
         read_mpu6050();
-        print6Axis();
+        if (printGyroQ)
+          print6Axis();
       }
       for (byte i = offset; i < DOF; i++) {
 #ifdef ESP_PWM

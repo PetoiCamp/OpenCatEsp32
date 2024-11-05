@@ -309,7 +309,7 @@ bool read_mpu6050() {
     }
     if (printGyroQ)
       print6Axis();
-    // exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+    // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 
     // Acceleration Real
     //      ^ head
@@ -319,21 +319,21 @@ bool read_mpu6050() {
     //        |
     //        | x-
     // if (AWZ < -8500 && AWZ > -8600)
-    //   exceptions = -1;  //dropping
+    //   imuException = -1;  //dropping
     // else
-    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  exceptions = aaReal.z < 0;
-      exceptions = -2;                 // flipped
+    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
+      imuException = -2;                 // flipped
 #ifndef ROBOT_ARM
     else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
-      exceptions = -3;
+      imuException = -3;
     else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
-      exceptions = -4;
+      imuException = -4;
 #endif
     // else if (  //keepDirectionQ &&
     //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-    //   exceptions = -5;
+    //   imuException = -5;
     else
-      exceptions = 0;
+      imuException = 0;
     // however, its change is very slow.
     for (byte m = 0; m < 3; m++) {
       previous_xyzReal[m] = *xyzReal[m];
@@ -486,7 +486,7 @@ void mpu6050Setup() {
   //   print6Axis();
   //   delay(2);
   // }
-  exceptions = aaReal.z < 0;
+  imuException = aaReal.z < 0;
   previous_ypr[0] = ypr[0];
 }
 

@@ -1,7 +1,7 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
-  if (gyroBalanceQ && exceptions) {  // the gyro reaction switch can be toggled on/off by the 'g' token
-    switch (exceptions) {
+  if (gyroBalanceQ && imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
+    switch (imuException) {
       case -1:
         {
           PTL("EXCEPTION 1");
@@ -128,7 +128,7 @@ void dealWithExceptions() {
         }
     }
 
-    // if (exceptions != -4)
+    // if (imuException != -4)
     print6Axis();
     read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
 
@@ -323,15 +323,16 @@ void reaction() {
                 else if (toupper(newCmd[i]) == T_GYRO_PRINT) {
                   printGyroQ = newCmd[i] == T_GYRO_PRINT;
                   print6Axis();
+                } else if (newCmd[i] == '?') {
+                  PTF("Gyro state:");
+                  PTT(" Balance-", gyroBalanceQ);
+                  PTT(" Print-", printGyroQ);
+                  PTTL(" Frequency-", fineAdjustQ);
                 }
                 i++;
               }
               imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
               runDelay = fineAdjustQ ? delayMid : delayShort;
-              PTF("Gyro state:");
-              PTT(" Balance-", gyroBalanceQ);
-              PTT(" Print-", printGyroQ);
-              PTTL(" Frequency-", fineAdjustQ);
             }
           }
 #endif
@@ -900,10 +901,10 @@ void reaction() {
     }
 
     if (token == T_SKILL && newCmd[0] != '\0') {
-      if (skill->period > 0)
-        strcpy(lastCmd, newCmd);
-      else
-        strcpy(lastCmd, "up");
+      // if (skill->period > 0)
+      strcpy(lastCmd, newCmd);
+      // else
+      //   strcpy(lastCmd, "up");
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
@@ -949,7 +950,7 @@ void reaction() {
         currentAdjust[i] = 0;
       printToAllPorts(token);  // behavior can confirm completion by sending the token back
     }
-    // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
+    // if (imuException && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')
     //     loadBySkillName(lastCmd);
 

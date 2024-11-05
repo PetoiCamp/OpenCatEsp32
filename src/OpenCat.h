@@ -301,7 +301,7 @@ bool newBoard = false;
 #define T_INDEXED_SEQUENTIAL_BIN 'M' // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_NAME 'n'                   // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-// #define T_MELODY 'o' 
+// #define T_MELODY 'o'
 #define T_SIGNAL_GEN 'o'
 #define T_CPG 'r'   // Oscillator for Central Pattern Generator
 #define T_PAUSE 'p' // pause
@@ -389,7 +389,7 @@ bool manualEyeColorQ = false;
 int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
-int exceptions = 0;
+int8_t imuException = 0;
 byte transformSpeed = 2;
 float protectiveShift; // reduce the wearing of the potentiometer
 
@@ -679,7 +679,7 @@ void initRobot()
 #ifdef GYRO_PIN
   read_mpu6050(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
-    tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
+    tQueue->addTask((imuException) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");
   beep(24, 50);
