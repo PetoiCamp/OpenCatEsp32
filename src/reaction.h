@@ -498,6 +498,7 @@ void reaction() {
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
+
               if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 && target[0] < DOF) {
                 targetFrame[target[0]] = target[1];
                 if (target[0] < 4) {
@@ -508,6 +509,13 @@ void reaction() {
               }
               if (token == T_CALIBRATE) {
                 gyroUpdateQ = gyroBalanceQ = false;
+                if (target[0] == DOF) {  //auto calibrate all body joints using servos' angle feedback
+                  strcpy(newCmd, "rest");
+                  loadBySkillName(newCmd);
+                  shutServos();
+                  autoCalibrate();
+                  break;
+                }
                 if (lastToken != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
@@ -528,28 +536,8 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-                int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
-                  continue;
-                int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
-                if (actualServoIndex == -1) {  //auto calibrate all body joints using servos' angle feedback
-                  strcpy(newCmd, "rest");
-                  loadBySkillName(newCmd);
-                  shutServos();
-                  PTLF("Push the robot tightly to the ground. Enter any character when ready.");
-                  while (!Serial.available())  //wait for user input
-                    ;
-                  while (Serial.available())
-                    Serial.read();
-                  autoCalibrate();
-                  saveCalib(servoCalib);
-                  tQueue->addTask(T_REST, "");
-                  tQueue->addTask(T_CALIBRATE, "");
-                  measureServoPin = 16;  // reattach the servos in the next reaction loop
-                  break;
-                }
 #ifdef ROBOT_ARM
-                else if (actualServoIndex == -2)  // auto calibrate the robot arm's pincer
+                if (target[0] == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
@@ -568,7 +556,11 @@ void reaction() {
                   loadBySkillName("calib");
                 } else
 #endif
-                  if (actualServoIndex >= 0) {
+                  if (target[0] < DOF && target[0] >= 0) {
+                  int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                  if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
+                    continue;
+                  int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
                   servo[actualServoIndex].write(duty);
 #else
@@ -826,7 +818,7 @@ void reaction() {
           }
           break;
         }
-      case T_SIGNAL_GEN://resolution, speed, jointIdx, midpoint, amp, freq,phase
+      case T_SIGNAL_GEN:  //resolution, speed, jointIdx, midpoint, amp, freq,phase
         {
           char *pch = strtok(newCmd, " ,");
           int inLen = 0;

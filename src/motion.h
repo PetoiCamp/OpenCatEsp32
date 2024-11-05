@@ -364,21 +364,54 @@ int calibratePincerByVibration(int start, int end, int step, int threshold = 100
 }
 
 int calibrationReference[] = {
-#ifdef NYBBLE
+//the angle difference between P1L and P1S is significant for auto calibration.
+#ifdef NYBBLE  //with plastic servo P1L
   0, 42, 0, 0, 0, 0, 0, 0,
   72, 72, -68, -68, -63, -63, 63, 63
-#else  // Bittle or Bittle R
-  0, 47, 0, 0, 0, 0, 0, 0,
-  70, 70, 70, 70, -63, -63, -63, -63
+#elif defined ROBOT_ARM  //  Bittle R with metal servo P1S
+  0, 50, 0, 0, 0, 0, 0, 0,
+  65, 65, 77, 77, -63, -63, -63, -63
+#else                    //Bittle with plastic servo P1L
+  0, 0, 0, 0, 0, 0, 0, 0,
+  73, 73, 76, 76, -66, -66, -66, -66
 #endif
 };
+
+// int calibrationReference2[] = {
+// #ifdef NYBBLE  //with plastic servo P1L
+//   0, 42, 0, 0, 0, 0, 0, 0,
+//   72, 72, -68, -68, -63, -63, 63, 63
+// #elif defined ROBOT_ARM  //  Bittle R with metal servo P1S
+//   0, 50, 0, 0, 0, 0, 0, 0,
+//   -85, -85, -70, -70,83, 83, 83, 83
+// #else                    //Bittle with plastic servo P1L
+//   0, 0, 0, 0, 0, 0, 0, 0,
+//   73, 73, 76, 76, -66, -66, -66, -66
+// #endif
+// };
 void autoCalibrate() {
-  for (byte t = 0; t < 3; t++)
+  // PTLF("Auto calibration reference:");
+  // printList(calibrationReference);
+  PTLF("Push the robot tightly to the ground. Enter any character when ready.");
+  while (!Serial.available())  //wait for user input
+    ;
+  while (Serial.available())
+    Serial.read();
+  for (byte t = 0; t < connectedCountDown; t++) {
     servoFeedback();
-  for (byte i = 0; i < DOF; i++) {
-    int diff = currentAng[i] - calibrationReference[i];
-    servoCalib[i] += diff;
+    // printList(movedJoint);
+    // printList(connectedFeedbackServo);
   }
+  for (byte i = 0; i < DOF; i++) {
+    if (connectedFeedbackServo[i] > 0) {
+      int diff = currentAng[i] - calibrationReference[i];
+      servoCalib[i] += diff;
+    }
+  }
+  saveCalib(servoCalib);
+  tQueue->addTask(T_REST, "");
+  tQueue->addTask(T_CALIBRATE, "");
+  measureServoPin = 16;  // reattach the servos in the next reaction loop
 }
 
 void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, bool move = 1, char curveMethod = 't') {  // trigonometric
