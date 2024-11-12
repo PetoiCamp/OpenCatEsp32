@@ -202,7 +202,7 @@ float readFeedback(byte s)  // returns the pulse width in microseconds
       n--;
       if (n == 0)
         return -3;
-    } else if (i > 0)
+    } else if (i > 0)  //skip the first pulse
       mean += temp;
   }
   if (n > 1) {
@@ -280,6 +280,40 @@ bool servoFollow() {
   }
   return moved;
 }
+
+void readAllFeedbackFast()  // returns the pulse width in microseconds
+{                           // s is not the joint index, but the pwm pin index that may shift by 4
+  //if(!servo[s].attached())// adding this condition will cause servos to jig. why?
+  for (int s = 0; s < 12; s++)
+    servo[s].attach(PWM_pin[s], modelObj[s]);  // sometimes servo[s].attach() is true, but it still needs to be attached. why there's no conflict?
+  delay(3);                                   // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
+
+  for (int jointIdx = 0; jointIdx < DOF; jointIdx++) {
+    if (jointIdx == 3) jointIdx = 8;
+    int s = jointIdx < 4 ? jointIdx : jointIdx - 4;
+    servo[s].writeMicroseconds(feedbackSignal);
+    servo[s].detach();
+    pinMode(PWM_pin[s], INPUT);
+    float mean = 0;
+    int n = nPulse;
+    for (byte i = 0; i < nPulse; i++) {  // measure three times to calculate the mean
+      int temp = measurePulseWidth(PWM_pin[s]);
+      if (temp < 400) {  //there can be noises to return a fake pulsewidth. it's usually smaller than the shortest possible signal (500ms)
+        n--;
+      } else if (i > 0)  //skip the first pulse
+        mean += temp;
+    }
+    if (n > 1) {
+      // PTT(n, ": ")
+      int feedback = mean / (n - 1);
+      float convertedAngle = (servo[s].pulseToAngle(feedback) - calibratedZeroPosition[jointIdx]) / rotationDirection[jointIdx];
+      currentAng[jointIdx] = round(convertedAngle);
+      // PTT(currentAng[jointIdx], '\t');
+    }
+  }
+  // PTL();
+}
+
 
 void allRotate() {
   for (int pos = -50; pos < 50; pos += 1) {  // goes from 0 degrees to 180 degrees

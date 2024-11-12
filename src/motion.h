@@ -180,7 +180,7 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     //   return;
     // }
     for (int s = 0; s <= steps; s++) {
-      if (gyroUpdateQ) { 
+      if (gyroUpdateQ) {
         read_mpu6050();
         if (printGyroQ)
           print6Axis();
@@ -370,7 +370,7 @@ int calibrationReference[] = {
   0, 42, 0, 0, 0, 0, 0, 0,
   72, 72, -68, -68, -63, -63, 63, 63
 #elif defined ROBOT_ARM  //  Bittle R with metal servo P1S
-  0, 50, 0, 0, 0, 0, 0, 0,
+  0, 55, 0, 0, 0, 0, 0, 0,
   65, 65, 77, 77, -63, -63, -63, -63
 #else                    //Bittle with plastic servo P1L
   0, 0, 0, 0, 0, 0, 0, 0,
@@ -445,5 +445,39 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
     if (move)
       transform(targetFrame, 1, speed);
     PTL();
+  }
+}
+#define TOTAL_FRAME 100
+int totalFrame = 0;
+int8_t learnData[11 * TOTAL_FRAME];
+void learnByDrag() {
+  totalFrame = 0;
+  while (totalFrame < TOTAL_FRAME && !Serial.available()) {
+    if (!(totalFrame % 10))
+      PTT(totalFrame, '\t');
+    readAllFeedbackFast();
+    for (int i = 0; i < 11; i++) {
+      int j = (i > 2) ? i + 5 : i;
+      learnData[totalFrame * 11 + i] = currentAng[j];
+    }
+    totalFrame++;
+  }
+  while (Serial.available()) Serial.read();
+  beep(15, 200);
+  tQueue->addTask(T_REST, "");
+  measureServoPin = 16;  // reattach the servos in the next reaction loop
+}
+void performLearn() {
+  int target[DOF];
+  for (int i = 0; i < DOF; i++)
+    target[i] = currentAng[i];
+  for (int f = 0; f < totalFrame; f++) {
+    for (int i = 0; i < 11; i++) {
+      int j = (i > 2) ? i + 5 : i;
+      target[j] = learnData[f * 11 + i];
+      // PTT(target[j], '\t');
+    }
+    // PTL();
+    transform(target, 1, 2);
   }
 }

@@ -30,6 +30,13 @@ Petoi LLC
 // #define NUMPIXELS 1
 // #endif
 
+float fit(int d) {
+  if (d < 130)
+    return d / 8.0;
+  else
+    return 4096.0 / (pow(4096 - d, 1.0 / 3) + 25) - 84;
+}
+
 #ifdef NEOPIXEL_PIN
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel strip(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
@@ -37,9 +44,9 @@ Adafruit_NeoPixel strip(NUMPIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 bool makeSound = true;
 
-float kpDistance = 0.3;      // Proportional gain
-float kiDistance = 0.1;      // Integral gain
-float kdDistance = 0.1;      // Derivative gain
+float kpDistance = 0.3;     // Proportional gain
+float kiDistance = 0.1;     // Integral gain
+float kdDistance = 0.1;     // Derivative gain
 float setpoint = 0;          // Target value
 float errorDistance = 0;     // Difference between setpoint and actual value
 float integral = 0;          // Running sum of errors over time
@@ -52,6 +59,7 @@ int rawL, rawR;
 float dL, dR, meanD, maxD, minD;
 int meanA = 0, meanB = 0, diffA_B = 0, actualDiff = 0, last = 0;
 int longThres = 20;
+long leftCloseTimer, rightCloseTimer;
 
 void resetPID() {
   errorDistance = 0;
@@ -93,22 +101,32 @@ void distancePID(float dLeft, float dRight) {
       derivative = errorDistance - last_error;
 
       // Calculate the control signal using the PID formula
-      currentXDistance = -max(-90.0, min(90.0, double(kpDistance * errorDistance + kiDistance * integral + kdDistance * derivative)));
+      currentXDistance = -max(-75.0, min(75.0, double(kpDistance * errorDistance + kiDistance * integral + kdDistance * derivative)));
       // Send the control signal to the sensors to adjust their angles
-      calibratedPWM(0, currentXDistance, 2);
+      // token = T_INDEXED_SIMULTANEOUS_BIN;
+      // newCmd[0] = 0;
+      // newCmd[1] = currentXDistance;
+      // newCmd[2] = 1;
+      // newCmd[3] = 15;
+      // // last = actualOffset;
+      // cmdLen = 4;
+      // newCmdIdx = 5;
+        manualHeadQ = true;
+      targetHead[0] = currentXDistance;
+      int duty = currentAng[0] + max(-20, min(20, (targetHead[0] - currentAng[0])));
+      calibratedPWM(0, duty, 0.5);
       // Save the current errorDistance for use in the next iteration
       last_error = errorDistance;
     }
   }
-  PT('\t');
-  PT(errorDistance);
-  PT('\t');
-  PT(integral);
-  PT('\t');
-  PT(derivative);
-  PT('\t');
-  PT(currentXDistance);
-  PTL();
+  // PT('\t');
+  // PT(errorDistance);
+  // PT('\t');
+  // PT(integral);
+  // PT('\t');
+  // PT(derivative);
+  // PT('\t');
+  // PT(currentXDistance);
 }
 
 void doubleInfraredDistanceSetup() {
@@ -121,27 +139,55 @@ void doubleInfraredDistanceSetup() {
 #ifdef LED_PIN
   pinMode(LED_PIN, OUTPUT);
 #endif
+  manualHeadQ = true;
 }
 
 void readDistancePins() {
-  rawL = analogRead(ANALOG3) / rate;
-  rawR = analogRead(ANALOG4) / rate;
-  dL = rawL < 30 ? rawL / 4.0 : 200.0 / sqrt(BASE_RANGE - rawL);
-  dR = rawR < 30 ? rawR / 4.0 : 200.0 / sqrt(BASE_RANGE - rawR);
-  meanD = (dL + dR) / 2;
-  maxD = max(dL, dR);
-  minD = min(dL, dR);
-  if (1) {
-    PT("rL ");
-    PT(rawL);
-    PT("\trR ");
-    PT(rawR);
+  // #ifdef BiBoard_V1_0
+  //   rawL = analogRead(ANALOG4);
+  //   rawR = analogRead(ANALOG3);
+  // #else
+  dL = fit(analogRead(ANALOG3));
+  dR = fit(analogRead(ANALOG4));
+  // #endif
+
+  // meanD = (dL + dR) / 2;
+  // maxD = max(dL, dR);
+  // minD = min(dL, dR);
+  if (0) {
+    // PT("rL ");
+    // PT(rawL);
+    // PT("\trR ");
+    // PT(rawR);
     PT("\tdL ");
     PT(dL);
     PT("\tdR ");
     PT(dR);
     PT("\tmD ");
     PT(meanD);
+  }
+}
+
+void catchObject() {
+  while (dL < 30 || dR < 30) {
+    readDistancePins();
+    distancePID(dL, dR);
+    if (dL < 10)  //within capture range
+      leftCloseTimer = millis();
+    if (dR < 10)  //within capture range
+      rightCloseTimer = millis();
+    // if (currentAng[2] < 20)
+    calibratedPWM(2, min(float(80), 80 - (min(dL, dR) - 15) * 5));  //open pincer
+    if (leftCloseTimer > 0 && leftCloseTimer > 0 && abs(leftCloseTimer - rightCloseTimer) < 50) {
+      int8_t targetShift = (leftCloseTimer - rightCloseTimer);  // evaluate the target's speed and direction
+      PTHL("targetShift", targetShift);
+      calibratedPWM(0, currentAng[0] + targetShift);
+      calibratedPWM(1, 45);   //raise arm
+      calibratedPWM(2, 120);  //clip the pincer
+      delay(1000);
+      tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0,0,1,0,2,0", 1000);
+      leftCloseTimer = rightCloseTimer = -1;
+    }
   }
 }
 
@@ -171,18 +217,22 @@ void read_doubleInfraredDistance() {
       // tQueue->addTask('k', "sit");
       // tQueue->addTask('i', "");
     }
-  } else if (periodGlobal == 1) {
+  }
+#ifdef ROBOT_ARM
+
+#endif
+  if (periodGlobal == 1) {
     distancePID(dL, dR);
-    if (currentXDistance < -75 || currentXDistance > 75) {
-      if (currentXDistance < -75) {
-        // tQueue->addTask('k', "vtR", 2000);
-      } else {
-        // tQueue->addTask('k', "vtL", 2000);
-      }
-      // tQueue->addTask('k', "sit");
-      currentXDistance = 0;
-      resetPID();
-    }
+    // if (currentXDistance < -75 || currentXDistance > 75) {
+    //   if (currentXDistance < -75) {
+    //     // tQueue->addTask('k', "vtR", 2000);
+    //   } else {
+    //     // tQueue->addTask('k', "vtL", 2000);
+    //   }
+    //   // tQueue->addTask('k', "sit");
+    //   currentXDistance = 0;
+    //   resetPID();
+    // }
   }
   // distanceNaive(dL, dR);
   else if (periodGlobal > 1 && tQueue->cleared()) {  // gait
@@ -206,4 +256,5 @@ void read_doubleInfraredDistance() {
       }
     }
   }
+  // PTL();
 }

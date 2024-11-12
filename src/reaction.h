@@ -275,7 +275,8 @@ void reaction() {
     switch (token) {
       case T_HELP_INFO:
         {
-          PTLF("* Please refer to docs.petoi.com");
+          PTLF("* Please refer to docs.petoi.com.\nEnter any character to continue.");
+          while(!Serial.available());
           break;
         }
       case T_QUERY:
@@ -835,6 +836,13 @@ void reaction() {
           int8_t speed = pars[1];
           signalGenerator(resolution, speed, pars + 2, inLen, 1);
           break;
+        }
+      case T_LEARN:
+        {
+          if (newCmd[0] == 'l')
+            learnByDrag();
+          else if (newCmd[0] = 'p')
+            performLearn();
         }
       case T_TEMP:
         {  // call the last skill data received from the serial port

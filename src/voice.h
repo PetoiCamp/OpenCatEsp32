@@ -29,6 +29,8 @@
 String customizedCmdList[] = {
 #ifdef BITTLE
 #ifdef ROBOT_ARM
+  // "xl",
+  // "xp",
   "kpickF",                                 //pick front 捡起来
   "kputD",                                  //put down 放下
   "khuntL",                                 //hunt 捕猎
@@ -38,7 +40,7 @@ String customizedCmdList[] = {
   "klaunchL",                               //launch 发射
   "kclapL",                                 //clap 鼓掌
   "ktossF",                                 //toss front 前抛
-  "qc2 0:0~c-2:0~kclap:1000~kpickF:1000~",  //calibrate arm (for QA) 校准(工厂用)
+  "qc-2:0>kclap:1000>kpickF:1000>",  //calibrate arm (for QA) 校准(工厂用)
 #else
   "kpu1",                                                                  // single-handed pushups
   "m0 80 0 -80 0 0",                                                       // wave head
