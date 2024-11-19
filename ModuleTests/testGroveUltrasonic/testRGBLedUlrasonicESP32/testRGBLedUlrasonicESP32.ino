@@ -5,12 +5,25 @@
 // Petoi LLC
 // Feb.6, 2024
 
-// comment out the following line if the Buzzer is too loud
-// #define BUZZER 25  // the PWM pin the ACTIVE buzzer is attached to
-
 #include "RgbUltrasonic.h"
 
-RgbUltrasonic ultrasonic(16, 17);  //(signal, RGB) use the Grove Tx Rx
+// #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
+// #define BiBoard_V0_2
+#define BiBoard_V1_0
+
+#if defined BiBoard_V0_1 || defined BiBoard_V0_2
+#define UART_RX2 16
+#define UART_TX2 17
+// comment out the following line if the Buzzer is too loud
+// #define BUZZER 25  // the PWM pin the ACTIVE buzzer is attached to
+#elif defined BiBoard_V1_0
+#define UART_RX2 9
+#define UART_TX2 10
+// comment out the following line if the Buzzer is too loud
+// #define BUZZER 2  // the PWM pin the ACTIVE buzzer is attached to
+#endif
+
+RgbUltrasonic ultrasonic(UART_RX2, UART_TX2);  //(signal, RGB) use the Grove Tx Rx
 // RgbUltrasonic ultrasonic(27,23);  //(signal, RGB) use the infrared reciever's pin 23 and pwm pin 27
 //The RGBLED module should be plugged in the fourth grove socket with D6, D7
 
