@@ -1,7 +1,7 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
-  if (gyroBalanceQ && exceptions) {  // the gyro reaction switch can be toggled on/off by the 'g' token
-    switch (exceptions) {
+  if (gyroBalanceQ && imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
+    switch (imuException) {
       case -1:
         {
           PTL("EXCEPTION 1");
@@ -128,7 +128,7 @@ void dealWithExceptions() {
         }
     }
 
-    // if (exceptions != -4)
+    // if (imuException != -4)
     print6Axis();
     read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
 
@@ -148,6 +148,7 @@ void dealWithExceptions() {
 // V_real = V_read / 4096 * 3.3 * ratio
 // V_real = V_read / vFactor, vFactor = 4096 / 3.3 / ratio
 // a more accurate fitting for V1_0 is V_real = V_read / 515 + 1.95
+
 #ifdef VOLTAGE
 bool lowBattery() {
   long currentTime = millis() / CHECK_BATTERY_PERIOD;
@@ -159,11 +160,10 @@ bool lowBattery() {
 #else
     voltage = voltage / 414;
 #endif
-    if (voltage < NO_BATTERY_VOLTAGE2
-        || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-            || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
-             && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
-    ) {                                                                // if battery voltage is low, it needs to be recharged
+    if (voltage < NO_BATTERY_VOLTAGE2 || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+                                          || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
+                                           && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
+    ) {                                                                                              // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
       // if set too high, the robot will stop working when the battery still has power.
@@ -191,19 +191,19 @@ bool lowBattery() {
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
-      int8_t bStep = 1;
-      for (byte brightness = 1; brightness > 0; brightness += bStep) {
-#ifdef NEOPIXEL_PIN
-        strip.setPixelColor(0, strip.Color(brightness, 0, 0));
-        strip.show();
-#endif
-#ifdef PWM_LED_PIN
-        analogWrite(PWM_LED_PIN, 255 - brightness);
-#endif
-        if (brightness == 255)
-          bStep = -1;
-        delay(5);
-      }
+      //       int8_t bStep = 1;
+      //       for (byte brightness = 1; brightness > 0; brightness += bStep) {
+      // #ifdef NEOPIXEL_PIN
+      //         strip.setPixelColor(0, strip.Color(brightness, 0, 0));
+      //         strip.show();
+      // #endif
+      // #ifdef PWM_LED_PIN
+      //         analogWrite(PWM_LED_PIN, 255 - brightness);
+      // #endif
+      //         if (brightness == 255)
+      //           bStep = -1;
+      //         delay(5);
+      //       }
       lastVoltage = voltage;
       return true;
     }
@@ -235,7 +235,8 @@ void reaction() {
     // PTLF("-----");
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
-      fineAdjust = true;
+      fineAdjustQ = true;
+      gyroUpdateQ = true;
       gyroBalanceQ = true;
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
@@ -254,6 +255,7 @@ void reaction() {
 #endif
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
+      gyroUpdateQ = true;
       gyroBalanceQ = true;
       printToAllPorts('G');
     }
@@ -263,14 +265,19 @@ void reaction() {
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
-      reAttachAllServos();
-      measureServoPin = -1;
       for (byte i = 0; i < DOF; i++)
         movedJoint[i] = 0;
+      reAttachAllServos();
+      measureServoPin = -1;
     }
 #endif
 
     switch (token) {
+      case T_HELP_INFO:
+        {
+          PTLF("* Please refer to docs.petoi.com");
+          break;
+        }
       case T_QUERY:
         {
           printToAllPorts(MODEL);
@@ -293,10 +300,7 @@ void reaction() {
           );
           break;
         }
-      case T_GYRO_FINENESS:
-      case T_GYRO_BALANCE:
-      case T_PRINT_GYRO:
-      case T_VERBOSELY_PRINT_GYRO:
+      case T_GYRO:
       case T_RANDOM_MIND:
         {
           if (token == T_RANDOM_MIND) {
@@ -304,19 +308,32 @@ void reaction() {
             token = autoSwitch ? 'Z' : 'z';  // G for activated gyro
           }
 #ifdef GYRO_PIN
-          else if (token == T_GYRO_FINENESS) {
-            fineAdjust = !fineAdjust;
-            // imuSkip = fineAdjust ? IMU_SKIP : IMU_SKIP_MORE;
-            runDelay = fineAdjust ? delayMid : delayShort;
-            token = fineAdjust ? 'G' : 'g';  // G for activated gyro
-          } else if (token == T_GYRO_BALANCE) {
-            gyroBalanceQ = !gyroBalanceQ;
-            token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
-          } else if (token == T_PRINT_GYRO) {
-            print6Axis();
-          } else if (token == T_VERBOSELY_PRINT_GYRO) {
-            printGyro = !printGyro;
-            token = printGyro ? 'V' : 'v';  // V for verbosely print gyro data
+          else if (token == T_GYRO) {
+            if (cmdLen == 0) {
+              gyroBalanceQ = gyroUpdateQ = !gyroUpdateQ;
+              token = gyroUpdateQ ? 'G' : 'g';  // G for activated gyro
+            } else {
+              byte i = 0;
+              while (newCmd[i] != '\0') {
+                if (toupper(newCmd[i]) == T_GYRO_FINENESS) {
+                  fineAdjustQ = newCmd[i] == T_GYRO_FINENESS;
+                  token = fineAdjustQ ? 'G' : 'g';  // G for activated gyro
+                } else if (toupper(newCmd[i]) == T_GYRO_BALANCE)
+                  gyroBalanceQ = newCmd[i] == T_GYRO_BALANCE;
+                else if (toupper(newCmd[i]) == T_GYRO_PRINT) {
+                  printGyroQ = newCmd[i] == T_GYRO_PRINT;
+                  print6Axis();
+                } else if (newCmd[i] == '?') {
+                  PTF("Gyro state:");
+                  PTT(" Balance-", gyroBalanceQ);
+                  PTT(" Print-", printGyroQ);
+                  PTTL(" Frequency-", fineAdjustQ);
+                }
+                i++;
+              }
+              imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
+              runDelay = fineAdjustQ ? delayMid : delayShort;
+            }
           }
 #endif
           break;
@@ -384,11 +401,11 @@ void reaction() {
           }
           break;
         }
-      case T_MELODY:
-        {
-          playMelody(melody1, sizeof(melody1) / 2);
-          break;
-        }
+        // case T_MELODY:
+        //   {
+        //     playMelody(melody1, sizeof(melody1) / 2);
+        //     break;
+        //   }
 #ifdef ULTRASONIC
       case T_COLOR:
         {
@@ -482,6 +499,7 @@ void reaction() {
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
+
               if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 && target[0] < DOF) {
                 targetFrame[target[0]] = target[1];
                 if (target[0] < 4) {
@@ -491,7 +509,14 @@ void reaction() {
                   nonHeadJointQ = true;
               }
               if (token == T_CALIBRATE) {
-                gyroBalanceQ = false;
+                gyroUpdateQ = gyroBalanceQ = false;
+                if (target[0] == DOF) {  //auto calibrate all body joints using servos' angle feedback
+                  strcpy(newCmd, "rest");
+                  loadBySkillName(newCmd);
+                  shutServos();
+                  autoCalibrate();
+                  break;
+                }
                 if (lastToken != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
@@ -512,19 +537,15 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-                int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
-                  continue;
-                int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ROBOT_ARM
-                if (actualServoIndex == -2)  //auto calibrate the robot arm's pincer
+                if (target[0] == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
                   calibratedPWM(1, 90);
                   delay(500);
-                  int criticalAngle = calibrateByVibration(-25, 25, 4);
-                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  int criticalAngle = calibratePincerByVibration(-25, 25, 4);
+                  criticalAngle = calibratePincerByVibration(criticalAngle - 4, criticalAngle + 4, 1);
                   servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
 #ifdef I2C_EEPROM_ADDRESS
@@ -536,7 +557,11 @@ void reaction() {
                   loadBySkillName("calib");
                 } else
 #endif
-                {
+                  if (target[0] < DOF && target[0] >= 0) {
+                  int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                  if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
+                    continue;
+                  int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
                   servo[actualServoIndex].write(duty);
 #else
@@ -794,6 +819,23 @@ void reaction() {
           }
           break;
         }
+      case T_SIGNAL_GEN:  //resolution, speed, jointIdx, midpoint, amp, freq,phase
+        {
+          char *pch = strtok(newCmd, " ,");
+          int inLen = 0;
+          int8_t pars[60];  // allows 12 joints 5*12 = 60
+          while (pch != NULL) {
+            pars[inLen++] = atoi(pch);  //@@@ cast
+            pch = strtok(NULL, " ,\t");
+          }
+          // for (int i = 0; i < inLen; i++)
+          //   PTT(pars[i], ' ');
+          // PTL();
+          int8_t resolution = pars[0];
+          int8_t speed = pars[1];
+          signalGenerator(resolution, speed, pars + 2, inLen, 1);
+          break;
+        }
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
@@ -843,7 +885,12 @@ void reaction() {
         }
       case T_TASK_QUEUE:
         {
-          tQueue->createTask();
+          tQueue->createTask();  // use 'q' to start the sequence.
+                                 // add subToken followed by the subCommand
+                                 // use ':' to add the delay time (mandatory)
+                                 // add '>' to end the sub command
+                                 // example: qk sit:1000>m 8 0 8 -30 8 0:500>
+                                 // Nybble wash face: qksit:100>o 1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10 10 4 0, 15 10 0 4 0:100>
           break;
         }
       default:
@@ -854,15 +901,15 @@ void reaction() {
     }
 
     if (token == T_SKILL && newCmd[0] != '\0') {
-      if (skill->period > 0)
-        strcpy(lastCmd, newCmd);
-      else
-        strcpy(lastCmd, "up");
+      // if (skill->period > 0)
+      strcpy(lastCmd, newCmd);
+      // else
+      //   strcpy(lastCmd, "up");
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
+      if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
     resetCmd();
@@ -879,7 +926,7 @@ void reaction() {
     if (skill->period > 1)
       delay(delayShort + max(0, int(runDelay
 #ifdef GYRO_PIN
-                                    - (max(abs(ypr[1]), abs(ypr[2])) / 10)  // accelerate gait when tilted
+                                    - gyroBalanceQ * (max(abs(ypr[1]), abs(ypr[2])) / 10)  // accelerate gait when tilted
 #endif
                                     )));
     if (skill->period < 0) {
@@ -903,7 +950,7 @@ void reaction() {
         currentAdjust[i] = 0;
       printToAllPorts(token);  // behavior can confirm completion by sending the token back
     }
-    // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
+    // if (imuException && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')
     //     loadBySkillName(lastCmd);
 
@@ -924,6 +971,6 @@ void reaction() {
       transform((int8_t *)newCmd, 1, 2);
     }
   } else {
-    delay(1);  //avoid triggering WDT on BiBoard V0_2
+    delay(1);  // avoid triggering WDT on BiBoard V0_2
   }
 }

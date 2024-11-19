@@ -177,25 +177,35 @@ uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r'
 // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
 #define READ_ACCELERATION
 void print6Axis() {
-  PT_FMT(ypr[0], 2);
-  PT('\t');
-  PT_FMT(ypr[1], 2);
-  PT('\t');
-  PT_FMT(ypr[2], 2);
+  char buffer[48];  // Adjust buffer size as needed
 #ifdef READ_ACCELERATION
-  PT("\t");
-  // PT(aaWorld.x);
-  // PT("\t");
-  // PT(aaWorld.y);
-  PT(*xyzReal[0]);  // x is along the longer direction of the robot
-  PT("\t");
-  PT(*xyzReal[1]);
-  PT('\t');
-  PT(*xyzReal[2]);
-  PT("\t");
-  PT(aaWorld.z);
+  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d",  //7x6 = 42
+          ypr[0], ypr[1], ypr[2], *xyzReal[0], *xyzReal[1], *xyzReal[2], aaWorld.z);
+#else
+  sprintf(buffer, "%6.1f %6.1f %6.1f", ypr[0], ypr[1], ypr[2]);
 #endif
-  PTL();
+  printToAllPorts(buffer);
+  // PTL();
+
+  //   PT_FMT(ypr[0], 2);
+  //   PT('\t');
+  //   PT_FMT(ypr[1], 2);
+  //   PT('\t');
+  //   PT_FMT(ypr[2], 2);
+  // #ifdef READ_ACCELERATION
+  //   PT("\t");
+  //   // PT(aaWorld.x);
+  //   // PT("\t");
+  //   // PT(aaWorld.y);
+  //   PT(*xyzReal[0]);  // x is along the longer direction of the robot
+  //   PT("\t");
+  //   PT(*xyzReal[1]);
+  //   PT('\t');
+  //   PT(*xyzReal[2]);
+  //   PT("\t");
+  //   PT(aaWorld.z);
+  // #endif
+  //   PTL();
 }
 
 void print6AxisMacro() {
@@ -297,9 +307,9 @@ bool read_mpu6050() {
         *xyzReal[i] = -*xyzReal[i];
 #endif
     }
-    if (printGyro)
+    if (printGyroQ)
       print6Axis();
-    // exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+    // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 
     // Acceleration Real
     //      ^ head
@@ -309,21 +319,21 @@ bool read_mpu6050() {
     //        |
     //        | x-
     // if (AWZ < -8500 && AWZ > -8600)
-    //   exceptions = -1;  //dropping
+    //   imuException = -1;  //dropping
     // else
-    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  exceptions = aaReal.z < 0;
-      exceptions = -2;                 // flipped
+    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
+      imuException = -2;                 // flipped
 #ifndef ROBOT_ARM
     else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
-      exceptions = -3;
+      imuException = -3;
     else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
-      exceptions = -4;
+      imuException = -4;
 #endif
     // else if (  //keepDirectionQ &&
     //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-    //   exceptions = -5;
+    //   imuException = -5;
     else
-      exceptions = 0;
+      imuException = 0;
     // however, its change is very slow.
     for (byte m = 0; m < 3; m++) {
       previous_xyzReal[m] = *xyzReal[m];
@@ -476,7 +486,7 @@ void mpu6050Setup() {
   //   print6Axis();
   //   delay(2);
   // }
-  exceptions = aaReal.z < 0;
+  imuException = aaReal.z < 0;
   previous_ypr[0] = ypr[0];
 }
 

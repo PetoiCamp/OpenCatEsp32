@@ -35,9 +35,9 @@ bool oldDeviceConnected = false;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
-#define CHARACTERISTIC_UUID_RX "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
-#define CHARACTERISTIC_UUID_TX "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
+#define SERVICE_UUID_APP "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
+#define CHARACTERISTIC_UUID_RX_APP "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
+#define CHARACTERISTIC_UUID_TX_APP "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
 
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -85,13 +85,18 @@ void readBle() {
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
+    if (token == 'g' && cmdLen == 0) {  //adapt for the mobile app where 'g' toggles acceleration
+      cmdLen = 1;
+      newCmd[0] = fineAdjustQ ? 'f' : 'F';
+      newCmd[1] = '\0';
+    }
     // PTL(cmdLen);
   }
 }
 
 void bleSetup() {
   //  Serial.print("UUID: ");
-  //  Serial.println(SERVICE_UUID);
+  //  Serial.println(SERVICE_UUID_APP);
   // Create the BLE Device
 #ifdef I2C_EEPROM_ADDRESS
   PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
@@ -106,19 +111,19 @@ void bleSetup() {
   pServer->setCallbacks(new MyServerCallbacks());
 
   // Create the BLE Service
-  BLEService *pService = pServer->createService(SERVICE_UUID);
+  BLEService *pService = pServer->createService(SERVICE_UUID_APP);
 
   // Create a BLE Characteristic
   pTxCharacteristic =
     pService->createCharacteristic(
-      CHARACTERISTIC_UUID_TX,
+      CHARACTERISTIC_UUID_TX_APP,
       BLECharacteristic::PROPERTY_NOTIFY);
 
   pTxCharacteristic->addDescriptor(new BLE2902());
 
   BLECharacteristic *pRxCharacteristic =
     pService->createCharacteristic(
-      CHARACTERISTIC_UUID_RX,
+      CHARACTERISTIC_UUID_RX_APP,
       BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
   pRxCharacteristic->setCallbacks(new MyCallbacks());
