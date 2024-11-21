@@ -278,8 +278,11 @@ public:
       interruptedDuringBehavior = false;
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
       bool gyroUpdateQlag = gyroUpdateQ;
-      gyroUpdateQ = strcmp(skillName, "bf") && strcmp(skillName, "ff") && strcmp(skillName, "pd") && strstr(skillName, "rl") == NULL;  //won't read gyro for fast motion
-      for (byte c = 0; c < abs(period); c++) {                                                                                         // the last two in the row are transition speed and delay
+      gyroUpdateQ = strcmp(skillName, "bf") && strcmp(skillName, "ff")
+                    && strcmp(skillName, "flipF") && strcmp(skillName, "flipD")
+                    && strcmp(skillName, "flipL") && strcmp(skillName, "flipR")
+                    && strcmp(skillName, "pd") && strcmp(skillName, "hds") && strcmp(skillName, "bx") && strstr(skillName, "rl") == NULL;  //won't read gyro for fast motion
+      for (byte c = 0; c < abs(period); c++) {                                                                                             // the last two in the row are transition speed and delay
         Stream *serialPort = NULL;
 // String source;
 #ifdef BT_SSP

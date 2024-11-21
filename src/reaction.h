@@ -276,7 +276,8 @@ void reaction() {
       case T_HELP_INFO:
         {
           PTLF("* Please refer to docs.petoi.com.\nEnter any character to continue.");
-          while(!Serial.available());
+          while (!Serial.available())
+            ;
           break;
         }
       case T_QUERY:
@@ -839,10 +840,18 @@ void reaction() {
         }
       case T_LEARN:
         {
-          if (newCmd[0] == 'l')
+          if (newCmd[0] == 'l') {  //learn
+            gyroBalanceQ = false;
+            loadBySkillName("up");
+            delay(500);
             learnByDrag();
-          else if (newCmd[0] = 'p')
+          } else if (newCmd[0] = 'p') {  //perform
+            loadBySkillName("up");
             performLearn();
+            delay(1000);
+            loadBySkillName("up");
+          }
+          break;
         }
       case T_TEMP:
         {  // call the last skill data received from the serial port

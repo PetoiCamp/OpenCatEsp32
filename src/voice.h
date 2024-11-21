@@ -27,19 +27,19 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-#ifdef BITTLE
-#ifdef ROBOT_ARM
   // "xl",
   // "xp",
-  "kpickF",                                 //pick front 捡起来
-  "kputD",                                  //put down 放下
-  "khuntL",                                 //hunt 捕猎
-  "kshowOff",                               //show off 展示
-  "kputL",                                  //put left 收起来
-  "ktossL",                                 //toss left 左抛
-  "klaunchL",                               //launch 发射
-  "kclapL",                                 //clap 鼓掌
-  "ktossF",                                 //toss front 前抛
+#ifdef BITTLE
+#ifdef ROBOT_ARM
+  "kpickF",                          //pick front 捡起来
+  "kputD",                           //put down 放下
+  "khuntL",                          //hunt 捕猎
+  "kshowOff",                        //show off 展示
+  "kputL",                           //put left 收起来
+  "ktossL",                          //toss left 左抛
+  "klaunchL",                        //launch 发射
+  "kclapL",                          //clap 鼓掌
+  "ktossF",                          //toss front 前抛
   "qc-2:0>kclap:1000>kpickF:1000>",  //calibrate arm (for QA) 校准(工厂用)
 #else
   "kpu1",                                                                  // single-handed pushups
@@ -56,9 +56,10 @@ String customizedCmdList[] = {
   "10th"  // define up to 10 customized commands.
 #endif
 #elif defined NYBBLE
-  "kluckyL",                                                               //lucky cat 招财猫
-  "klkPawsL",                                                              //lick paws 舔爪子
-  "kwsfL",                                                                 //wash face 洗脸
+  "kluckyL",   //lucky cat 招财猫
+  "klkPawsL",  //lick paws 舔爪子
+  "qksit:100>i0 20 1 0 8 -70 12 0 15 10:0>o1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10 10 4 0, 15 10 0 4 0:100>m0 0 1 -20 2 0:0>ksit:0",
+  // "kwsfL",                                                                 //wash face 洗脸
   "khuntL",                                                                //hunt 捕猎
   "m0 80 0 -80 0 0",                                                       // wave head                                                                //
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\

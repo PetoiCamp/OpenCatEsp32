@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241105"  // YYMMDD
+#define DATE "241121"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -189,9 +189,14 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 #define PWM_LED_PIN 27
+
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
+#ifdef BITTLE
   18, 14, 5, 27,  // head or shoulder roll
+#elif defined NYBBLE
+  18, 5, 14, 27,  // head or shoulder roll
+#endif
   23, 4, 12, 33,  // shoulder pitch
   19, 15, 13, 32  // knee
 };
@@ -624,9 +629,6 @@ void initRobot() {
 #ifdef BT_BLE
   bleSetup();
 #endif
-#ifdef BT_CLIENT
-  bleClientSetup();
-#endif
 #ifdef BT_SSP
   blueSspSetup();
 #endif
@@ -659,7 +661,9 @@ void initRobot() {
 #endif
 
   QA();
-
+#ifdef BT_CLIENT
+  bleClientSetup();
+#endif
   tQueue = new TaskQueue();
   loadBySkillName("rest");  // must have to avoid memory crash. need to check why.
                             // allCalibratedPWM(currentAng); alone will lead to crash

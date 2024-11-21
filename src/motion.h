@@ -447,37 +447,79 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
     PTL();
   }
 }
-#define TOTAL_FRAME 100
+#define MAX_FRAME 125
+#define IDLE_LEARN 2000
+#define SMALL_DIFF 3
+#define READY_COUNTDOWN 10
 int totalFrame = 0;
-int8_t learnData[11 * TOTAL_FRAME];
+int8_t learnData[11 * MAX_FRAME];
+int8_t learnDataPrev[11];
 void learnByDrag() {
   totalFrame = 0;
-  while (totalFrame < TOTAL_FRAME && !Serial.available()) {
-    if (!(totalFrame % 10))
-      PTT(totalFrame, '\t');
+  bool skip = false;
+  int getReady = 0;
+
+  while (getReady < READY_COUNTDOWN) {
+    PTH("ready", getReady);
     readAllFeedbackFast();
+    int diff = 0;
     for (int i = 0; i < 11; i++) {
       int j = (i > 2) ? i + 5 : i;
       learnData[totalFrame * 11 + i] = currentAng[j];
+      diff += (currentAng[j] - learnDataPrev[i]) * (currentAng[j] - learnDataPrev[i]);
+      learnDataPrev[i] = currentAng[j];
     }
-    totalFrame++;
+    PTHL("diff", diff);
+    if (diff <= SMALL_DIFF)
+      getReady++;
+    else
+      getReady = 0;
+  }
+  beep(30, 300);
+  PTL("Start to record motion");
+  long idleLearnTimer = millis();
+  while (totalFrame < MAX_FRAME              //not exceed the max frame
+         && !Serial.available()                //not ended by user
+         && millis() - idleLearnTimer < IDLE_LEARN)  //not idle for a long time
+  {
+    if (!(totalFrame % 10))
+      PTT(totalFrame, '\t');
+    readAllFeedbackFast();
+    int diff = 0;
+    for (int i = 0; i < 11; i++) {
+      int j = (i > 2) ? i + 5 : i;
+      learnData[totalFrame * 11 + i] = currentAng[j];
+      diff += (currentAng[j] - learnDataPrev[i]) * (currentAng[j] - learnDataPrev[i]);
+    }
+    // PTHL("diff", diff);
+    if (diff > SMALL_DIFF) {  //won't record if the joints are not moved
+      for (int i = 0; i < 11; i++)
+        learnDataPrev[i] = learnData[totalFrame * 11 + i];
+      idleLearnTimer = millis();
+      totalFrame++;
+    }
   }
   while (Serial.available()) Serial.read();
-  beep(15, 200);
-  tQueue->addTask(T_REST, "");
+  beep(30, 300);
+  tQueue->addTask('k', "up");
   measureServoPin = 16;  // reattach the servos in the next reaction loop
 }
 void performLearn() {
   int target[DOF];
   for (int i = 0; i < DOF; i++)
     target[i] = currentAng[i];
+  PTL('{');
+  PTTL(-totalFrame, ",0,0,1,\n0,0,0,");
   for (int f = 0; f < totalFrame; f++) {
     for (int i = 0; i < 11; i++) {
       int j = (i > 2) ? i + 5 : i;
       target[j] = learnData[f * 11 + i];
-      // PTT(target[j], '\t');
+      PTT(target[j], ",\t");
+      if (i == 2)
+        PT("0,0,0,0,0,\t");
     }
-    // PTL();
+    PTL("8,0,0,0,");
     transform(target, 1, 2);
   }
+  PTL("};");
 }
