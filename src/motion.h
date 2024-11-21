@@ -460,7 +460,7 @@ void learnByDrag() {
   int getReady = 0;
 
   while (getReady < READY_COUNTDOWN) {
-    PTH("ready", getReady);
+    PTHL("ready", READY_COUNTDOWN - getReady);
     readAllFeedbackFast();
     int diff = 0;
     for (int i = 0; i < 11; i++) {
@@ -478,8 +478,8 @@ void learnByDrag() {
   beep(30, 300);
   PTL("Start to record motion");
   long idleLearnTimer = millis();
-  while (totalFrame < MAX_FRAME              //not exceed the max frame
-         && !Serial.available()                //not ended by user
+  while (totalFrame < MAX_FRAME                      //not exceed the max frame
+         && !Serial.available()                      //not ended by user
          && millis() - idleLearnTimer < IDLE_LEARN)  //not idle for a long time
   {
     if (!(totalFrame % 10))
