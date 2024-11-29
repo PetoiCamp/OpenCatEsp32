@@ -1,3 +1,5 @@
+bool calibrateQ = false;
+#ifdef IMU_MPU6050
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v6.12)
 // 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
@@ -128,23 +130,23 @@ MPU6050 mpu;
 // #define OUTPUT_TEAPOT
 
 // MPU control/status vars
-bool dmpReady = false;   // set true if DMP init was successful
-uint8_t mpuIntStatus;    // holds actual interrupt status byte from MPU
-uint8_t devStatus;       // return status after each device operation (0 = success, !0 = error)
-uint16_t packetSize;     // expected DMP packet size (default is 42 bytes)
-uint16_t fifoCount;      // count of all bytes currently in FIFO
-uint8_t fifoBuffer[64];  // FIFO storage buffer
+bool dmpReady = false;  // set true if DMP init was successful
+uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;     // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64]; // FIFO storage buffer
 
 // orientation/motion vars
-Quaternion q;         // [w, x, y, z]         quaternion container
-VectorInt16 aa;       // [x, y, z]            accel sensor measurements
-VectorInt16 gy;       // [x, y, z]            gyro sensor measurements
-VectorInt16 aaReal;   // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measurements
-VectorFloat gravity;  // [x, y, z]            gravity vector
-float euler[3];       // [psi, theta, phi]    Euler angle container
-float ypr[3];         // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
-int16_t *xyzReal[3] = { &aaReal.x, &aaReal.y, &aaReal.z };
+Quaternion q;        // [w, x, y, z]         quaternion container
+VectorInt16 aa;      // [x, y, z]            accel sensor measurements
+VectorInt16 gy;      // [x, y, z]            gyro sensor measurements
+VectorInt16 aaReal;  // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld; // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity; // [x, y, z]            gravity vector
+float euler[3];      // [psi, theta, phi]    Euler angle container
+float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
+int16_t *xyzReal[3] = {&aaReal.x, &aaReal.y, &aaReal.z};
 int16_t previous_xyzReal[3];
 float previous_ypr[3];
 int8_t yprTilt[3];
@@ -157,11 +159,11 @@ int8_t yprTilt[3];
 #define AWZ aaWorld.z
 int thresX, thresY, thresZ;
 #define IMU_SKIP 1
-#define IMU_SKIP_MORE 23  // use prime number to avoid repeatly skipping the same joint
+#define IMU_SKIP_MORE 23 // use prime number to avoid repeatly skipping the same joint
 byte imuSkip = IMU_SKIP;
 
 // packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
+uint8_t teapotPacket[14] = {'$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n'};
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -175,40 +177,193 @@ uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r'
 // The REALACCEL numbers are calculated with respect to the orientation of the sensor itself, so that if it is flat and you move it straight up, the "Z" accel will change, but if you flip it up on one side and move it in the new relative "up" direction (along the sensor's Z axis), it will still register acceleration on the Z axis. Essentially, it is sensor-oriented acceleration which removes the effects of gravity and any non-flat/level orientation.
 
 // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
-#define READ_ACCELERATION
-void print6Axis() {
-  char buffer[48];  // Adjust buffer size as needed
-#ifdef READ_ACCELERATION
-  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d",  //7x6 = 42
-          ypr[0], ypr[1], ypr[2], *xyzReal[0], *xyzReal[1], *xyzReal[2], aaWorld.z);
-#else
-  sprintf(buffer, "%6.1f %6.1f %6.1f", ypr[0], ypr[1], ypr[2]);
-#endif
-  printToAllPorts(buffer);
-  // PTL();
 
-  //   PT_FMT(ypr[0], 2);
-  //   PT('\t');
-  //   PT_FMT(ypr[1], 2);
-  //   PT('\t');
-  //   PT_FMT(ypr[2], 2);
-  // #ifdef READ_ACCELERATION
-  //   PT("\t");
-  //   // PT(aaWorld.x);
-  //   // PT("\t");
-  //   // PT(aaWorld.y);
-  //   PT(*xyzReal[0]);  // x is along the longer direction of the robot
-  //   PT("\t");
-  //   PT(*xyzReal[1]);
-  //   PT('\t');
-  //   PT(*xyzReal[2]);
-  //   PT("\t");
-  //   PT(aaWorld.z);
-  // #endif
-  //   PTL();
+bool read_mpu6050()
+{
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
+  { // Get the Latest packet
+    // display Euler angles in degrees
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    mpu.dmpGetAccel(&aa, fifoBuffer);
+    mpu.dmpGetEuler(euler, &q);
+    mpu.dmpGetGravity(&gravity, &q);
+    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
+    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
+    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
+
+    for (byte i = 0; i < 3; i++)
+    { // no need to flip yaw
+      ypr[i] *= degPerRad;
+#ifdef BiBoard_V0_1
+      ypr[i] = -ypr[i];
+      if (i != 2)
+        *xyzReal[i] = -*xyzReal[i];
+#endif
+    }
+    // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+
+    // Acceleration Real
+    //      ^ head
+    //        ^ x+
+    //        |
+    //  y+ <------ y-
+    //        |
+    //        | x-
+    // if (AWZ < -8500 && AWZ > -8600)
+    //   imuException = -1;  //dropping
+    // else
+    if (ARZ < 0 && fabs(ypr[2]) > 85) //  imuException = aaReal.z < 0;
+      imuException = -2;              // flipped
+#ifndef ROBOT_ARM
+    else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
+      imuException = -3;
+    else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
+      imuException = -4;
+#endif
+    // else if (  //keepDirectionQ &&
+    //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
+    //   imuException = -5;
+    else
+      imuException = 0;
+    // however, its change is very slow.
+    for (byte m = 0; m < 3; m++)
+    {
+      previous_xyzReal[m] = *xyzReal[m];
+      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2)
+      {
+        previous_ypr[m] = ypr[m];
+      }
+    }
+    return true;
+  }
+  return false;
 }
 
-void print6AxisMacro() {
+void mpu6050Setup(bool calibrateQ = true)
+{
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
+  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+#elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
+  Fastwire::setup(400, true);
+#endif
+
+  // initialize serial communication
+  // (115200 chosen because it is required for Teapot Demo output, but it's
+  // really up to you depending on your project)
+  // Serial.begin(115200);
+  // while (!Serial)
+  // ;  // wait for Leonardo enumeration, others continue immediately
+
+  // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3V or Arduino
+  // Pro Mini running at 3.3V, cannot handle this baud rate reliably due to
+  // the baud timing being too misaligned with processor ticks. You must use
+  // 38400 or slower in these cases, or use some kind of external separate
+  // crystal solution for the UART timer.
+  int connectAttempt = 0;
+  do
+  {
+    // initialize device
+    PTLF("\nInitializing MPU6050...");
+#if defined CONFIG_DISABLE_HAL_LOCKS && CONFIG_DISABLE_HAL_LOCKS == 1
+    PTL("OK");
+    PTL("If the program stucks, reinstall Arduino ESP32 boards version 2.0.12. Newer version may cause bugs!");
+#else
+    PTL("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
+#endif
+    mpu.initialize();
+    // pinMode(INTERRUPT_PIN, INPUT);
+    // verify connection
+    PTF("- Testing MPU connections...attempt ");
+    PTL(connectAttempt++);
+    delay(500);
+  } while (!mpu.testConnection());
+  PTLF("- MPU6050 connection successful");
+
+  // load and configure the DMP
+  PTLF("- Initializing DMP...");
+
+  devStatus = mpu.dmpInitialize();
+  PT("MPU offsets: ");
+  for (byte m = 0; m < 6; m++)
+  {
+#ifdef I2C_EEPROM_ADDRESS
+    mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
+#else
+    mpuOffset[m] = config.getShort(("mpu" + String(m)).c_str());
+#endif
+    PTT(mpuOffset[m], '\t');
+  }
+  PTL();
+  // supply the gyro offsets here, scaled for min sensitivity
+  mpu.setXAccelOffset(mpuOffset[0]);
+  mpu.setYAccelOffset(mpuOffset[1]);
+  mpu.setZAccelOffset(mpuOffset[2]); // gravity
+  mpu.setXGyroOffset(mpuOffset[3]);  // yaw
+  mpu.setYGyroOffset(mpuOffset[4]);  // pitch
+  mpu.setZGyroOffset(mpuOffset[5]);  // roll
+
+  // make sure it worked (returns 0 if so)
+  if (devStatus == 0)
+  {
+    // Calibration Time: generate offsets and calibrate our MPU6050
+    if (calibrateQ)
+    {
+      PTLF("Calibrate MPU6050...");
+      mpu.CalibrateAccel(20);
+      mpu.CalibrateGyro(20);
+#ifdef I2C_EEPROM_ADDRESS
+      i2c_eeprom_write_int16(EEPROM_MPU, mpu.getXAccelOffset());
+      i2c_eeprom_write_int16(EEPROM_MPU + 2, mpu.getYAccelOffset());
+      i2c_eeprom_write_int16(EEPROM_MPU + 4, mpu.getZAccelOffset());
+      i2c_eeprom_write_int16(EEPROM_MPU + 6, mpu.getXGyroOffset());
+      i2c_eeprom_write_int16(EEPROM_MPU + 8, mpu.getYGyroOffset());
+      i2c_eeprom_write_int16(EEPROM_MPU + 10, mpu.getZGyroOffset());
+#else
+      config.putShort("mpu0", mpu.getXAccelOffset());
+      config.putShort("mpu1", mpu.getYAccelOffset());
+      config.putShort("mpu2", mpu.getZAccelOffset());
+      config.putShort("mpu3", mpu.getXGyroOffset());
+      config.putShort("mpu4", mpu.getYGyroOffset());
+      config.putShort("mpu5", mpu.getZGyroOffset());
+
+#endif
+      mpu.PrintActiveOffsets();
+    }
+    // turn on the DMP, now that it's ready
+    PTLF("- Enabling DMP...");
+    mpu.setDMPEnabled(true);
+
+    // enable Arduino interrupt detection
+    // PTF("- Enabling interrupt detection (Arduino external interrupt ");
+    // PT(digitalPinToInterrupt(INTERRUPT_PIN));
+    // PTLF(")...");
+    // attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
+    mpuIntStatus = mpu.getIntStatus();
+
+    // set our DMP Ready flag so the main loop() function knows it's okay to use it
+    PTLF("- DMP ready! Waiting for the first interrupt...");
+    dmpReady = true;
+
+    // get expected DMP packet size for later comparison
+    packetSize = mpu.dmpGetFIFOPacketSize();
+  }
+  else
+  {
+    // ERROR!
+    // 1 = initial memory load failed
+    // 2 = DMP configuration updates failed
+    // (if it's going to break, usually the code will be 1)
+    PTF("- DMP Initialization failed (code ");
+    PT(devStatus);
+    PTLF(")");
+  }
+
+  delay(10);
+  read_mpu6050();
+}
+void print6AxisMacro()
+{
 #ifdef OUTPUT_READABLE_QUATERNION
   // display quaternion values in easy matrix form: w x y z
   PT("quat\t");
@@ -282,223 +437,167 @@ void print6AxisMacro() {
   PT("\t");
 #endif
   PT("areal.z\t");
-  PT(aaReal.z);  // becomes negative when flipped
+  PT(aaReal.z); // becomes negative when flipped
   PT("\t");
 
   PTL();
 }
 
-bool read_mpu6050() {
-  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {  // Get the Latest packet
-    // display Euler angles in degrees
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    mpu.dmpGetAccel(&aa, fifoBuffer);
-    mpu.dmpGetEuler(euler, &q);
-    mpu.dmpGetGravity(&gravity, &q);
-    mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-    mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-    mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-
-    for (byte i = 0; i < 3; i++) {  // no need to flip yaw
-      ypr[i] *= degPerRad;
-#if defined BiBoard_V0_1
-      ypr[i] = -ypr[i];
-      if (i != 2)
-        *xyzReal[i] = -*xyzReal[i];
 #endif
-    }
-    if (printGyroQ)
-      print6Axis();
-    // exceptions = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 
-    // Acceleration Real
-    //      ^ head
-    //        ^ x+
-    //        |
-    //  y+ <------ y-
-    //        |
-    //        | x-
-    // if (AWZ < -8500 && AWZ > -8600)
-    //   exceptions = -1;  //dropping
-    // else
-    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  exceptions = aaReal.z < 0;
-      exceptions = -2;                 // flipped
-#ifndef ROBOT_ARM
-    else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
-      exceptions = -3;
-    else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
-      exceptions = -4;
-#endif
-    // else if (  //keepDirectionQ &&
-    //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-    //   exceptions = -5;
-    else
-      exceptions = 0;
-    // however, its change is very slow.
-    for (byte m = 0; m < 3; m++) {
-      previous_xyzReal[m] = *xyzReal[m];
-      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
-        previous_ypr[m] = ypr[m];
-      }
-    }
-    return true;
+#ifdef IMU_ICM42670
+#include "icm42670/petoi_icm42670p.h"
+
+imu42670p icm(Wire, 1);
+
+void icm42670Setup(bool calibrateQ = true)
+{
+  PTLF("\nInitializing ICM42670...");
+  icm.begin();
+  icm.init(200, 2, 250);
+  // Wait icm to start
+  delay(100);
+
+  // Calibration Time: generate offsets and calibrate our MPU6050
+  if (calibrateQ)
+  {
+    PTLF("Calibrate ICM42670...");
+    icm.getOffset(2000);
+    config.putFloat("icm_accel0", icm.offset_accel[0]);
+    config.putFloat("icm_accel1", icm.offset_accel[1]);
+    config.putFloat("icm_accel2", icm.offset_accel[2]);
+    config.putFloat("icm_gyro0", icm.offset_gyro[0]);
+    config.putFloat("icm_gyro1", icm.offset_gyro[1]);
+    config.putFloat("icm_gyro2", icm.offset_gyro[2]);
   }
-  return false;
+  else
+  {
+    Serial.println("calibration already done");
+    icm.offset_accel[0] = config.getFloat("icm_accel0");
+    icm.offset_accel[1] = config.getFloat("icm_accel1");
+    icm.offset_accel[2] = config.getFloat("icm_accel2");
+    icm.offset_gyro[0] = config.getFloat("icm_gyro0");
+    icm.offset_gyro[1] = config.getFloat("icm_gyro1");
+    icm.offset_gyro[2] = config.getFloat("icm_gyro2");
+  }
 }
+#endif
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-void mpu6050Setup() {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-#if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-  Wire.setClock(400000);  // 400kHz I2C clock. Comment this line if having compilation difficulties
-#elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
-  Fastwire::setup(400, true);
-#endif
-
-  // initialize serial communication
-  // (115200 chosen because it is required for Teapot Demo output, but it's
-  // really up to you depending on your project)
-  // Serial.begin(115200);
-  // while (!Serial)
-  // ;  // wait for Leonardo enumeration, others continue immediately
-
-  // NOTE: 8MHz or slower host processors, like the Teensy @ 3.3V or Arduino
-  // Pro Mini running at 3.3V, cannot handle this baud rate reliably due to
-  // the baud timing being too misaligned with processor ticks. You must use
-  // 38400 or slower in these cases, or use some kind of external separate
-  // crystal solution for the UART timer.
-  int connectAttempt = 0;
-  do {
-    // initialize device
-    PTLF("Initializing MPU...");
-#if defined CONFIG_DISABLE_HAL_LOCKS && CONFIG_DISABLE_HAL_LOCKS == 1
-    PTL("OK");
-    PTL("If the program stucks, reinstall Arduino ESP32 boards version 2.0.12. Newer version may cause bugs!");
+// #define READ_ACCELERATION
+void print6Axis()
+{
+  char buffer[48]; // Adjust buffer size as needed
+#ifdef IMU_MPU6050
+#ifdef READ_ACCELERATION
+  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d", // 7x6 = 42
+          ypr[0], ypr[1], ypr[2], *xyzReal[0], *xyzReal[1], *xyzReal[2], aaWorld.z);
 #else
-    PTL("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
+  sprintf(buffer, "%6.1f %6.1f %6.1f", ypr[0], ypr[1], ypr[2]);
 #endif
-    mpu.initialize();
-    // pinMode(INTERRUPT_PIN, INPUT);
-    // verify connection
-    PTF("- Testing MPU connections...attempt ");
-    PTL(connectAttempt++);
-    delay(500);
-  } while (!mpu.testConnection());
-  PTLF("- MPU6050 connection successful");
+  printToAllPorts(buffer, 0);
+#endif
 
-  // load and configure the DMP
-  PTLF("- Initializing DMP...");
-
-  devStatus = mpu.dmpInitialize();
-  PT("MPU offsets: ");
-  for (byte m = 0; m < 6; m++) {
-#ifdef I2C_EEPROM_ADDRESS
-    mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
+#ifdef IMU_ICM42670
+#ifdef READ_ACCELERATION
+  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d", // 7x6 = 42
+          icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.ax_real, icm.ay_real, icm.az_real);
 #else
-    mpuOffset[m] = config.getShort(("mpu" + String(m)).c_str());
+  sprintf(buffer, "%6.1f %6.1f %6.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #endif
-    PTT(mpuOffset[m], '\t');
-  }
+  printToAllPorts(buffer, 0);
+#endif
   PTL();
-  // supply the gyro offsets here, scaled for min sensitivity
-  mpu.setXAccelOffset(mpuOffset[0]);
-  mpu.setYAccelOffset(mpuOffset[1]);
-  mpu.setZAccelOffset(mpuOffset[2]);  // gravity
-  mpu.setXGyroOffset(mpuOffset[3]);   // yaw
-  mpu.setYGyroOffset(mpuOffset[4]);   // pitch
-  mpu.setZGyroOffset(mpuOffset[5]);   // roll
 
-  // make sure it worked (returns 0 if so)
-  if (devStatus == 0) {
-    // Calibration Time: generate offsets and calibrate our MPU6050
-    if (newBoard) {
-#ifndef AUTO_INIT
-      PTL("- Calibrate the Inertial Measurement Unit (IMU)? (Y/n): ");
-      char choice = getUserInputChar();
-      PTL(choice);
-      if (choice == 'Y' || choice == 'y') {
-#else
-      PTL("- Calibrate the Inertial Measurement Unit (IMU)...");
-#endif
-        PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
-#ifndef AUTO_INIT
-        beep(8, 500, 500, 5);
-#endif
-        beep(15, 500, 500, 1);
-        mpu.CalibrateAccel(20);
-        mpu.CalibrateGyro(20);
-#ifdef I2C_EEPROM_ADDRESS
-        i2c_eeprom_write_int16(EEPROM_MPU, mpu.getXAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 2, mpu.getYAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 4, mpu.getZAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 6, mpu.getXGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 8, mpu.getYGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 10, mpu.getZGyroOffset());
-#else
-      config.putShort("mpu0", mpu.getXAccelOffset());
-      config.putShort("mpu1", mpu.getYAccelOffset());
-      config.putShort("mpu2", mpu.getZAccelOffset());
-      config.putShort("mpu3", mpu.getXGyroOffset());
-      config.putShort("mpu4", mpu.getYGyroOffset());
-      config.putShort("mpu5", mpu.getZGyroOffset());
+  //   PT_FMT(ypr[0], 2);
+  //   PT('\t');
+  //   PT_FMT(ypr[1], 2);
+  //   PT('\t');
+  //   PT_FMT(ypr[2], 2);
+  // #ifdef READ_ACCELERATION
+  //   PT("\t");
+  //   // PT(aaWorld.x);
+  //   // PT("\t");
+  //   // PT(aaWorld.y);
+  //   PT(*xyzReal[0]);  // x is along the longer direction of the robot
+  //   PT("\t");
+  //   PT(*xyzReal[1]);
+  //   PT('\t');
+  //   PT(*xyzReal[2]);
+  //   PT("\t");
+  //   PT(aaWorld.z);
+  // #endif
+  //   PTL();
+}
 
-#endif
-        beep(18, 50, 50, 6);
+void imuSetup()
+{
+  if (newBoard)
+  {
 #ifndef AUTO_INIT
-      }
-#endif
-      mpu.PrintActiveOffsets();
+    PTL("- Calibrate the Inertial Measurement Unit (IMU)? (Y/n): ");
+    char choice = getUserInputChar();
+    PTL(choice);
+    if (choice == 'Y' || choice == 'y')
+      calibrateQ = true;
+    if (calibrateQ)
+    {
+      PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
+      beep(8, 500, 500, 5);
     }
-    // turn on the DMP, now that it's ready
-    PTLF("- Enabling DMP...");
-    mpu.setDMPEnabled(true);
-
-    // enable Arduino interrupt detection
-    // PTF("- Enabling interrupt detection (Arduino external interrupt ");
-    // PT(digitalPinToInterrupt(INTERRUPT_PIN));
-    // PTLF(")...");
-    // attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
-    mpuIntStatus = mpu.getIntStatus();
-
-    // set our DMP Ready flag so the main loop() function knows it's okay to use it
-    PTLF("- DMP ready! Waiting for the first interrupt...");
-    dmpReady = true;
-
-    // get expected DMP packet size for later comparison
-    packetSize = mpu.dmpGetFIFOPacketSize();
-  } else {
-    // ERROR!
-    // 1 = initial memory load failed
-    // 2 = DMP configuration updates failed
-    // (if it's going to break, usually the code will be 1)
-    PTF("- DMP Initialization failed (code ");
-    PT(devStatus);
-    PTLF(")");
+#endif
+    beep(15, 500, 500, 1);
   }
-
-  delay(10);
-  read_mpu6050();
+#ifdef IMU_MPU6050
   // for (byte t = 0; t < 100; t++) {
   //   read_mpu6050();
   //   print6Axis();
   //   delay(2);
   // }
-  exceptions = aaReal.z < 0;
+  mpu6050Setup(calibrateQ);
+  imuException = aaReal.z < 0;
+#endif
+#ifdef IMU_ICM42670
+  icm42670Setup(calibrateQ);
+#endif
+  if (calibrateQ)
+    beep(18, 50, 50, 6);
   previous_ypr[0] = ypr[0];
 }
 
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
-
-void imuExample() {
-  // if programming failed, don't try to do anything
-  if (!dmpReady)
-    return;
-  // read a packet from FIFO
-  read_mpu6050();
-  print6Axis();
+bool readIMU()
+{
+  if (gyroUpdateQ && !(frame % imuSkip))
+  {
+#ifdef IMU_MPU6050
+    // if programming failed, don't try to do anything
+    bool updated = false;
+    if (!dmpReady)
+      return false;
+    // read a packet from FIFO
+    updated |= read_mpu6050();
+#endif
+#ifdef IMU_ICM42670
+    icm.getImuGyro();
+#endif
+    if (updated & printGyroQ)
+      print6Axis();
+    return updated;
+  }
 }
+long imuTime = 0;
+void taskIMU(void *parameter)
+{
+  while (true)
+  {
+    if (millis() - imuTime > 5)
+    {
+      imuUpdated = readIMU();
+      imuTime = millis();
+    }
+  }
+}
+TaskHandle_t TASK_imu = NULL;

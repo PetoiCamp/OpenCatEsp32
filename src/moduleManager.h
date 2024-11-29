@@ -50,7 +50,6 @@
 // #define GYRO_PIN 0
 #endif
 
-
 int8_t indexOfModule(char moduleName) {
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleName == moduleList[i])
@@ -61,7 +60,7 @@ bool moduleActivatedQfunction(char moduleCode) {
   return moduleActivatedQ[indexOfModule(moduleCode)];
 }
 
-int8_t activeModuleIdx() {  //designed to work if only one active module is allowed
+int8_t activeModuleIdx() {  // designed to work if only one active module is allowed
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
     if (moduleActivatedQ[i])
       return i;
@@ -256,8 +255,8 @@ void showModuleStatus() {
 void reconfigureTheActiveModule(char *moduleCode) {
   // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
-    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     //if the modules is active and different from the new module
-      if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  //it won't disable the voice
+    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     // if the modules is active and different from the new module
+      if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  // it won't disable the voice
         continue;
       PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
@@ -454,7 +453,6 @@ String decision() {
   return "";
 }
 
-
 void i2cDetect() {
   byte error, address;
   int nDevices;
@@ -503,7 +501,7 @@ void read_touch() {
     TOUCH3,
   };
   for (byte t = 0; t < 4; t++) {
-    int touchValue = touchRead(touchPin[t]);  //do something with the touch?
+    int touchValue = touchRead(touchPin[t]);  // do something with the touch?
     //    PT(touchValue);
     //    PT('\t');
   }
@@ -513,7 +511,7 @@ void read_touch() {
 void readEnvironment() {
 #ifdef GYRO_PIN
   if (gyroUpdateQ && !(frame % imuSkip))
-    imuUpdated = read_mpu6050();
+    imuUpdated = readIMU();
 #endif
   read_sound();
   read_GPS();

@@ -81,10 +81,12 @@ String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE     // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP     // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define BT_CLIENT  // toggle Bluetooth client (BLE） for Micro:Bit
-#define GYRO_PIN   // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+// #define BT_CLIENT    // toggle Bluetooth client (BLE） for Micro:Bit
+#define GYRO_PIN      // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define IMU_MPU6050   // toggle the MPU6050 gyroscope
+#define IMU_ICM42670  // toggle the ICM42670 gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -185,7 +187,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_TX2 10
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
-#define IMU_ICM42670
+// #define IMU_ICM42670
 // #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 // #ifdef ROBOT_ARM
@@ -388,7 +390,7 @@ bool manualEyeColorQ = false;
 int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
-int exceptions = 0;
+int imuException = 0;
 byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 
@@ -626,7 +628,7 @@ void initRobot() {
   PTL("/10");
 
 #ifdef GYRO_PIN
-  mpu6050Setup();
+  imuSetup();
 #endif
 #ifdef BT_BLE
   bleSetup();
@@ -676,7 +678,7 @@ void initRobot() {
 #ifdef GYRO_PIN
   read_mpu6050();  // ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
-    tQueue->addTask((exceptions) ? T_CALIBRATE : T_REST, "");
+    tQueue->addTask((imuException) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");
   beep(24, 50);

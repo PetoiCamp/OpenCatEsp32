@@ -95,7 +95,18 @@ void distancePID(float dLeft, float dRight) {
       // Calculate the control signal using the PID formula
       currentXDistance = -max(-90.0, min(90.0, double(kpDistance * errorDistance + kiDistance * integral + kdDistance * derivative)));
       // Send the control signal to the sensors to adjust their angles
-      calibratedPWM(0, currentXDistance, 2);
+      // token = T_INDEXED_SIMULTANEOUS_BIN;
+      // newCmd[0] = 0;
+      // newCmd[1] = currentXDistance;
+      // newCmd[2] = 1;
+      // newCmd[3] = 15;
+      // // last = actualOffset;
+      // cmdLen = 4;
+      // newCmdIdx = 5;
+      manualHeadQ = true;
+      targetHead[0] = currentXDistance;
+      int duty = currentAng[0] + max(-20, min(20, (targetHead[0] - currentAng[0])));
+      calibratedPWM(0, duty, 0.5);
       // Save the current errorDistance for use in the next iteration
       last_error = errorDistance;
     }
