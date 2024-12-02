@@ -47,10 +47,13 @@ void allCalibratedPWM(int *dutyAng, byte offset = 0) {
   }
 }
 
-template<typename T> void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0, int runDelay = 8) {
+template<typename T>
+void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte offset = 0, int period = 0, int runDelay = 8) {
   if (0) {                     //(offset != 0)) {
     T *target_[DOF - offset];  // target_ ： nearest frame in target gait
-    for (int j = 0; j < DOF - offset; j++) { target_[j] = target; }
+    for (int j = 0; j < DOF - offset; j++) {
+      target_[j] = target;
+    }
     int min_pose_dis[8] = { 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000 };
     int min_pose_idx[8] = {};
     int gait_len = abs(period);
@@ -82,16 +85,24 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     for (int i = offset; i < DOF; i++) {
       maxDiff = max(maxDiff, abs(currentAng[i] - target_[i - offset][i - offset] * angleDataRatio));
       svel[i - offset] = (currentAng[i] - previousAng[i]);
-      if (curr_max_abs_svel < abs(currentAng[i] - previousAng[i])) { curr_max_abs_svel = abs(currentAng[i] - previousAng[i]); }
+      if (curr_max_abs_svel < abs(currentAng[i] - previousAng[i])) {
+        curr_max_abs_svel = abs(currentAng[i] - previousAng[i]);
+      }
       evel[i - offset] = (target + ((min_pose_idx[i - offset] + 1 >= gait_len) ? 0 : (min_pose_idx[i - offset] + 1)) * (DOF - offset))[i - offset] - (target + min_pose_idx[i - offset] * (DOF - offset))[i - offset];
     }
-    if (curr_max_abs_svel < 1) { curr_max_abs_svel = 1; }
+    if (curr_max_abs_svel < 1) {
+      curr_max_abs_svel = 1;
+    }
 
     float target_max_abs_svel = 0;
     for (int i = 0; i < DOF - offset; i++) {
-      if (target_max_abs_svel < abs(target[i] - target[DOF - offset + i])) { target_max_abs_svel = abs(target[i] - target[DOF - offset + i]); };
+      if (target_max_abs_svel < abs(target[i] - target[DOF - offset + i])) {
+        target_max_abs_svel = abs(target[i] - target[DOF - offset + i]);
+      };
     }
-    if (target_max_abs_svel < 1) { target_max_abs_svel = 1; }
+    if (target_max_abs_svel < 1) {
+      target_max_abs_svel = 1;
+    }
 
     Serial.print(" target_max_abs_svel: ");
     Serial.print(target_max_abs_svel);
@@ -171,7 +182,7 @@ template<typename T> void transform(T *target, byte angleDataRatio = 1, float sp
     // }
     for (int s = 0; s <= steps; s++) {
       if (gyroUpdateQ && printGyroQ) {
-        readIMU();
+        // readIMU();
         print6Axis();
       }
       for (byte i = offset; i < DOF; i++) {

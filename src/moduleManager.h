@@ -510,8 +510,10 @@ void read_touch() {
 #endif
 void readEnvironment() {
 #ifdef GYRO_PIN
-  if (gyroUpdateQ && !(frame % imuSkip))
-    imuUpdated = readIMU();
+  // if (gyroUpdateQ && !(frame % imuSkip))
+  //   imuUpdated = readIMU();
+  if (imuUpdated & printGyroQ)
+    print6Axis();
 #endif
   read_sound();
   read_GPS();

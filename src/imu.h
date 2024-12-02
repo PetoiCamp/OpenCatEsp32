@@ -130,23 +130,23 @@ MPU6050 mpu;
 // #define OUTPUT_TEAPOT
 
 // MPU control/status vars
-bool dmpReady = false;  // set true if DMP init was successful
-uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
-uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-uint16_t fifoCount;     // count of all bytes currently in FIFO
-uint8_t fifoBuffer[64]; // FIFO storage buffer
+bool dmpReady = false;   // set true if DMP init was successful
+uint8_t mpuIntStatus;    // holds actual interrupt status byte from MPU
+uint8_t devStatus;       // return status after each device operation (0 = success, !0 = error)
+uint16_t packetSize;     // expected DMP packet size (default is 42 bytes)
+uint16_t fifoCount;      // count of all bytes currently in FIFO
+uint8_t fifoBuffer[64];  // FIFO storage buffer
 
 // orientation/motion vars
-Quaternion q;        // [w, x, y, z]         quaternion container
-VectorInt16 aa;      // [x, y, z]            accel sensor measurements
-VectorInt16 gy;      // [x, y, z]            gyro sensor measurements
-VectorInt16 aaReal;  // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld; // [x, y, z]            world-frame accel sensor measurements
-VectorFloat gravity; // [x, y, z]            gravity vector
-float euler[3];      // [psi, theta, phi]    Euler angle container
-float ypr[3];        // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
-int16_t *xyzReal[3] = {&aaReal.x, &aaReal.y, &aaReal.z};
+Quaternion q;         // [w, x, y, z]         quaternion container
+VectorInt16 aa;       // [x, y, z]            accel sensor measurements
+VectorInt16 gy;       // [x, y, z]            gyro sensor measurements
+VectorInt16 aaReal;   // [x, y, z]            gravity-free accel sensor measurements
+VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measurements
+VectorFloat gravity;  // [x, y, z]            gravity vector
+float euler[3];       // [psi, theta, phi]    Euler angle container
+float ypr[3];         // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
+int16_t *xyzReal[3] = { &aaReal.x, &aaReal.y, &aaReal.z };
 int16_t previous_xyzReal[3];
 float previous_ypr[3];
 int8_t yprTilt[3];
@@ -159,11 +159,11 @@ int8_t yprTilt[3];
 #define AWZ aaWorld.z
 int thresX, thresY, thresZ;
 #define IMU_SKIP 1
-#define IMU_SKIP_MORE 23 // use prime number to avoid repeatly skipping the same joint
+#define IMU_SKIP_MORE 23  // use prime number to avoid repeatly skipping the same joint
 byte imuSkip = IMU_SKIP;
 
 // packet structure for InvenSense teapot demo
-uint8_t teapotPacket[14] = {'$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n'};
+uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -178,10 +178,8 @@ uint8_t teapotPacket[14] = {'$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r',
 
 // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
 
-bool read_mpu6050()
-{
-  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer))
-  { // Get the Latest packet
+bool read_mpu6050() {
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) {  // Get the Latest packet
     // display Euler angles in degrees
     mpu.dmpGetQuaternion(&q, fifoBuffer);
     mpu.dmpGetAccel(&aa, fifoBuffer);
@@ -191,8 +189,7 @@ bool read_mpu6050()
     mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
     mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
 
-    for (byte i = 0; i < 3; i++)
-    { // no need to flip yaw
+    for (byte i = 0; i < 3; i++) {  // no need to flip yaw
       ypr[i] *= degPerRad;
 #ifdef BiBoard_V0_1
       ypr[i] = -ypr[i];
@@ -212,8 +209,8 @@ bool read_mpu6050()
     // if (AWZ < -8500 && AWZ > -8600)
     //   imuException = -1;  //dropping
     // else
-    if (ARZ < 0 && fabs(ypr[2]) > 85) //  imuException = aaReal.z < 0;
-      imuException = -2;              // flipped
+    if (ARZ < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
+      imuException = -2;               // flipped
 #ifndef ROBOT_ARM
     else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
       imuException = -3;
@@ -226,11 +223,9 @@ bool read_mpu6050()
     else
       imuException = 0;
     // however, its change is very slow.
-    for (byte m = 0; m < 3; m++)
-    {
+    for (byte m = 0; m < 3; m++) {
       previous_xyzReal[m] = *xyzReal[m];
-      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2)
-      {
+      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
         previous_ypr[m] = ypr[m];
       }
     }
@@ -239,11 +234,10 @@ bool read_mpu6050()
   return false;
 }
 
-void mpu6050Setup(bool calibrateQ = true)
-{
+void mpu6050Setup(bool calibrateQ = true) {
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
-  Wire.setClock(400000); // 400kHz I2C clock. Comment this line if having compilation difficulties
+  Wire.setClock(400000);  // 400kHz I2C clock. Comment this line if having compilation difficulties
 #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
   Fastwire::setup(400, true);
 #endif
@@ -261,8 +255,7 @@ void mpu6050Setup(bool calibrateQ = true)
   // 38400 or slower in these cases, or use some kind of external separate
   // crystal solution for the UART timer.
   int connectAttempt = 0;
-  do
-  {
+  do {
     // initialize device
     PTLF("\nInitializing MPU6050...");
 #if defined CONFIG_DISABLE_HAL_LOCKS && CONFIG_DISABLE_HAL_LOCKS == 1
@@ -285,8 +278,7 @@ void mpu6050Setup(bool calibrateQ = true)
 
   devStatus = mpu.dmpInitialize();
   PT("MPU offsets: ");
-  for (byte m = 0; m < 6; m++)
-  {
+  for (byte m = 0; m < 6; m++) {
 #ifdef I2C_EEPROM_ADDRESS
     mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
 #else
@@ -298,17 +290,15 @@ void mpu6050Setup(bool calibrateQ = true)
   // supply the gyro offsets here, scaled for min sensitivity
   mpu.setXAccelOffset(mpuOffset[0]);
   mpu.setYAccelOffset(mpuOffset[1]);
-  mpu.setZAccelOffset(mpuOffset[2]); // gravity
-  mpu.setXGyroOffset(mpuOffset[3]);  // yaw
-  mpu.setYGyroOffset(mpuOffset[4]);  // pitch
-  mpu.setZGyroOffset(mpuOffset[5]);  // roll
+  mpu.setZAccelOffset(mpuOffset[2]);  // gravity
+  mpu.setXGyroOffset(mpuOffset[3]);   // yaw
+  mpu.setYGyroOffset(mpuOffset[4]);   // pitch
+  mpu.setZGyroOffset(mpuOffset[5]);   // roll
 
   // make sure it worked (returns 0 if so)
-  if (devStatus == 0)
-  {
+  if (devStatus == 0) {
     // Calibration Time: generate offsets and calibrate our MPU6050
-    if (calibrateQ)
-    {
+    if (calibrateQ) {
       PTLF("Calibrate MPU6050...");
       mpu.CalibrateAccel(20);
       mpu.CalibrateGyro(20);
@@ -347,9 +337,7 @@ void mpu6050Setup(bool calibrateQ = true)
 
     // get expected DMP packet size for later comparison
     packetSize = mpu.dmpGetFIFOPacketSize();
-  }
-  else
-  {
+  } else {
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
@@ -362,8 +350,7 @@ void mpu6050Setup(bool calibrateQ = true)
   delay(10);
   read_mpu6050();
 }
-void print6AxisMacro()
-{
+void print6AxisMacro() {
 #ifdef OUTPUT_READABLE_QUATERNION
   // display quaternion values in easy matrix form: w x y z
   PT("quat\t");
@@ -437,7 +424,7 @@ void print6AxisMacro()
   PT("\t");
 #endif
   PT("areal.z\t");
-  PT(aaReal.z); // becomes negative when flipped
+  PT(aaReal.z);  // becomes negative when flipped
   PT("\t");
 
   PTL();
@@ -450,8 +437,7 @@ void print6AxisMacro()
 
 imu42670p icm(Wire, 1);
 
-void icm42670Setup(bool calibrateQ = true)
-{
+void icm42670Setup(bool calibrateQ = true) {
   PTLF("\nInitializing ICM42670...");
   icm.begin();
   icm.init(200, 2, 250);
@@ -459,8 +445,7 @@ void icm42670Setup(bool calibrateQ = true)
   delay(100);
 
   // Calibration Time: generate offsets and calibrate our MPU6050
-  if (calibrateQ)
-  {
+  if (calibrateQ) {
     PTLF("Calibrate ICM42670...");
     icm.getOffset(2000);
     config.putFloat("icm_accel0", icm.offset_accel[0]);
@@ -469,9 +454,7 @@ void icm42670Setup(bool calibrateQ = true)
     config.putFloat("icm_gyro0", icm.offset_gyro[0]);
     config.putFloat("icm_gyro1", icm.offset_gyro[1]);
     config.putFloat("icm_gyro2", icm.offset_gyro[2]);
-  }
-  else
-  {
+  } else {
     Serial.println("calibration already done");
     icm.offset_accel[0] = config.getFloat("icm_accel0");
     icm.offset_accel[1] = config.getFloat("icm_accel1");
@@ -488,25 +471,24 @@ void icm42670Setup(bool calibrateQ = true)
 // ================================================================
 
 // #define READ_ACCELERATION
-void print6Axis()
-{
-  char buffer[48]; // Adjust buffer size as needed
+void print6Axis() {
+  char buffer[48];  // Adjust buffer size as needed
 #ifdef IMU_MPU6050
 #ifdef READ_ACCELERATION
-  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d", // 7x6 = 42
+  sprintf(buffer, "%7.1f %7.1f %7.1f %6d %6d %6d",  // 7x6 = 42
           ypr[0], ypr[1], ypr[2], *xyzReal[0], *xyzReal[1], *xyzReal[2], aaWorld.z);
 #else
-  sprintf(buffer, "%6.1f %6.1f %6.1f", ypr[0], ypr[1], ypr[2]);
+  sprintf(buffer, "%7.1f %7.1f %7.1f", ypr[0], ypr[1], ypr[2]);
 #endif
   printToAllPorts(buffer, 0);
 #endif
 
 #ifdef IMU_ICM42670
 #ifdef READ_ACCELERATION
-  sprintf(buffer, "%6.1f %6.1f %6.1f %6d %6d %6d", // 7x6 = 42
+  sprintf(buffer, "%7.1f %7.1f %7.1f %6d %6d %6d",  // 7x6 = 42
           icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.ax_real, icm.ay_real, icm.az_real);
 #else
-  sprintf(buffer, "%6.1f %6.1f %6.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
+  sprintf(buffer, "%7.1f %7.1f %7.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #endif
   printToAllPorts(buffer, 0);
 #endif
@@ -533,18 +515,44 @@ void print6Axis()
   //   PTL();
 }
 
-void imuSetup()
-{
-  if (newBoard)
-  {
+bool readIMU() {
+  if (gyroUpdateQ && !(frame % imuSkip)) {
+#ifdef IMU_MPU6050
+    // if programming failed, don't try to do anything
+    bool updated = false;
+    if (!dmpReady)
+      return false;
+    // read a packet from FIFO
+    updated |= read_mpu6050();
+#endif
+#ifdef IMU_ICM42670
+    icm.getImuGyro();
+#endif
+    return updated;
+  }
+}
+
+long imuTime = 0;
+void taskIMU(void *parameter) {
+  while (true) {
+    if (millis() - imuTime > 5) {
+      imuUpdated = readIMU();
+      imuTime = millis();
+      // delay(1);  // to avoid the task to be blocked
+    }
+  }
+}
+TaskHandle_t TASK_imu = NULL;
+
+void imuSetup() {
+  if (newBoard) {
 #ifndef AUTO_INIT
     PTL("- Calibrate the Inertial Measurement Unit (IMU)? (Y/n): ");
     char choice = getUserInputChar();
     PTL(choice);
     if (choice == 'Y' || choice == 'y')
       calibrateQ = true;
-    if (calibrateQ)
-    {
+    if (calibrateQ) {
       PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
       beep(8, 500, 500, 5);
     }
@@ -566,38 +574,14 @@ void imuSetup()
   if (calibrateQ)
     beep(18, 50, 50, 6);
   previous_ypr[0] = ypr[0];
-}
-
-bool readIMU()
-{
-  if (gyroUpdateQ && !(frame % imuSkip))
-  {
-#ifdef IMU_MPU6050
-    // if programming failed, don't try to do anything
-    bool updated = false;
-    if (!dmpReady)
-      return false;
-    // read a packet from FIFO
-    updated |= read_mpu6050();
+#ifdef GYRO_PIN
+  xTaskCreatePinnedToCore(
+    taskIMU,    // task function
+    "TaskIMU",  // name
+    10000,      // task stack size​​
+    NULL,       // parameters
+    1,          // priority
+    &TASK_imu,  // handle
+    0);         // core
 #endif
-#ifdef IMU_ICM42670
-    icm.getImuGyro();
-#endif
-    if (updated & printGyroQ)
-      print6Axis();
-    return updated;
-  }
 }
-long imuTime = 0;
-void taskIMU(void *parameter)
-{
-  while (true)
-  {
-    if (millis() - imuTime > 5)
-    {
-      imuUpdated = readIMU();
-      imuTime = millis();
-    }
-  }
-}
-TaskHandle_t TASK_imu = NULL;

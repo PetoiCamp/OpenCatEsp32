@@ -76,14 +76,14 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241104"  // YYMMDD
+#define DATE "241202"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-// #define BT_CLIENT    // toggle Bluetooth client (BLE） for Micro:Bit
+#define BT_BLE        // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP        // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_CLIENT     // toggle Bluetooth client (BLE） for Micro:Bit
 #define GYRO_PIN      // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define IMU_MPU6050   // toggle the MPU6050 gyroscope
 #define IMU_ICM42670  // toggle the ICM42670 gyroscope
@@ -356,6 +356,7 @@ int frame = 0;
 int tStep = 1;
 long loopTimer;
 byte fps = 0;
+// long wdtTimer;
 
 char token;
 char lastToken;

@@ -1,3 +1,4 @@
+#include "esp32-hal.h"
 void dealWithExceptions() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ && imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
@@ -944,6 +945,7 @@ void reaction() {
       transform((int8_t *)newCmd, 1, 2);
     }
   } else {
-    delay(1);  // avoid triggering WDT on BiBoard V0_2
+    // wdtTimer = millis();
+    delay(1);  // avoid triggering WDT
   }
 }
