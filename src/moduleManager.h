@@ -208,6 +208,7 @@ void stopModule(char moduleCode) {
 #ifdef DOUBLE_IR_DISTANCE
     case EXTENSION_DOUBLE_IR_DISTANCE:
       {
+        manualHeadQ = false;
         break;
       }
 #endif

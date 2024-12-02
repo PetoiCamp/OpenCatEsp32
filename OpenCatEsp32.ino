@@ -14,8 +14,7 @@
 // Send '!' token to reset the birthmark in the EEPROM so that the robot will restart to reset
 // #define AUTO_INIT  //activate it to automatically reset joint and imu calibration without prompts
 
-// you can also activate the following modes (they will diable the gyro to save programming space)
-// allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
+// you can also activate the following modes by the 'X' token defined in src/OpenCat.h
 #define VOICE                     // Petoi Grove voice module
 #define ULTRASONIC                // for Petoi RGB ultrasonic distance sensor
 #define PIR                       // for PIR (Passive Infrared) sensor
@@ -25,7 +24,7 @@
 #define GESTURE                   // for Gesture module
 #define CAMERA                    // for Mu Vision camera
 #define QUICK_DEMO                // for quick demo
-// #define ROBOT_ARM                 // for attaching head clip arm
+#define ROBOT_ARM                 // for attaching head clip arm
 #include "src/OpenCat.h"
 
 void setup() {

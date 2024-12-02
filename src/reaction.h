@@ -266,17 +266,19 @@ void reaction() {
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
-      reAttachAllServos();
-      measureServoPin = -1;
       for (byte i = 0; i < DOF; i++)
         movedJoint[i] = 0;
+      reAttachAllServos();
+      measureServoPin = -1;
     }
 #endif
 
     switch (token) {
       case T_HELP_INFO:
         {
-          PTLF("* Please refer to docs.petoi.com");
+          PTLF("* Please refer to docs.petoi.com.\nEnter any character to continue.");
+          while (!Serial.available())
+            ;
           break;
         }
       case T_QUERY:
@@ -324,15 +326,16 @@ void reaction() {
                 else if (toupper(newCmd[i]) == T_GYRO_PRINT) {
                   printGyroQ = newCmd[i] == T_GYRO_PRINT;
                   print6Axis();
+                } else if (newCmd[i] == '?') {
+                  PTF("Gyro state:");
+                  PTT(" Balance-", gyroBalanceQ);
+                  PTT(" Print-", printGyroQ);
+                  PTTL(" Frequency-", fineAdjustQ);
                 }
                 i++;
               }
               imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
               runDelay = fineAdjustQ ? delayMid : delayShort;
-              PTF("Gyro state:");
-              PTT(" Balance-", gyroBalanceQ);
-              PTT(" Print-", printGyroQ);
-              PTTL(" Frequency-", fineAdjustQ);
             }
           }
 #endif
@@ -401,11 +404,11 @@ void reaction() {
           }
           break;
         }
-      case T_MELODY:
-        {
-          playMelody(melody1, sizeof(melody1) / 2);
-          break;
-        }
+        // case T_MELODY:
+        //   {
+        //     playMelody(melody1, sizeof(melody1) / 2);
+        //     break;
+        //   }
 #ifdef ULTRASONIC
       case T_COLOR:
         {
@@ -499,6 +502,7 @@ void reaction() {
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
+
               if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 && target[0] < DOF) {
                 targetFrame[target[0]] = target[1];
                 if (target[0] < 4) {
@@ -509,6 +513,13 @@ void reaction() {
               }
               if (token == T_CALIBRATE) {
                 gyroUpdateQ = gyroBalanceQ = false;
+                if (target[0] == DOF) {  //auto calibrate all body joints using servos' angle feedback
+                  strcpy(newCmd, "rest");
+                  loadBySkillName(newCmd);
+                  shutServos();
+                  autoCalibrate();
+                  break;
+                }
                 if (lastToken != T_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
@@ -529,19 +540,15 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-                int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
-                  continue;
-                int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ROBOT_ARM
-                if (actualServoIndex == -2)  // auto calibrate the robot arm's pincer
+                if (target[0] == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
                   calibratedPWM(1, 90);
                   delay(500);
-                  int criticalAngle = calibrateByVibration(-25, 25, 4);
-                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  int criticalAngle = calibratePincerByVibration(-25, 25, 4);
+                  criticalAngle = calibratePincerByVibration(criticalAngle - 4, criticalAngle + 4, 1);
                   servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
 #ifdef I2C_EEPROM_ADDRESS
@@ -553,7 +560,11 @@ void reaction() {
                   loadBySkillName("calib");
                 } else
 #endif
-                {
+                  if (target[0] < DOF && target[0] >= 0) {
+                  int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                  if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
+                    continue;
+                  int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
                   servo[actualServoIndex].write(duty);
 #else
@@ -811,6 +822,38 @@ void reaction() {
           }
           break;
         }
+      case T_SIGNAL_GEN:  //resolution, speed, jointIdx, midpoint, amp, freq,phase
+        {
+          char *pch = strtok(newCmd, " ,");
+          int inLen = 0;
+          int8_t pars[60];  // allows 12 joints 5*12 = 60
+          while (pch != NULL) {
+            pars[inLen++] = atoi(pch);  //@@@ cast
+            pch = strtok(NULL, " ,\t");
+          }
+          // for (int i = 0; i < inLen; i++)
+          //   PTT(pars[i], ' ');
+          // PTL();
+          int8_t resolution = pars[0];
+          int8_t speed = pars[1];
+          signalGenerator(resolution, speed, pars + 2, inLen, 1);
+          break;
+        }
+      case T_LEARN:
+        {
+          if (newCmd[0] == 'l') {  //learn
+            gyroBalanceQ = false;
+            loadBySkillName("up");
+            delay(500);
+            learnByDrag();
+          } else if (newCmd[0] = 'p') {  //perform
+            loadBySkillName("up");
+            performLearn();
+            delay(1000);
+            loadBySkillName("up");
+          }
+          break;
+        }
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
@@ -863,8 +906,9 @@ void reaction() {
           tQueue->createTask();  // use 'q' to start the sequence.
                                  // add subToken followed by the subCommand
                                  // use ':' to add the delay time (mandatory)
-                                 // add '~' to end the sub command
-                                 // example: qk sit:1000~m 8 0 8 -30 8 0:500~
+                                 // add '>' to end the sub command
+                                 // example: qk sit:1000>m 8 0 8 -30 8 0:500>
+                                 // Nybble wash face: qksit:100>o 1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10 10 4 0, 15 10 0 4 0:100>
           break;
         }
       default:
@@ -875,10 +919,10 @@ void reaction() {
     }
 
     if (token == T_SKILL && newCmd[0] != '\0') {
-      if (skill->period > 0)
-        strcpy(lastCmd, newCmd);
-      else
-        strcpy(lastCmd, "up");
+      // if (skill->period > 0)
+      strcpy(lastCmd, newCmd);
+      // else
+      //   strcpy(lastCmd, "up");
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)

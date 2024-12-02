@@ -190,22 +190,18 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // #define IMU_ICM42670
 // #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
-// #ifdef ROBOT_ARM
-// const uint8_t PWM_pin[PWM_NUM] = {
-//   // swap the front left knee servo spot for better accessibility of the clip servo's cable
-//   18, 5, 4, 23,    // head or shoulder roll
-//   19, 15, 12, 33,  // shoulder pitch
-//   32, 13, 14, 27   // knee
-// };
-// #else
 #define PWM_LED_PIN 27
+
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
+#ifdef BITTLE
+    18, 14, 5, 27, // head or shoulder roll
+#elif defined NYBBLE
     18, 5, 14, 27, // head or shoulder roll
+#endif
     23, 4, 12, 33, // shoulder pitch
     19, 15, 13, 32 // knee
 };
-// #endif
 
 #elif defined BiBoard2
 #define PWM_NUM 16
@@ -289,7 +285,7 @@ bool newBoard = false;
 #define T_GYRO_PRINT 'P'        // always print gyro data
 #define T_GYRO_PRINT_OFF 'p'    // print gyro data once then stop
 
-#define T_HELP_INFO 'h'                // print some help information
+#define T_HELP_INFO 'h'                // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i' //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I' // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
@@ -303,7 +299,8 @@ bool newBoard = false;
 #define T_INDEXED_SEQUENTIAL_BIN 'M' // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
 #define T_NAME 'n'                   // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
-#define T_MELODY 'o'
+// #define T_MELODY 'o'
+#define T_SIGNAL_GEN 'o'
 #define T_CPG 'r'   // Oscillator for Central Pattern Generator
 #define T_PAUSE 'p' // pause
 #define T_POWER 'P' // power, print the voltage
@@ -314,7 +311,8 @@ bool newBoard = false;
 #define T_TEMP 'T' // call the last skill data received from the serial port
 #define T_MEOW 'u'
 #define T_SERVO_MICROSECOND 'w' // PWM width modulation
-#define T_XLEG 'x'
+// #define T_XLEG 'x'
+#define T_LEARN 'x'
 #define T_RANDOM_MIND 'z' // toggle random behaviors
 
 #define T_READ 'R'       // read pin     R
@@ -391,7 +389,7 @@ bool manualEyeColorQ = false;
 int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
-int imuException = 0;
+int8_t imuException = 0;
 byte transformSpeed = 2;
 float protectiveShift; // reduce the wearing of the potentiometer
 
@@ -635,9 +633,6 @@ void initRobot()
 #ifdef BT_BLE
   bleSetup();
 #endif
-#ifdef BT_CLIENT
-  bleClientSetup();
-#endif
 #ifdef BT_SSP
   blueSspSetup();
 #endif
@@ -671,7 +666,9 @@ void initRobot()
 #endif
 
   QA();
-
+#ifdef BT_CLIENT
+  bleClientSetup();
+#endif
   tQueue = new TaskQueue();
   loadBySkillName("rest"); // must have to avoid memory crash. need to check why.
                            // allCalibratedPWM(currentAng); alone will lead to crash

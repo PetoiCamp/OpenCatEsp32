@@ -60,7 +60,7 @@ public:
       PTHL("sublen", subLen);
       char *subCmd = new char[subLen + 1];
       strcpy(subCmd, sub);
-      sub = strtok(NULL, "~");
+      sub = strtok(NULL, ">");
       int subDuration = atoi(sub);
       sub = strtok(NULL, ":");
       PTH(subToken, subCmd);
