@@ -334,7 +334,7 @@ int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
   for (int a = start; a < end; a += step) {
     calibratedPWM(2, -120);
     for (int i = 0; i < 20; i++) {
-      read_mpu6050();
+      readIMU();
       delay(20);
     }
     angLag0 = *xyzReal[0];
@@ -345,7 +345,7 @@ int calibrateByVibration(int start, int end, int step, int threshold = 10000) {
     // int correspondingAng;
     do {
       after = millis() - startTime;
-      read_mpu6050();
+      readIMU();
       int diff0 = angLag0 - *xyzReal[0];
       if (diff0) {
         // if (abs(diff0) > abs(maxVibration)) {

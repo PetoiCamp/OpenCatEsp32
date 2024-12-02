@@ -131,7 +131,7 @@ void dealWithExceptions() {
 
     // if (imuException != -4)
     print6Axis();
-    read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
+    readIMU();  // flush the IMU to avoid static readings and infinite loop
 
     // if (tQueue->lastTask == NULL) {
     //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
