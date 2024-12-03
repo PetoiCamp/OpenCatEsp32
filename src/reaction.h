@@ -131,7 +131,7 @@ void dealWithExceptions() {
 
     // if (imuException != -4)
     print6Axis();
-    readIMU();  // flush the IMU to avoid static readings and infinite loop
+    // readIMU();  // flush the IMU to avoid static readings and infinite loop
 
     // if (tQueue->lastTask == NULL) {
     //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
@@ -513,7 +513,7 @@ void reaction() {
               }
               if (token == T_CALIBRATE) {
                 gyroUpdateQ = gyroBalanceQ = false;
-                if (target[0] == DOF) {  //auto calibrate all body joints using servos' angle feedback
+                if (target[0] == DOF) {  // auto calibrate all body joints using servos' angle feedback
                   strcpy(newCmd, "rest");
                   loadBySkillName(newCmd);
                   shutServos();
@@ -822,7 +822,7 @@ void reaction() {
           }
           break;
         }
-      case T_SIGNAL_GEN:  //resolution, speed, jointIdx, midpoint, amp, freq,phase
+      case T_SIGNAL_GEN:  // resolution, speed, jointIdx, midpoint, amp, freq,phase
         {
           char *pch = strtok(newCmd, " ,");
           int inLen = 0;
@@ -841,12 +841,12 @@ void reaction() {
         }
       case T_LEARN:
         {
-          if (newCmd[0] == 'l') {  //learn
+          if (newCmd[0] == 'l') {  // learn
             gyroBalanceQ = false;
             loadBySkillName("up");
             delay(500);
             learnByDrag();
-          } else if (newCmd[0] = 'p') {  //perform
+          } else if (newCmd[0] = 'p') {  // perform
             loadBySkillName("up");
             performLearn();
             delay(1000);

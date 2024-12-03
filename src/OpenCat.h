@@ -676,7 +676,7 @@ void initRobot()
 
   initModuleManager();
 #ifdef GYRO_PIN
-  readIMU(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
+  // readIMU(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ)
     tQueue->addTask((imuException) ? T_CALIBRATE : T_REST, "");
 #endif

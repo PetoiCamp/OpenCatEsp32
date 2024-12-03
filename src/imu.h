@@ -1,5 +1,6 @@
 bool calibrateQ = false;
 float ypr[3];
+float previous_ypr[3];
 #define IMU_SKIP 1
 #define IMU_SKIP_MORE 23  // use prime number to avoid repeatly skipping the same joint
 #define ARX *xyzReal[0]
@@ -10,7 +11,6 @@ float ypr[3];
 #define AWZ aaWorld.z
 byte imuSkip = IMU_SKIP;
 int16_t previous_xyzReal[3];
-float previous_ypr[3];
 int8_t yprTilt[3];
 int16_t *xyzReal[3];
 int thresX, thresY, thresZ;
@@ -469,6 +469,12 @@ void icm42670Setup(bool calibrateQ = true) {
     icm.offset_gyro[1] = config.getFloat("icm_gyro1");
     icm.offset_gyro[2] = config.getFloat("icm_gyro2");
   }
+  PT("ICM offsets: ");
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_accel[i], '\t');
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_gyro[i], '\t');
+  PTL();
 }
 #endif
 
@@ -522,10 +528,11 @@ void print6Axis() {
 }
 
 bool readIMU() {
+  bool updated = false;
   if (gyroUpdateQ && !(frame % imuSkip)) {
 #ifdef IMU_MPU6050
     // if programming failed, don't try to do anything
-    bool updated = false;
+
     // read a packet from FIFO
     updated |= mpu.read_mpu6050();
     for (byte i = 0; i < 3; i++) {
@@ -537,18 +544,20 @@ bool readIMU() {
     icm.getImuGyro();
 #endif
     return updated;
-  } else
+  } else {
+    delay(1);  // to avoid the task to be blocked the wdt
     return false;
+  }
 }
 
 long imuTime = 0;
 void taskIMU(void *parameter) {
   while (true) {
-    if (millis() - imuTime > 5) {
+    if (millis() - imuTime > 10) {
       imuUpdated = readIMU();
       imuTime = millis();
-      // delay(1);  // to avoid the task to be blocked
-    }
+    } else
+      delay(1);  // to avoid the task to be blocked the wdt
   }
 }
 TaskHandle_t TASK_imu = NULL;

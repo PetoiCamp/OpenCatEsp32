@@ -1,31 +1,26 @@
 #define MEMORY_ADDRESS_SIZE 4
-class SkillPreview
-{
+class SkillPreview {
 public:
-  char *skillName; // use char array instead of String to save memory
-  int period;      // the period of a skill. 1 for posture, >1 for gait, <-1 for behavior
+  char *skillName;  // use char array instead of String to save memory
+  int period;       // the period of a skill. 1 for posture, >1 for gait, <-1 for behavior
   int index;
-  SkillPreview(int s)
-  {
+  SkillPreview(int s) {
     skillName = new char[strlen(skillNameWithType[s])];
     strcpy(skillName, skillNameWithType[s]);
-    skillName[strlen(skillNameWithType[s]) - 1] = '\0'; // drop the last charactor of skill type
+    skillName[strlen(skillNameWithType[s]) - 1] = '\0';  // drop the last charactor of skill type
     unsigned int pgmAddress = (unsigned int)progmemPointer[s];
-    period = (int8_t)pgm_read_byte(pgmAddress); // automatically cast to char*
+    period = (int8_t)pgm_read_byte(pgmAddress);  // automatically cast to char*
     index = s;
   }
 };
 
-class SkillList : public QList<SkillPreview *>
-{
+class SkillList : public QList<SkillPreview *> {
 public:
-  SkillList()
-  {
+  SkillList() {
     PT("Build skill list...");
     //  PT(sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE);
     PTL(sizeof(skillNameWithType) / MEMORY_ADDRESS_SIZE);
-    for (int s = 0; s < sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE; s++)
-    {
+    for (int s = 0; s < sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE; s++) {
       SkillPreview *tempAddress = new SkillPreview(s);
       this->push_back(tempAddress);
     }
@@ -34,71 +29,62 @@ public:
     for (randomMindListLength = 0; randomMindList[randomMindListLength] != NULL; randomMindListLength++)
       ;
   }
-  int lookUp(const char *key)
-  {
+  int lookUp(const char *key) {
     byte nSkills = sizeof(progmemPointer) / MEMORY_ADDRESS_SIZE;
     byte randSkillIdx = strcmp(key, "x") ? nSkills : random(nSkills);
     byte keyLen = strlen(key);
     char lr = key[keyLen - 1];
-    for (int s = 0; s < nSkills; s++)
-    {
+    for (int s = 0; s < nSkills; s++) {
       char readName[CMD_LEN + 1];
       strcpy(readName, this->get(s)->skillName);
       char readNameLR = readName[strlen(readName) - 1];
-      if (s == randSkillIdx)
-      {
+      if (s == randSkillIdx) {
         bool forbiddenQ = false;
-        for (int i = 0; i < sizeof(forbiddenSkills) / sizeof(String); i++)
-        {
-          if (forbiddenSkills[i] == readName)
-          {
+        for (int i = 0; i < sizeof(forbiddenSkills) / sizeof(String); i++) {
+          if (forbiddenSkills[i] == readName) {
             forbiddenQ = true;
             break;
           }
         }
-        if (readNameLR == 'L' || readNameLR == 'F' || forbiddenQ)
-        { // forbid walking or violent motions in random mode
+        if (readNameLR == 'L' || readNameLR == 'F' || forbiddenQ) {  // forbid walking or violent motions in random mode
           randSkillIdx++;
           continue;
         }
       }
       byte nameLen = strlen(readName);
-      if (s == randSkillIdx         // random skill
-          || !strcmp(readName, key) // exact match: gait type + F or L, behavior
+      if (s == randSkillIdx          // random skill
+          || !strcmp(readName, key)  // exact match: gait type + F or L, behavior
           // || readName[nameLen - 1] == 'L' && !strncmp(readName, key, nameLen - 1)
-          || readName[nameLen - 1] != 'F' && strcmp(readName, "bk") && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X') // L, R or X
-      )
-      {
+          || readName[nameLen - 1] != 'F' && strcmp(readName, "bk") && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
+      ) {
         printToAllPorts(readName);
         return s;
       }
     }
-    PT('?'); // key not found
+    PT('?');  // key not found
     PT(key);
-    PTL('?'); // it will print ?? in random mode. Why?
+    PTL('?');  // it will print ?? in random mode. Why?
     return -1;
   }
 };
 SkillList *skillList;
 
-class Skill
-{
+class Skill {
 public:
-  char skillName[20]; // use char array instead of String to save memory
+  char skillName[20];  // use char array instead of String to save memory
   int8_t offsetLR;
-  int period; // the period of a skill. 1 for posture, >1 for gait, <-1 for behavior
+  int period;  // the period of a skill. 1 for posture, >1 for gait, <-1 for behavior
   float transformSpeed;
   byte skillHeader;
   byte frameSize;
-  int expectedRollPitch[2]; // expected body orientation (roll, pitch)
-  byte angleDataRatio;      // divide large angles by 1 or 2. if the max angle of a skill is >128, all the angls will be divided by 2
-  byte loopCycle[3];        // the looping section of a behavior (starting row, ending row, repeating cycles)
+  int expectedRollPitch[2];  // expected body orientation (roll, pitch)
+  byte angleDataRatio;       // divide large angles by 1 or 2. if the max angle of a skill is >128, all the angls will be divided by 2
+  byte loopCycle[3];         // the looping section of a behavior (starting row, ending row, repeating cycles)
   byte firstMotionJoint;
-  int8_t *dutyAngles; // the data array for skill angles and parameters
+  int8_t *dutyAngles;  // the data array for skill angles and parameters
 
-  Skill()
-  {
-    skillName[0] = '\0'; // use char array instead of String to save memory
+  Skill() {
+    skillName[0] = '\0';  // use char array instead of String to save memory
     offsetLR = 0;
     period = 0;
     transformSpeed = 1;
@@ -109,50 +95,43 @@ public:
     firstMotionJoint = 0;
     dutyAngles = NULL;
   }
-  void buildSkill()
-  { // K token
+  void buildSkill() {  // K token
     strcpy(skillName, "tmp");
     offsetLR = 0;
-    period = (int8_t)newCmd[0]; // automatically cast to char*
+    period = (int8_t)newCmd[0];  // automatically cast to char*
     dataLen(period);
     formatSkill();
   }
 
-  void buildSkill(int s)
-  {
+  void buildSkill(int s) {
     strcpy(skillName, newCmd);
     unsigned int pgmAddress = (unsigned int)progmemPointer[s];
-    period = (int8_t)pgm_read_byte(pgmAddress); // automatically cast to char*
-    for (int i = 0; i < dataLen(period); i++)
-    {
+    period = (int8_t)pgm_read_byte(pgmAddress);  // automatically cast to char*
+    for (int i = 0; i < dataLen(period); i++) {
       newCmd[i] = pgm_read_byte(pgmAddress++);
     }
     newCmd[dataLen(period)] = '~';
     formatSkill();
   }
-  ~Skill()
-  {
+  ~Skill() {
   }
-  int dataLen(int8_t p)
-  {
+  int dataLen(int8_t p) {
     skillHeader = p > 0 ? 4 : 7;
-    frameSize = p > 1 ? WALKING_DOF : // gait
-                    p == 1 ? DOF
-                           : // posture
-                    DOF + 4; // behavior
+    frameSize = p > 1 ? WALKING_DOF :  // gait
+                  p == 1 ? DOF
+                         :  // posture
+                  DOF + 4;  // behavior
     int len = skillHeader + abs(p) * frameSize;
     return len;
   }
 
-  void inplaceShift()
-  {
-    int angleLen = abs(period) * frameSize;                // need one extra byte for terminator '~'
-    int shiftRequiredByNewCmd = CMD_LEN - skillHeader + 1; // required shift to store CMD_LEN + 1 chars. it can hold a command with CMD_LEN chars. the additioanl byte is required by '\0'.
-    spaceAfterStoringData = BUFF_LEN - angleLen - 1;       // the bytes before the dutyAngles. The allowed command's bytes needs to -1
+  void inplaceShift() {
+    int angleLen = abs(period) * frameSize;                 // need one extra byte for terminator '~'
+    int shiftRequiredByNewCmd = CMD_LEN - skillHeader + 1;  // required shift to store CMD_LEN + 1 chars. it can hold a command with CMD_LEN chars. the additioanl byte is required by '\0'.
+    spaceAfterStoringData = BUFF_LEN - angleLen - 1;        // the bytes before the dutyAngles. The allowed command's bytes needs to -1
     // PTH("request", shiftRequiredByNewCmd);
     // PTH("aloShft", BUFF_LEN - (skillHeader + angleLen));
-    if (CMD_LEN > spaceAfterStoringData)
-    {
+    if (CMD_LEN > spaceAfterStoringData) {
       PTF("LMT ");
       PTL(spaceAfterStoringData);
     }
@@ -161,13 +140,11 @@ public:
     dutyAngles = (int8_t *)newCmd + BUFF_LEN - angleLen;
   }
 
-  void formatSkill()
-  {
-    transformSpeed = 1; // period > 1 ? 1 : 0.5;
+  void formatSkill() {
+    transformSpeed = 1;  // period > 1 ? 1 : 0.5;
     firstMotionJoint = (period <= 1) ? 0 : DOF - WALKING_DOF;
 
-    for (int i = 0; i < 2; i++)
-    {
+    for (int i = 0; i < 2; i++) {
       expectedRollPitch[i] = (int8_t)newCmd[1 + i];
 #ifdef GYRO_PIN
       yprTilt[2 - i] = 0;
@@ -175,8 +152,7 @@ public:
     }
     angleDataRatio = (int8_t)newCmd[3];
     byte baseHeader = 4;
-    if (period < 0)
-    {
+    if (period < 0) {
       for (byte i = 0; i < 3; i++)
         loopCycle[i] = (int8_t)newCmd[baseHeader++];
     }
@@ -197,8 +173,7 @@ public:
     // }
   }
 #define PRINT_SKILL_DATA
-  void info()
-  {
+  void info() {
     PT("Skill Name: ");
     PTL(skillName);
     PTF("period: ");
@@ -210,8 +185,7 @@ public:
     PT(")\t");
     PTF("angleRatio: ");
     PTL(angleDataRatio);
-    if (period < 0)
-    {
+    if (period < 0) {
       PT("loop frame: ");
       for (byte i = 0; i < 3; i++)
         PT(String((byte)loopCycle[i]) + ", ");
@@ -219,21 +193,15 @@ public:
     }
 #ifdef PRINT_SKILL_DATA
     int showRows = 1;
-    for (int k = 0; k < abs(period); k++)
-    {
-      if (abs(period) <= showRows + 2 || k < showRows || k == abs(period) - 1)
-      {
-        for (int col = 0; col < frameSize; col++)
-        {
+    for (int k = 0; k < abs(period); k++) {
+      if (abs(period) <= showRows + 2 || k < showRows || k == abs(period) - 1) {
+        for (int col = 0; col < frameSize; col++) {
           PT((int8_t)dutyAngles[k * frameSize + col]);
           PT(",\t");
         }
         PTL();
-      }
-      else
-      {
-        if (k == showRows)
-        {
+      } else {
+        if (k == showRows) {
           PTF(" skipping ");
           PT(abs(period) - 1 - showRows);
           PTF(" frames");
@@ -246,71 +214,58 @@ public:
 #endif
     PTL();
   }
-  void mirror()
-  { // Create a mirror function to allow the robot to pick random directions of behaviors.
+  void mirror() {  // Create a mirror function to allow the robot to pick random directions of behaviors.
     // It makes the robot more unpredictable and helps it get rid of an infinite loop,
     // such as failed fall-recovering against a wall.
     expectedRollPitch[0] = -expectedRollPitch[0];
-    for (int k = 0; k < abs(period); k++)
-    {
-      if (period <= 1)
-      {                                                         // behavior
-        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize]; // head and tail panning angles
-#ifndef ROBOT_ARM                                               // avoid mirroring the pincers' movements
+    for (int k = 0; k < abs(period); k++) {
+      if (period <= 1) {                                         // behavior
+        dutyAngles[k * frameSize] = -dutyAngles[k * frameSize];  // head and tail panning angles
+#ifndef ROBOT_ARM                                                // avoid mirroring the pincers' movements
         dutyAngles[k * frameSize + 2] = -dutyAngles[k * frameSize + 2];
 #endif
       }
-      for (byte col = (period > 1) ? 0 : 2; col < ((period > 1) ? WALKING_DOF : DOF) / 2; col++)
-      {
+      for (byte col = (period > 1) ? 0 : 2; col < ((period > 1) ? WALKING_DOF : DOF) / 2; col++) {
         int8_t temp = dutyAngles[k * frameSize + 2 * col];
         dutyAngles[k * frameSize + 2 * col] = dutyAngles[k * frameSize + 2 * col + 1];
         dutyAngles[k * frameSize + 2 * col + 1] = temp;
       }
     }
   }
-  void shiftCenterOfMass(int angle)
-  {
+  void shiftCenterOfMass(int angle) {
     int offset = 8;
     if (period > 1)
       offset = 0;
-    for (int k = 0; k < abs(period); k++)
-    {
+    for (int k = 0; k < abs(period); k++) {
       // printList(dutyAngles + k * frameSize, frameSize); //compare the angle change
-      for (byte col = 0; col < 2; col++)
-      {
+      for (byte col = 0; col < 2; col++) {
         dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] + angle;
       }
-      for (byte col = 4; col < 6; col++)
-      {
+      for (byte col = 4; col < 6; col++) {
         dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * 1.2;
       }
       // printList(dutyAngles + k * frameSize, frameSize);
     }
   }
-  int nearestFrame()
-  {
+  int nearestFrame() {
     if (period == 1)
       frame = 0;
-    else // find the nearest frame using certain algorithm
+    else  // find the nearest frame using certain algorithm
       frame = 0;
     return frame;
   }
-  void transformToSkill(int frame = 0)
-  {
+  void transformToSkill(int frame = 0) {
     //      info();
     transform(dutyAngles + frame * frameSize, angleDataRatio, transformSpeed, firstMotionJoint, period, runDelay);
   }
-  void convertTargetToPosture(int *targetFrame)
-  {
+  void convertTargetToPosture(int *targetFrame) {
     int extreme[2];
     getExtreme(targetFrame, extreme);
-    if (extreme[0] < -125 || extreme[1] > 125)
-    {
+    if (extreme[0] < -125 || extreme[1] > 125) {
       angleDataRatio = 2;
       for (int i = 0; i < DOF; i++)
         targetFrame[i] /= 2;
-    }
-    else
+    } else
       angleDataRatio = 1;
     arrayNCPY(dutyAngles, targetFrame, DOF);
     period = 1;
@@ -318,43 +273,34 @@ public:
     frameSize = DOF;
     frame = 0;
   }
-  void perform()
-  {
-    if (period < 0)
-    { // behaviors
+  void perform() {
+    if (period < 0) {  // behaviors
       interruptedDuringBehavior = false;
       int8_t repeat = loopCycle[2] >= 0 && loopCycle[2] < 2 ? 0 : loopCycle[2] - 1;
-      bool gyroUpdateQlag = gyroUpdateQ;
-      gyroUpdateQ = strcmp(skillName, "bf") && strcmp(skillName, "ff") && strcmp(skillName, "flipF") && strcmp(skillName, "flipD") && strcmp(skillName, "flipL") && strcmp(skillName, "flipR") && strcmp(skillName, "pd") && strcmp(skillName, "hds") && strcmp(skillName, "bx") && strstr(skillName, "rl") == NULL; // won't read gyro for fast motion
-      for (byte c = 0; c < abs(period); c++)
-      { // the last two in the row are transition speed and delay
+      bool gyroBalanceQlag = gyroBalanceQ;
+      gyroBalanceQ = strcmp(skillName, "bf") && strcmp(skillName, "ff") && strcmp(skillName, "flipF") && strcmp(skillName, "flipD") && strcmp(skillName, "flipL") && strcmp(skillName, "flipR") && strcmp(skillName, "pd") && strcmp(skillName, "hds") && strcmp(skillName, "bx") && strstr(skillName, "rl") == NULL;  // won't read gyro for fast motion
+      for (byte c = 0; c < abs(period); c++) {                                                                                                                                                                                                                                                                         // the last two in the row are transition speed and delay
         Stream *serialPort = NULL;
 // String source;
 #ifdef BT_SSP
-        if (SerialBT.available())
-        { // give BT a higher priority over wired serial
+        if (SerialBT.available()) {  // give BT a higher priority over wired serial
           serialPort = &SerialBT;
           // source = "BT";
-        }
-        else
+        } else
 #endif
 #ifdef VOICE
-            if (SERIAL_VOICE.available())
+          if (SERIAL_VOICE.available())
           serialPort = &SERIAL_VOICE;
         else
 #endif
           // the BT_BLE is unhandled here
-          if (moduleActivatedQ[0] && Serial2.available())
-          {
+          if (moduleActivatedQ[0] && Serial2.available()) {
             serialPort = &Serial2;
-          }
-          else if (Serial.available())
-          {
+          } else if (Serial.available()) {
             serialPort = &Serial;
           }
-        if (serialPort || gyroUpdateQ && (imuException != -2 && !strcmp(skillName, "rc") // recovered during recover
-                                          || imuException == -2 && strcmp(skillName, "rc")))
-        { // the IMU is updated in transform
+        if (serialPort || gyroBalanceQ && (imuException != -2 && !strcmp(skillName, "rc")        // recovered during recover
+                                           || imuException == -2 && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
           // PTLF("Behavior interrupted");
           interruptedDuringBehavior = true;
           return;
@@ -362,26 +308,24 @@ public:
         // printToAllPorts("Progress: " + String(c + 1) + "/" + abs(period));
         //  printList(dutyAngles + c * frameSize);
         transform(dutyAngles + c * frameSize, angleDataRatio, dutyAngles[DOF + c * frameSize] / 8.0);
-#ifdef GYRO_PIN // if opt out the gyro, the calculation can be really fast
-        if (dutyAngles[DOF + 2 + c * frameSize])
-        {
+#ifdef GYRO_PIN  // if opt out the gyro, the calculation can be really fast
+        if (dutyAngles[DOF + 2 + c * frameSize]) {
           int triggerAxis = dutyAngles[DOF + 2 + c * frameSize];
           int triggerAngle = dutyAngles[DOF + 3 + c * frameSize];
           float currentYpr = ypr[abs(triggerAxis)];
           float previousYpr = currentYpr;
           long triggerTimer = millis();
-          while (1)
-          {
-            readIMU();
+          while (1) {
+            // readIMU();
             // print6Axis();
             currentYpr = ypr[abs(triggerAxis)];
             // PT(currentYpr);
             // PTF("\t");
             // PTL(triggerAngle);
             if (
-                ((180 - fabs(currentYpr) > 2)                                                                                          // skip the angle when the reading jumps from 180 to -180
-                 && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle)) // the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
-                || millis() - triggerTimer > 3000)                                                                                     // if the robot stucks by the trigger for more than 3 seconds, it will break.
+              ((180 - fabs(currentYpr) > 2)                                                                                           // skip the angle when the reading jumps from 180 to -180
+               && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  // the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
+              || millis() - triggerTimer > 3000)                                                                                      // if the robot stucks by the trigger for more than 3 seconds, it will break.
               break;
             previousYpr = currentYpr;
           }
@@ -389,36 +333,30 @@ public:
 #endif
         delay(abs(dutyAngles[DOF + 1 + c * frameSize] * 50));
 
-        if (repeat != 0 && c != 0 && c == loopCycle[1])
-        {
+        if (repeat != 0 && c != 0 && c == loopCycle[1]) {
           // printToAllPorts("Loop remaining: " + String(repeat));
           c = loopCycle[0] - 1;
-          if (repeat > 0) // if repeat <0, infinite loop. only reset button will break the loop
+          if (repeat > 0)  // if repeat <0, infinite loop. only reset button will break the loop
             repeat--;
         }
       }
-      gyroUpdateQ = gyroUpdateQlag;
+      gyroBalanceQ = gyroBalanceQlag;
       printToAllPorts(token);
-    }
-    else
-    { // postures and gaits
+    } else {  // postures and gaits
 #ifdef GYRO_PIN
-      if (imuUpdated && gyroBalanceQ && !(frame % imuSkip))
-      {
+      if (imuUpdated && gyroBalanceQ && !(frame % imuSkip)) {
         //          PT(ypr[2]); PT('\t');
         //          PT(RollPitchDeviation[0]); PT('\t');
         //          printList(currentAdjust);
-        for (byte i = 0; i < 2; i++)
-        {
-          RollPitchDeviation[i] = ypr[2 - i] - expectedRollPitch[i];                                                                         // all in degrees
-          RollPitchDeviation[i] = sign(ypr[2 - i]) * max(float(fabs(RollPitchDeviation[i]) - levelTolerance[i]), float(0)) + yprTilt[2 - i]; // filter out small angles
+        for (byte i = 0; i < 2; i++) {
+          RollPitchDeviation[i] = ypr[2 - i] - expectedRollPitch[i];                                                                          // all in degrees
+          RollPitchDeviation[i] = sign(ypr[2 - i]) * max(float(fabs(RollPitchDeviation[i]) - levelTolerance[i]), float(0)) + yprTilt[2 - i];  // filter out small angles
         }
         imuUpdated = false;
       }
 #endif
 
-      for (int jointIndex = 0; jointIndex < DOF; jointIndex++)
-      {
+      for (int jointIndex = 0; jointIndex < DOF; jointIndex++) {
         //          PT(jointIndex); PT('\t');
 // #ifdef ROBOT_ARM
 //         if (abs(period) > 1 && jointIndex == 0)  //don't move the robot arm's joints for gaits
@@ -438,35 +376,31 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint      // gait and non-walking joints
-            || abs(period) == 1 && jointIndex < 4 && manualHeadQ) // posture and head group and manually controlled head
+        if (abs(period) > 1 && jointIndex < firstMotionJoint       // gait and non-walking joints
+            || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  // posture and head group and manually controlled head
         {
-          if (!manualHeadQ && jointIndex < 4)
-          {
+          if (!manualHeadQ && jointIndex < 4) {
 #ifndef ROBOT_ARM
             duty =
-                (jointIndex != 1 ? offsetLR : 0) // look left or right
-                + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
+              (jointIndex != 1 ? offsetLR : 0)  // look left or right
+              + 10 * sin(frame * (jointIndex + 2) * M_PI / abs(period));
 #else
             if (jointIndex == 1 && strstr(skillName, "bk") != NULL)
               duty = 50;
             else
               duty = 0;
 #endif
-          }
-          else
+          } else
             duty = currentAng[jointIndex] + max(-20, min(20, (targetHead[jointIndex] - currentAng[jointIndex])));
           //  - gyroBalanceQ * currentAdjust[jointIndex];
-        }
-        else
-        {
+        } else {
           duty = dutyAngles[frame * frameSize + jointIndex - firstMotionJoint] * angleDataRatio;
         }
         duty =
 #ifdef GYRO_PIN
-            +gyroBalanceQ * (!imuException ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
+          +gyroBalanceQ * (!imuException ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
 #endif
-            + duty;
+          + duty;
         calibratedPWM(jointIndex, duty);
       }
       //        PTL();
@@ -478,36 +412,32 @@ public:
 };
 Skill *skill;
 
-void loadBySkillName(const char *skillName)
-{ // get lookup information from on-board EEPROM and read the data array from storage
+void loadBySkillName(const char *skillName) {  // get lookup information from on-board EEPROM and read the data array from storage
   char lr = skillName[strlen(skillName) - 1];
   int skillIndex;
-#ifdef ROBOT_ARM // use the altered Arm gait
+#ifdef ROBOT_ARM  // use the altered Arm gait
   bool optimizedForArm = false;
   char *nameStr = new char[strlen(skillName) + 4];
   strcpy(nameStr, skillName);
-  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL)
-  { // try to find the arm version
+  if (lr == 'L' || lr == 'R' || lr == 'F' && strstr(nameStr, "Arm") == NULL) {  // try to find the arm version
     // if the name contains L R F and doesn't contain "Arm"
-    nameStr[strlen(skillName) - 1] = '\0'; // remove the L R F in the end
-    strcat(nameStr, "Arm");                // insert Arm
-    nameStr[strlen(skillName) + 2] = lr;   // append L R F
+    nameStr[strlen(skillName) - 1] = '\0';  // remove the L R F in the end
+    strcat(nameStr, "Arm");                 // insert Arm
+    nameStr[strlen(skillName) + 2] = lr;    // append L R F
     nameStr[strlen(skillName) + 3] = '\0';
     // PTHL("mod ", nameStr);
   }
   skillIndex = skillList->lookUp(nameStr);
   if (skillIndex != -1)
     optimizedForArm = true;
-  else
-  {
-    optimizedForArm = false; // if there's no special skillname with Arm, use the original skill
+  else {
+    optimizedForArm = false;  // if there's no special skillname with Arm, use the original skill
     skillIndex = skillList->lookUp(skillName);
   }
 #else
   skillIndex = skillList->lookUp(skillName);
 #endif
-  if (skillIndex != -1)
-  {
+  if (skillIndex != -1) {
     // if (skill != NULL)
     //   delete[] skill;
 
@@ -520,24 +450,23 @@ void loadBySkillName(const char *skillName)
     thresY = (skill->period > 1) ? 10000 : 6000;
 // thresZ = (skill->period > 1) ? -8000 : -10000;
 #endif
-    if (strcmp(newCmd, "calib") && skill->period == 1)
-    { // for static postures
+    if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
       int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;
       for (byte i = 0; i < DOF; i++)
 #ifdef ROBOT_ARM
         if (i != 2)
 #endif
-          skill->dutyAngles[i] += protectiveShift; // add protective shift to reduce wearing at the same spot
+          skill->dutyAngles[i] += protectiveShift;  // add protective shift to reduce wearing at the same spot
     }
     // skill->info();
-    if (lr == 'R'                                                 // 'R' must mirror
-        || (lr == 'X' || lr != 'L')                               // 'L' should not mirror
-               && (random(10) > 7 && random(10) > 5 || coinFace)) // 1/5 chance to random otherwise flip everytime
-      skill->mirror();                                            // mirror the direction of a behavior
+    if (lr == 'R'                                                // 'R' must mirror
+        || (lr == 'X' || lr != 'L')                              // 'L' should not mirror
+             && (random(10) > 7 && random(10) > 5 || coinFace))  // 1/5 chance to random otherwise flip everytime
+      skill->mirror();                                           // mirror the direction of a behavior
     coinFace = !coinFace;
 #ifdef ROBOT_ARM
-    if (skill->period == 1 && strcmp(newCmd, "calib") // postures
-        || skill->period > 1 && !optimizedForArm)     // gaits
+    if (skill->period == 1 && strcmp(newCmd, "calib")  // postures
+        || skill->period > 1 && !optimizedForArm)      // gaits
       skill->shiftCenterOfMass(-10);
 #endif
     skill->transformToSkill(skill->nearestFrame());

@@ -454,10 +454,14 @@ String decision() {
   return "";
 }
 
+bool icmQ = false;
+bool mpuQ = false;
+bool eepromQ = false;
 void i2cDetect() {
   byte error, address;
   int nDevices;
-
+  int8_t i2cAddress[] = { 0x54, 0x68, 0x69, 0 };
+  String i2cAddressName[] = { "EEPROM", "MPU6050", "ICM42670", "Misc." };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -472,9 +476,24 @@ void i2cDetect() {
       if (address < 16)
         Serial.print("0");
       Serial.print(address, HEX);
-      Serial.println("  !");
-
-      nDevices++;
+      Serial.print(":\t");
+      for (byte i = nDevices; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
+        if (address == i2cAddress[i]) {
+          PT(i2cAddressName[i]);
+          if (i == 0)
+            eepromQ = true;
+          else if (i == 1)
+            mpuQ = true;
+          else if (i == 2)
+            icmQ = true;
+          nDevices++;
+          break;
+        }
+        if (i == sizeof(i2cAddress) / sizeof(int8_t) - 1) {
+          PT(i2cAddressName[i]);
+        }
+      }
+      PTL();
     } else if (error == 4) {
       Serial.print("- Unknown error at address 0x");
       if (address < 16)
