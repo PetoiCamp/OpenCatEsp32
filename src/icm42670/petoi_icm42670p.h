@@ -12,7 +12,6 @@ public:
   float yprHistory[MEAN_FILTER_SIZE][3];
   int8_t index;
   float a_real[3];
-  float g_real[3];
   float offset_accel[3];  // imu offset data
   float offset_gyro[3];
 

@@ -86,7 +86,7 @@ String SoftwareVersion = "";
 #define BT_CLIENT    // toggle Bluetooth client (BLE） for Micro:Bit
 #define GYRO_PIN     // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define IMU_MPU6050  // toggle the MPU6050 gyroscope
-#define IMU_ICM42670 // toggle the ICM42670 gyroscope
+// #define IMU_ICM42670 // toggle the ICM42670 gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills

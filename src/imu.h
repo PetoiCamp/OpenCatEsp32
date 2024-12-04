@@ -3,16 +3,18 @@ float ypr[3];
 float previous_ypr[3];
 #define IMU_SKIP 1
 #define IMU_SKIP_MORE 23  // use prime number to avoid repeatly skipping the same joint
-#define ARX *xyzReal[0]
-#define ARY *xyzReal[1]
-#define ARZ *xyzReal[2]
+#define ARX xyzReal[0]
+#define ARY xyzReal[1]
+#define ARZ xyzReal[2]
 #define AWX aaWorld.x
 #define AWY aaWorld.y
 #define AWZ aaWorld.z
+#define GRAVITY 10.0
+float gFactor = GRAVITY / 8192;
 byte imuSkip = IMU_SKIP;
-int16_t previous_xyzReal[3];
+float previousXYZ[3];
 int8_t yprTilt[3];
-int16_t *xyzReal[3];
+float xyzReal[3];
 int thresX, thresY, thresZ;
 #ifdef IMU_MPU6050
 
@@ -156,8 +158,9 @@ class mpu6050p : public MPU6050 {
 public:
   VectorInt16 aaReal;   // [x, y, z]            gravity-free accel sensor measurements
   VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measurements
-  float ypr[3];         // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
   int16_t *xyzReal[3] = { &aaReal.x, &aaReal.y, &aaReal.z };
+  float ypr[3];     // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
+  float a_real[3];  // [x, y, z]            gravity vector in the real world
 
   // packet structure for InvenSense teapot demo
   uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
@@ -190,10 +193,11 @@ public:
 
       for (byte i = 0; i < 3; i++) {  // no need to flip yaw
         ypr[i] *= degPerRad;
+        a_real[i] = *xyzReal[i] / 8192.0 * GRAVITY;
 #ifdef BiBoard_V0_1
         ypr[i] = -ypr[i];
         if (i != 2)
-          *xyzReal[i] = -*xyzReal[i];
+          a_real[i] = -a_real[i];
 #endif
       }
       // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
@@ -208,12 +212,12 @@ public:
       // if (AWZ < -8500 && AWZ > -8600)
       //   imuException = -1;  //dropping
       // else
-      if (ARZ < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
-        imuException = -2;               // flipped
+      if (a_real[2] < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
+        imuException = -2;                     // flipped
 #ifndef ROBOT_ARM
-      else if (!moduleDemoQ && abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARY - previous_xyzReal[1]) > 6000 && abs(ARZ - previous_xyzReal[2]) > 6000)
+      else if (!moduleDemoQ && abs(a_real[0] - previousXYZ[0]) > 6000 * gFactor && abs(a_real[1] - previousXYZ[1]) > 6000 * gFactor && abs(a_real[2] - previousXYZ[2]) > 6000 * gFactor)
         imuException = -3;
-      else if (!moduleDemoQ && (abs(ARX - previous_xyzReal[0]) > 6000 && abs(ARX) > thresX || abs(ARY - previous_xyzReal[1]) > 5000 && abs(ARY) > thresY))
+      else if (!moduleDemoQ && (abs(a_real[0] - previousXYZ[0]) > 6000 * gFactor && abs(a_real[0]) > thresX * gFactor || abs(a_real[1] - previousXYZ[1]) > 5000 * gFactor && abs(a_real[1]) > thresY * gFactor))
         imuException = -4;
 #endif
       // else if (  //keepDirectionQ &&
@@ -223,7 +227,7 @@ public:
         imuException = 0;
       // however, its change is very slow.
       for (byte m = 0; m < 3; m++) {
-        previous_xyzReal[m] = *xyzReal[m];
+        previousXYZ[m] = a_real[m];
         if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
           previous_ypr[m] = ypr[m];
         }
@@ -482,13 +486,13 @@ void icm42670Setup(bool calibrateQ = true) {
 // ===                      INITIAL SETUP                       ===
 // ================================================================
 
-// #define READ_ACCELERATION
+#define PRINT_ACCELERATION
 void print6Axis() {
-  char buffer[48];  // Adjust buffer size as needed
+  char buffer[45];  // Adjust buffer size as needed
 #ifdef IMU_MPU6050
-#ifdef READ_ACCELERATION
-  sprintf(buffer, "%7.1f %7.1f %7.1f %6d %6d %6d",  // 7x6 = 42
-          mpu.ypr[0], mpu.ypr[1], mpu.ypr[2], *xyzReal[0], *xyzReal[1], *xyzReal[2], aaWorld.z);
+#ifdef PRINT_ACCELERATION
+  sprintf(buffer, "%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",                                     // 7x6 = 42
+          mpu.ypr[0], mpu.ypr[1], mpu.ypr[2], mpu.a_real[0], mpu.a_real[1], mpu.a_real[2]);  //, aaWorld.z);
 #else
   sprintf(buffer, "%7.1f %7.1f %7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
 #endif
@@ -496,9 +500,9 @@ void print6Axis() {
 #endif
 
 #ifdef IMU_ICM42670
-#ifdef READ_ACCELERATION
-  sprintf(buffer, "%7.1f %7.1f %7.1f %6d %6d %6d",  // 7x6 = 42
-          icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.ax_real, icm.ay_real, icm.az_real);
+#ifdef PRINT_ACCELERATION
+  sprintf(buffer, "%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",  //
+          icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.a_real[0], icm.a_real[1], icm.a_real[2]);
 #else
   sprintf(buffer, "%7.1f %7.1f %7.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #endif
@@ -511,7 +515,7 @@ void print6Axis() {
   //   PT_FMT(ypr[1], 2);
   //   PT('\t');
   //   PT_FMT(ypr[2], 2);
-  // #ifdef READ_ACCELERATION
+  // #ifdef PRINT_ACCELERATION
   //   PT("\t");
   //   // PT(aaWorld.x);
   //   // PT("\t");
@@ -537,11 +541,13 @@ bool readIMU() {
     updated |= mpu.read_mpu6050();
     for (byte i = 0; i < 3; i++) {
       ypr[i] = mpu.ypr[i];
-      xyzReal[i] = mpu.xyzReal[i];
+      xyzReal[i] = mpu.a_real[i];
     }
 #endif
 #ifdef IMU_ICM42670
     icm.getImuGyro();
+    for (byte i = 0; i < 3; i++)
+      icm.a_real[i] *= GRAVITY;
 #endif
     return updated;
   } else {

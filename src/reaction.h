@@ -215,10 +215,11 @@ bool lowBattery() {
       safeRest = false;
     }
     lastVoltage = voltage;
-    if ((voltage > LOW_VOLTAGE                                         // powered by 7.4V
-         || (voltage > LOW_VOLTAGE2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-        && lowBatteryQ) {
-      if (voltage > LOW_VOLTAGE)
+    if ((voltage > LOW_VOLTAGE + 0.2                                         // powered by 7.4V
+         || (voltage > LOW_VOLTAGE2 + 0.2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+        && lowBatteryQ)                                                      // +0.1 to avoid fluctuation around the threshold
+    {
+      if (voltage > LOW_VOLTAGE + 0.2)
         PTL("Got 7.4 V power");
       else
         PTL("Got 6.0 V power");
@@ -313,8 +314,8 @@ void reaction() {
 #ifdef GYRO_PIN
           else if (token == T_GYRO) {
             if (cmdLen == 0) {
-              gyroBalanceQ = gyroUpdateQ = !gyroUpdateQ;
-              token = gyroUpdateQ ? 'G' : 'g';  // G for activated gyro
+              gyroBalanceQ = !gyroBalanceQ;
+              token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
             } else {
               byte i = 0;
               while (newCmd[i] != '\0') {
@@ -512,7 +513,7 @@ void reaction() {
                   nonHeadJointQ = true;
               }
               if (token == T_CALIBRATE) {
-                gyroUpdateQ = gyroBalanceQ = false;
+                gyroBalanceQ = false;
                 if (target[0] == DOF) {  // auto calibrate all body joints using servos' angle feedback
                   strcpy(newCmd, "rest");
                   loadBySkillName(newCmd);

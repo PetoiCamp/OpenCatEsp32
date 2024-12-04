@@ -88,14 +88,13 @@ void imu42670p::transformIMUData() {
   gz_real = imuData.gyro[2] / gyro_ratio;
 }
 
-
 void imu42670p::transformIMUDataWithOffset() {
   a_real[0] = ax_real = (imuData.accel[0] - offset_accel[0]) / accel_ratio;
   a_real[1] = ay_real = (imuData.accel[1] - offset_accel[1]) / accel_ratio;
   a_real[2] = az_real = (imuData.accel[2] - offset_accel[2]) / accel_ratio;
-  g_real[0] = gx_real = (imuData.gyro[0] - offset_gyro[0]) / gyro_ratio;
-  g_real[1] = gy_real = (imuData.gyro[1] - offset_gyro[1]) / gyro_ratio;
-  g_real[2] = gz_real = (imuData.gyro[2] - offset_gyro[2]) / gyro_ratio;
+  gx_real = (imuData.gyro[0] - offset_gyro[0]) / gyro_ratio;
+  gy_real = (imuData.gyro[1] - offset_gyro[1]) / gyro_ratio;
+  gz_real = (imuData.gyro[2] - offset_gyro[2]) / gyro_ratio;
 }
 
 void imu42670p::printRealworldData() {
@@ -149,7 +148,8 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
 
   // Normalise accelerometer measurement
   norm = sqrt(ax * ax + ay * ay + az * az);
-  if (norm == 0.0f) return;  // handle NaN
+  if (norm == 0.0f)
+    return;  // handle NaN
   norm = 1.0f / norm;
   ax *= norm;
   ay *= norm;
@@ -214,21 +214,21 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
 
   // transform quaternion to euler
   yprHistory[index][0] = -(atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3])) * 180.0f / PI;
-  float diff = yprHistory[index][0] - yprHistory[(index-1)%MEAN_FILTER_SIZE][0];
+  float diff = yprHistory[index][0] - yprHistory[(index - 1) % MEAN_FILTER_SIZE][0];
   if (abs(diff) < 0.02)
     yawDrift += diff;
-  ypr[0] = yaw = yprHistory[index][0]  - yawDrift;
-  ypr[1]=ypr[1]*MEAN_FILTER_SIZE-yprHistory[index][1];
-  ypr[2]=ypr[2]*MEAN_FILTER_SIZE-yprHistory[index][2];
+  ypr[0] = yaw = yprHistory[index][0] - yawDrift;
+  ypr[1] = ypr[1] * MEAN_FILTER_SIZE - yprHistory[index][1];
+  ypr[2] = ypr[2] * MEAN_FILTER_SIZE - yprHistory[index][2];
   yprHistory[index][1] = pitch = (asin(2.0f * (q[1] * q[3] - q[0] * q[2]))) * 180.0f / PI;
   yprHistory[index][2] = roll = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3])) * 180.0f / PI;
-  ypr[1]=(ypr[1]+yprHistory[index][1])/MEAN_FILTER_SIZE;
-  ypr[2]=(ypr[2]+yprHistory[index][2])/MEAN_FILTER_SIZE;
-  index =(index+1)%MEAN_FILTER_SIZE;
+  ypr[1] = (ypr[1] + yprHistory[index][1]) / MEAN_FILTER_SIZE;
+  ypr[2] = (ypr[2] + yprHistory[index][2]) / MEAN_FILTER_SIZE;
+  index = (index + 1) % MEAN_FILTER_SIZE;
 }
 void imu42670p::getImuGyro() {
   getDataFromRegisters(imuData);
-  if (imuData.accel[0] != prevData.accel[0] || imuData.accel[1] != prevData.accel[1] || imuData.accel[2] != prevData.accel[2]) {  //only calculate if the gyro data is updated
+  if (imuData.accel[0] != prevData.accel[0] || imuData.accel[1] != prevData.accel[1] || imuData.accel[2] != prevData.accel[2]) {  // only calculate if the gyro data is updated
     for (byte i = 0; i < 3; i++)
       prevData.accel[i] = imuData.accel[i];
     // print realWorld data
@@ -248,13 +248,13 @@ void imu42670p::getImuGyro() {
     // Serial.print(" ");
     // Serial.print(yawDrift);
     // Serial.print(" ");
-//    char temp[10];
-//    for (byte i = 0; i < 3; i++) {
-//      sprintf(temp, "%8.2f", ypr[i]*(i==1?-1:1)+10);
-//      Serial.print(temp);
-//      Serial.print(" ");
-//    }
-//    printRealworldData();
+    //    char temp[10];
+    //    for (byte i = 0; i < 3; i++) {
+    //      sprintf(temp, "%8.2f", ypr[i]*(i==1?-1:1)+10);
+    //      Serial.print(temp);
+    //      Serial.print(" ");
+    //    }
+    //    printRealworldData();
     // Serial.print("\tdeltaT:");
     // Serial.print("\t");
     // Serial.print(deltaT);
