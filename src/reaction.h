@@ -238,7 +238,7 @@ void reaction() {
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       fineAdjustQ = true;
-      gyroUpdateQ = true;
+      // updateGyroQ = true;
       gyroBalanceQ = true;
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
@@ -257,7 +257,7 @@ void reaction() {
 #endif
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
-      gyroUpdateQ = true;
+      // updateGyroQ = true;
       gyroBalanceQ = true;
       printToAllPorts('G');
     }

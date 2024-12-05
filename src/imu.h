@@ -200,38 +200,6 @@ public:
           a_real[i] = -a_real[i];
 #endif
       }
-      // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
-
-      // Acceleration Real
-      //      ^ head
-      //        ^ x+
-      //        |
-      //  y+ <------ y-
-      //        |
-      //        | x-
-      // if (AWZ < -8500 && AWZ > -8600)
-      //   imuException = -1;  //dropping
-      // else
-      if (a_real[2] < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
-        imuException = -2;                     // flipped
-#ifndef ROBOT_ARM
-      else if (!moduleDemoQ && abs(a_real[0] - previousXYZ[0]) > 6000 * gFactor && abs(a_real[1] - previousXYZ[1]) > 6000 * gFactor && abs(a_real[2] - previousXYZ[2]) > 6000 * gFactor)
-        imuException = -3;
-      else if (!moduleDemoQ && (abs(a_real[0] - previousXYZ[0]) > 6000 * gFactor && abs(a_real[0]) > thresX * gFactor || abs(a_real[1] - previousXYZ[1]) > 5000 * gFactor && abs(a_real[1]) > thresY * gFactor))
-        imuException = -4;
-#endif
-      // else if (  //keepDirectionQ &&
-      //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-      //   imuException = -5;
-      else
-        imuException = 0;
-      // however, its change is very slow.
-      for (byte m = 0; m < 3; m++) {
-        previousXYZ[m] = a_real[m];
-        if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
-          previous_ypr[m] = ypr[m];
-        }
-      }
       return true;
     }
     return false;
@@ -488,25 +456,28 @@ void icm42670Setup(bool calibrateQ = true) {
 
 #define PRINT_ACCELERATION
 void print6Axis() {
-  char buffer[45];  // Adjust buffer size as needed
-#ifdef IMU_MPU6050
-#ifdef PRINT_ACCELERATION
-  sprintf(buffer, "%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",                                     // 7x6 = 42
-          mpu.ypr[0], mpu.ypr[1], mpu.ypr[2], mpu.a_real[0], mpu.a_real[1], mpu.a_real[2]);  //, aaWorld.z);
-#else
-  sprintf(buffer, "%7.1f %7.1f %7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
-#endif
-  printToAllPorts(buffer, 0);
-#endif
-
+  char buffer[50];  // Adjust buffer size as needed
 #ifdef IMU_ICM42670
+  if (icmQ) {
 #ifdef PRINT_ACCELERATION
-  sprintf(buffer, "%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",  //
-          icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.a_real[0], icm.a_real[1], icm.a_real[2]);
+    sprintf(buffer, "ICM %7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",  //
+            icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.a_real[0], icm.a_real[1], icm.a_real[2]);
 #else
-  sprintf(buffer, "%7.1f %7.1f %7.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
+    sprintf(buffer, "ICM %7.1f %7.1f %7.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #endif
-  printToAllPorts(buffer, 0);
+    printToAllPorts(buffer, 0);
+  }
+#endif
+#ifdef IMU_MPU6050
+  if (mpuQ) {
+#ifdef PRINT_ACCELERATION
+    sprintf(buffer, " MCU%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",                                 // 7x6 = 42
+            mpu.ypr[0], mpu.ypr[1], mpu.ypr[2], mpu.a_real[0], mpu.a_real[1], mpu.a_real[2]);  //, aaWorld.z);
+#else
+    sprintf(buffer, "MCU%7.1f %7.1f %7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
+#endif
+    printToAllPorts(buffer, 0);
+  }
 #endif
   PTL();
 
@@ -533,22 +504,61 @@ void print6Axis() {
 
 bool readIMU() {
   bool updated = false;
-  if (gyroUpdateQ && !(frame % imuSkip)) {
-#ifdef IMU_MPU6050
-    // if programming failed, don't try to do anything
-
-    // read a packet from FIFO
-    updated |= mpu.read_mpu6050();
-    for (byte i = 0; i < 3; i++) {
-      ypr[i] = mpu.ypr[i];
-      xyzReal[i] = mpu.a_real[i];
+  if (updateGyroQ && !(frame % imuSkip)) {
+#ifdef IMU_ICM42670
+    if (icmQ) {
+      updated = true;
+      icm.getImuGyro();
+      for (byte i = 0; i < 3; i++) {
+        icm.a_real[i] *= GRAVITY;
+        xyzReal[i] = icm.a_real[i];
+        ypr[i] = icm.ypr[i];
+      }
     }
 #endif
-#ifdef IMU_ICM42670
-    icm.getImuGyro();
-    for (byte i = 0; i < 3; i++)
-      icm.a_real[i] *= GRAVITY;
+#ifdef IMU_MPU6050
+    // if programming failed, don't try to do anything
+    // read a packet from FIFO
+    if (mpuQ) {
+      updated |= mpu.read_mpu6050();  // mpu6050's frequency is lower than icm42670
+      for (byte i = 0; i < 3; i++) {
+        xyzReal[i] = mpu.a_real[i];
+        ypr[i] = mpu.ypr[i];
+      }
+    }
 #endif
+    // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+
+    // Acceleration Real
+    //      ^ head
+    //        ^ x+
+    //        |
+    //  y+ <------ y-
+    //        |
+    //        | x-
+    // if (AWZ < -8500 && AWZ > -8600)
+    //   imuException = -1;  //dropping
+    // else
+    if (xyzReal[2] < 0 && fabs(ypr[2]) > 85)  //  imuException = aaReal.z < 0;
+      imuException = -2;                      // flipped
+#ifndef ROBOT_ARM
+    else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
+      imuException = -3;
+    else if (!moduleDemoQ && (abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[0]) > thresX * gFactor || abs(xyzReal[1] - previousXYZ[1]) > 5000 * gFactor && abs(xyzReal[1]) > thresY * gFactor))
+      imuException = -4;
+#endif
+    // else if (  //keepDirectionQ &&
+    //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
+    //   imuException = -5;
+    else
+      imuException = 0;
+    // however, its change is very slow.
+    for (byte m = 0; m < 3; m++) {
+      previousXYZ[m] = xyzReal[m];
+      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
+        previous_ypr[m] = ypr[m];
+      }
+    }
     return updated;
   } else {
     delay(1);  // to avoid the task to be blocked the wdt
@@ -584,21 +594,17 @@ void imuSetup() {
     beep(15, 500, 500, 1);
   }
 #ifdef IMU_MPU6050
-  // for (byte t = 0; t < 100; t++) {
-  //   read_mpu6050();
-  //   print6Axis();
-  //   delay(2);
-  // }
-  mpu.mpu6050Setup(calibrateQ);
-  imuException = mpu.aaReal.z < 0;
+  if (mpuQ) {
+    mpu.mpu6050Setup(calibrateQ);
+  }
 #endif
 #ifdef IMU_ICM42670
-  icm42670Setup(calibrateQ);
+  if (icmQ)
+    icm42670Setup(calibrateQ);
 #endif
   if (calibrateQ)
     beep(18, 50, 50, 6);
   previous_ypr[0] = ypr[0];
-#ifdef GYRO_PIN
   xTaskCreatePinnedToCore(
     taskIMU,    // task function
     "TaskIMU",  // name
@@ -607,5 +613,6 @@ void imuSetup() {
     1,          // priority
     &TASK_imu,  // handle
     0);         // core
-#endif
+  delay(100);
+  // imuException = xyzReal[3] < 0;
 }

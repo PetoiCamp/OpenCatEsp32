@@ -210,7 +210,7 @@ void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte of
     // }
     for (int s = 0; s <= steps; s++)
     {
-      if (gyroUpdateQ && printGyroQ)
+      if (updateGyroQ && printGyroQ)
       {
         print6Axis();
       }
@@ -366,11 +366,7 @@ int calibratePincerByVibration(int start, int end, int step, int threshold = 100
   for (int a = start; a < end; a += step)
   {
     calibratedPWM(2, -120);
-    // for (int i = 0; i < 20; i++)
-    // {
-    //   // readIMU();
     delay(300);
-    // }
     angLag0 = xyzReal[0];
     calibratedPWM(2, a);
     long startTime = millis();

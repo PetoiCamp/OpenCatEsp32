@@ -81,12 +81,10 @@ String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE       // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP       // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define BT_CLIENT    // toggle Bluetooth client (BLE） for Micro:Bit
-#define GYRO_PIN     // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
-#define IMU_MPU6050  // toggle the MPU6050 gyroscope
-// #define IMU_ICM42670 // toggle the ICM42670 gyroscope
+#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
+#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -374,7 +372,7 @@ long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
 bool lowBatteryQ = false;
-bool gyroUpdateQ = true;
+bool updateGyroQ = true;
 bool fineAdjustQ = true;
 bool gyroBalanceQ = true;
 bool printGyroQ = false;
@@ -411,6 +409,9 @@ String moduleNames[] = {"Grove_Serial", "Voice", "Double_Touch", "Double_Light "
 bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 bool moduleDemoQ = false;
 byte moduleIndex;
+bool icmQ = false;
+bool mpuQ = false;
+bool eepromQ = false;
 bool initialBoot = true;
 bool coinFace = true;
 bool safeRest = true;
@@ -628,7 +629,8 @@ void initRobot()
   PTL("/10");
 
 #ifdef GYRO_PIN
-  imuSetup();
+  if (updateGyroQ)
+    imuSetup();
 #endif
 #ifdef BT_BLE
   bleSetup();

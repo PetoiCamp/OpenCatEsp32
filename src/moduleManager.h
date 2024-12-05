@@ -454,9 +454,6 @@ String decision() {
   return "";
 }
 
-bool icmQ = false;
-bool mpuQ = false;
-bool eepromQ = false;
 void i2cDetect() {
   byte error, address;
   int nDevices;
@@ -501,6 +498,10 @@ void i2cDetect() {
       Serial.println(address, HEX);
     }
   }
+  if (!icmQ && !mpuQ) {
+    updateGyroQ = false;
+    PTL("No IMU detected!");
+  }
   if (nDevices == 0)
     Serial.println("- No I2C devices found");
   else
@@ -530,10 +531,11 @@ void read_touch() {
 #endif
 void readEnvironment() {
 #ifdef GYRO_PIN
-  // if (gyroUpdateQ && !(frame % imuSkip))
+  // if (updateGyroQ && !(frame % imuSkip))
   //   imuUpdated = readIMU();
-  if (imuUpdated & printGyroQ)
-    print6Axis();
+  if (updateGyroQ)
+    if (imuUpdated & printGyroQ)
+      print6Axis();
 #endif
   read_sound();
   read_GPS();

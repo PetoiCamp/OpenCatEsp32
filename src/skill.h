@@ -317,7 +317,7 @@ public:
           long triggerTimer = millis();
           while (1) {
             // readIMU();
-            // print6Axis();
+            print6Axis();
             currentYpr = ypr[abs(triggerAxis)];
             // PT(currentYpr);
             // PTF("\t");

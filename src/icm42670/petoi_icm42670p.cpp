@@ -215,12 +215,14 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
   // transform quaternion to euler
   yprHistory[index][0] = -(atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3])) * 180.0f / PI;
   float diff = yprHistory[index][0] - yprHistory[(index - 1) % MEAN_FILTER_SIZE][0];
-  if (abs(diff) < 0.02)
+  if (abs(diff) < 0.05)
     yawDrift += diff;
   ypr[0] = yaw = yprHistory[index][0] - yawDrift;
   ypr[1] = ypr[1] * MEAN_FILTER_SIZE - yprHistory[index][1];
   ypr[2] = ypr[2] * MEAN_FILTER_SIZE - yprHistory[index][2];
   yprHistory[index][1] = pitch = (asin(2.0f * (q[1] * q[3] - q[0] * q[2]))) * 180.0f / PI;
+  if (az<0) // the raw pitch won't exceed 90 degrees
+    yprHistory[index][1] = (pitch < 0 ? -1 : 1) * 180 - pitch;
   yprHistory[index][2] = roll = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3])) * 180.0f / PI;
   ypr[1] = (ypr[1] + yprHistory[index][1]) / MEAN_FILTER_SIZE;
   ypr[2] = (ypr[2] + yprHistory[index][2]) / MEAN_FILTER_SIZE;
