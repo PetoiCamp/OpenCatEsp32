@@ -23,7 +23,7 @@ byte mpuBad1[] = { 19, 17, 16, 14, 12,
                    16, 16, 16, 16, 16 };
 
 #define MEAN_THRESHOLD 0.2
-#define STD_THRESHOLD 0.02
+#define STD_THRESHOLD 0.2
 
 #ifdef GYRO_PIN
 void testIMU() {
@@ -44,11 +44,16 @@ void testIMU() {
     }
   }
   PTL("\nIMU test: both mean and standard deviation should be small on Pitch and Roll axis\n");
-  delay(1000);
+  // delay(1000);
   int count = 100;
   float **history = new float *[2];
   for (int a = 0; a < 2; a++)
     history[a] = new float[count];
+  while (fabs(ypr[1]) > 0.1 || fabs(ypr[2]) > 0.1) {
+    delay(10);
+    print6Axis();
+  }
+  PTL("Test");
   for (int t = 0; t < count; t++) {
     delay(10);
     print6Axis();

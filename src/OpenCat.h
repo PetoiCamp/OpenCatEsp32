@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241202" // YYMMDD
+#define DATE "241206" // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -185,7 +185,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define UART_TX2 10
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
-// #define IMU_ICM42670
+#define IMU_ICM42670
 // #define I2C_EEPROM_ADDRESS 0x54  //Address of i2c eeprom chip
 
 #define PWM_LED_PIN 27
@@ -679,7 +679,7 @@ void initRobot()
   initModuleManager();
 #ifdef GYRO_PIN
   // readIMU(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
-  if (!moduleDemoQ)
+  if (!moduleDemoQ && updateGyroQ)
     tQueue->addTask((imuException) ? T_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");

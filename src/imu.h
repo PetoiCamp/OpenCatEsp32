@@ -421,7 +421,18 @@ void icm42670Setup(bool calibrateQ = true) {
   icm.init(200, 2, 250);
   // Wait icm to start
   delay(100);
-
+  icm.offset_accel[0] = config.getFloat("icm_accel0");
+  icm.offset_accel[1] = config.getFloat("icm_accel1");
+  icm.offset_accel[2] = config.getFloat("icm_accel2");
+  icm.offset_gyro[0] = config.getFloat("icm_gyro0");
+  icm.offset_gyro[1] = config.getFloat("icm_gyro1");
+  icm.offset_gyro[2] = config.getFloat("icm_gyro2");
+  PT("Using ICM offsets: ");
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_accel[i], '\t');
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_gyro[i], '\t');
+  PTL();
   // Calibration Time: generate offsets and calibrate our MPU6050
   if (calibrateQ) {
     PTLF("Calibrate ICM42670...");
@@ -432,20 +443,15 @@ void icm42670Setup(bool calibrateQ = true) {
     config.putFloat("icm_gyro0", icm.offset_gyro[0]);
     config.putFloat("icm_gyro1", icm.offset_gyro[1]);
     config.putFloat("icm_gyro2", icm.offset_gyro[2]);
+    PT("New ICM offsets: ");
+    for (byte i = 0; i < 3; i++)
+      PTT(icm.offset_accel[i], '\t');
+    for (byte i = 0; i < 3; i++)
+      PTT(icm.offset_gyro[i], '\t');
+    PTL();
   } else {
     Serial.println("calibration already done");
-    icm.offset_accel[0] = config.getFloat("icm_accel0");
-    icm.offset_accel[1] = config.getFloat("icm_accel1");
-    icm.offset_accel[2] = config.getFloat("icm_accel2");
-    icm.offset_gyro[0] = config.getFloat("icm_gyro0");
-    icm.offset_gyro[1] = config.getFloat("icm_gyro1");
-    icm.offset_gyro[2] = config.getFloat("icm_gyro2");
   }
-  PT("ICM offsets: ");
-  for (byte i = 0; i < 3; i++)
-    PTT(icm.offset_accel[i], '\t');
-  for (byte i = 0; i < 3; i++)
-    PTT(icm.offset_gyro[i], '\t');
   PTL();
 }
 #endif
@@ -456,14 +462,16 @@ void icm42670Setup(bool calibrateQ = true) {
 
 #define PRINT_ACCELERATION
 void print6Axis() {
+  if (!updateGyroQ)
+    return;
   char buffer[50];  // Adjust buffer size as needed
 #ifdef IMU_ICM42670
   if (icmQ) {
 #ifdef PRINT_ACCELERATION
-    sprintf(buffer, "ICM %7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",  //
-            icm.ypr[0], icm.ypr[1], icm.ypr[2], icm.a_real[0], icm.a_real[1], icm.a_real[2]);
+    sprintf(buffer, "ICM:%6.1f%6.1f%6.1f%7.1f%7.1f%7.1f\t",  //
+            icm.a_real[0], icm.a_real[1], icm.a_real[2], icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #else
-    sprintf(buffer, "ICM %7.1f %7.1f %7.1f", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
+    sprintf(buffer, "ICM%7.1f%7.1f%7.1f\t", icm.ypr[0], icm.ypr[1], icm.ypr[2]);
 #endif
     printToAllPorts(buffer, 0);
   }
@@ -471,10 +479,10 @@ void print6Axis() {
 #ifdef IMU_MPU6050
   if (mpuQ) {
 #ifdef PRINT_ACCELERATION
-    sprintf(buffer, " MCU%7.1f %7.1f %7.1f %5.1f %5.1f %5.1f",                                 // 7x6 = 42
-            mpu.ypr[0], mpu.ypr[1], mpu.ypr[2], mpu.a_real[0], mpu.a_real[1], mpu.a_real[2]);  //, aaWorld.z);
+    sprintf(buffer, "MCU:%6.1f%6.1f%6.1f%7.1f%7.1f%7.1f",                                      // 7x6 = 42
+            mpu.a_real[0], mpu.a_real[1], mpu.a_real[2], mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);  //, aaWorld.z);
 #else
-    sprintf(buffer, "MCU%7.1f %7.1f %7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
+    sprintf(buffer, "MCU%7.1f%7.1f%7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
 #endif
     printToAllPorts(buffer, 0);
   }

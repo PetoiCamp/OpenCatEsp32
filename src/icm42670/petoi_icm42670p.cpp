@@ -51,12 +51,12 @@ void imu42670p::getOffset(int num) {
   offset_gyro[1] = offset_gyro[1] / num;
   offset_gyro[2] = offset_gyro[2] / num;
 
-  Serial.print("ICM42670 offset:\t");
-  for (byte i = 0; i < 3; i++) {
-    Serial.print(offset_gyro[i]);
-    Serial.print('\t');
-  }
-  Serial.println();
+//  Serial.print("ICM42670 offset:\t");
+//  for (byte i = 0; i < 3; i++) {
+//    Serial.print(offset_gyro[i]);
+//    Serial.print('\t');
+//  }
+//  Serial.println();
 }
 
 float imu42670p::getTemperature() {
