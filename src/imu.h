@@ -140,7 +140,6 @@ int thresX, thresY, thresZ;
 // format used for the InvenSense teapot demo
 // #define OUTPUT_TEAPOT
 class mpu6050p : public MPU6050 {
-
   // MPU control/status vars
   bool dmpReady = false;   // set true if DMP init was successful
   uint8_t mpuIntStatus;    // holds actual interrupt status byte from MPU
@@ -212,8 +211,7 @@ public:
 #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
     Fastwire::setup(400, true);
 #endif
-
-    // initialize serial communication
+      // initialize serial communication
     // (115200 chosen because it is required for Teapot Demo output, but it's
     // really up to you depending on your project)
     // Serial.begin(115200);
@@ -420,21 +418,28 @@ void icm42670Setup(bool calibrateQ = true) {
   icm.begin();
   icm.init(200, 2, 250);
   // Wait icm to start
-  delay(100);
-  icm.offset_accel[0] = config.getFloat("icm_accel0");
-  icm.offset_accel[1] = config.getFloat("icm_accel1");
-  icm.offset_accel[2] = config.getFloat("icm_accel2");
-  icm.offset_gyro[0] = config.getFloat("icm_gyro0");
-  icm.offset_gyro[1] = config.getFloat("icm_gyro1");
-  icm.offset_gyro[2] = config.getFloat("icm_gyro2");
-  PT("Using ICM offsets: ");
-  for (byte i = 0; i < 3; i++)
-    PTT(icm.offset_accel[i], '\t');
-  for (byte i = 0; i < 3; i++)
-    PTT(icm.offset_gyro[i], '\t');
-  PTL();
+  delay(10);
+  if (config.isKey("icm_accel0")) {
+    icm.offset_accel[0] = config.getFloat("icm_accel0");
+    icm.offset_accel[1] = config.getFloat("icm_accel1");
+    icm.offset_accel[2] = config.getFloat("icm_accel2");
+    icm.offset_gyro[0] = config.getFloat("icm_gyro0");
+    icm.offset_gyro[1] = config.getFloat("icm_gyro1");
+    icm.offset_gyro[2] = config.getFloat("icm_gyro2");
+    PT("Using ICM offsets: ");
+    for (byte i = 0; i < 3; i++)
+      PTT(icm.offset_accel[i], '\t');
+    for (byte i = 0; i < 3; i++)
+      PTT(icm.offset_gyro[i], '\t');
+    PTL();
+  } else
+    PTLF("Calibrate for the first time!");
   // Calibration Time: generate offsets and calibrate our MPU6050
   if (calibrateQ) {
+    for (byte i = 0; i < 3; i++) {
+      icm.offset_accel[i] = 0;
+      icm.offset_gyro[i] = 0;
+    }
     PTLF("Calibrate ICM42670...");
     icm.getOffset(2000);
     config.putFloat("icm_accel0", icm.offset_accel[0]);
@@ -607,8 +612,9 @@ void imuSetup() {
   }
 #endif
 #ifdef IMU_ICM42670
-  if (icmQ)
+  if (icmQ) {
     icm42670Setup(calibrateQ);
+  }
 #endif
   if (calibrateQ)
     beep(18, 50, 50, 6);

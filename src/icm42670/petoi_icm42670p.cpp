@@ -2,11 +2,7 @@
 
 imu42670p::imu42670p(TwoWire &i2c, bool address_lsb)
   : ICM42670(i2c, address_lsb) {
-  for (byte i = 0; i < 3; i++) {
-    offset_accel[i] = 0;
-    offset_gyro[i] = 0;
-  }
-  yawDrift = 0;
+  Serial.println("Constructor");// why is it unused ("Constructor" is not printed during bootup)
 }
 
 int imu42670p::init(uint16_t odr, uint16_t accel_fsr, uint16_t gyro_fsr) {
@@ -21,10 +17,9 @@ int imu42670p::init(uint16_t odr, uint16_t accel_fsr, uint16_t gyro_fsr) {
 
   // update accel ratio
   accel_ratio = 32768 / accel_fsr;
-
   // update gyro ratio
   gyro_ratio = 131.0 / (gyro_fsr / 250);
-
+  yawDrift = 0;
   return rc;
 }
 
@@ -60,7 +55,6 @@ void imu42670p::getOffset(int num) {
 }
 
 float imu42670p::getTemperature() {
-
   float temp = imuData.temperature / 128 + 25;
   Serial.print("Temperature in C - ");
   Serial.println(temp);
@@ -74,7 +68,6 @@ float imu42670p::getAccelRatio(uint8_t accel_fsr) {
 }
 
 float imu42670p::getGyroRatio(uint8_t gyro_fsr) {
-
   // get gyro sensitivity
   return gyro_ratio;
 }
