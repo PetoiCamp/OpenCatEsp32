@@ -22,7 +22,7 @@ byte mpuBad[] = { 25, 20, 16, 11, 9,
 byte mpuBad1[] = { 19, 17, 16, 14, 12,
                    16, 16, 16, 16, 16 };
 
-#define MEAN_THRESHOLD 0.2
+#define MEAN_THRESHOLD 0.1
 #define STD_THRESHOLD 0.2
 
 #ifdef GYRO_PIN
@@ -55,10 +55,12 @@ void testIMU() {
   }
   PTL("Test");
   for (int t = 0; t < count; t++) {
-    delay(10);
+    while (!imuUpdated)//lock to prevent reading imu when it's still calculating
+      delay(1);
     print6Axis();
     for (int a = 0; a < 2; a++)
       history[a][t] = ypr[a + 1];
+    imuUpdated = false;
   }
   String axis[] = { "Pitch ", "Roll  " };
   for (int a = 0; a < 2; a++) {
