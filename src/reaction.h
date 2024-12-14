@@ -128,7 +128,6 @@ void dealWithExceptions() {
           break;
         }
     }
-
     // if (imuException != -4)
     print6Axis();
     // readIMU();  // flush the IMU to avoid static readings and infinite loop
@@ -792,6 +791,23 @@ void reaction() {
                 if (cmdLen >= 3) {
                   printToAllPorts('=');
                   printToAllPorts(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                }
+                break;
+              }
+#endif
+#ifdef CAMERA
+            case EXTENSION_CAMERA:
+              {
+                char *option = newCmd;
+                while (*(++option) != '~') {
+                  if (*option == 'P')
+                    cameraPrintQ = 2;
+                  else if (*option == 'p')
+                    cameraPrintQ = 1;
+                  else if (*option == 'R')
+                    cameraReactionQ = true;
+                  else if (*option == 'r')
+                    cameraReactionQ = false;
                 }
                 break;
               }

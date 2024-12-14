@@ -336,6 +336,11 @@ bool newBoard = false;
 #define EXTENSION_CAMERA 'C'             // connect to Grove I2C
 #define EXTENSION_QUICK_DEMO 'Q'         // activate the quick demo at the end of OpenCatEsp32.ino
 
+#define T_CAMERA_PRINT 'P'
+#define T_CAMERA_PRINT_OFF 'p'
+#define T_CAMERA_REACTION 'R'
+#define T_CAMERA_REACTION_OFF 'r'
+
 // bool updated[10];
 float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
@@ -411,6 +416,9 @@ bool moduleDemoQ = false;
 byte moduleIndex;
 bool icmQ = false;
 bool mpuQ = false;
+bool MuQ = false;
+bool SentryQ = false;
+bool GroveVisionQ = false;
 bool eepromQ = false;
 bool initialBoot = true;
 bool coinFace = true;
@@ -614,7 +622,8 @@ void initRobot()
   printToAllPorts(MODEL);
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
-  i2cDetect();
+  i2cDetect(Wire);
+  i2cDetect(Wire1);
 #ifdef I2C_EEPROM_ADDRESS
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));

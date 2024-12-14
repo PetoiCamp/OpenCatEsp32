@@ -5,6 +5,9 @@
 #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
+int8_t cameraPrintQ = 0;
+bool cameraReactionQ = false;
+
 #ifdef BiBoard_V1_0
 #define USE_WIRE1 // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
 #endif
@@ -169,99 +172,103 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1)
 // #define ROTATE
 void cameraBehavior(int xCoord, int yCoord, int width)
 {
-  showRecognitionResult(xCoord, yCoord, width);
+  if (cameraPrintQ)
+    showRecognitionResult(xCoord, yCoord, width);
+  if (cameraReactionQ)
+  {
 #ifdef WALK
-  if (width > 45 && width != 52) // 52 maybe a noise signal
-    widthCounter++;
-  else
-    widthCounter = 0;
-  if (width < 25 && width != 16)
-  {                                                                                                    // 16 maybe a noise signal
-    tQueue->addTask('k', currentX < -15 ? "wkR" : (currentX > 15 ? "wkL" : "wkF"), (50 - width) * 50); // walk towards you
-    tQueue->addTask('k', "sit");
-    tQueue->addTask('i', "");
-    currentX = 0;
-  }
-  else if (widthCounter > 2)
-  {
-    tQueue->addTask('k', "bk", 1000); // the robot will walk backward if you get too close!
-    tQueue->addTask('k', "sit");
-    tQueue->addTask('i', "");
-    widthCounter = 0;
-    currentX = 0;
-  }
-  else
-#endif
-  {
-    xDiff = (xCoord - imgRangeX / 2.0); // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
-    yDiff = (yCoord - imgRangeY / 2.0); // atan((yCoord - imgRangeY / 2.0) / (imgRangeX / 2.0)) * degPerRad;
-    if (abs(xDiff) > 1 || abs(yDiff) > 1)
+    if (width > 45 && width != 52) // 52 maybe a noise signal
+      widthCounter++;
+    else
+      widthCounter = 0;
+    if (width < 25 && width != 16)
+    {                                                                                                    // 16 maybe a noise signal
+      tQueue->addTask('k', currentX < -15 ? "wkR" : (currentX > 15 ? "wkL" : "wkF"), (50 - width) * 50); // walk towards you
+      tQueue->addTask('k', "sit");
+      tQueue->addTask('i', "");
+      currentX = 0;
+    }
+    else if (widthCounter > 2)
     {
-      xDiff = xDiff / (lensFactor / 10.0);
-      yDiff = yDiff / (lensFactor / 10.0);
-      currentX = max(min(currentX - xDiff, 125), -125) / (proportion / 10.0);
-      currentY = max(min(currentY - yDiff, 125), -125) / (proportion / 10.0);
-
-      // PT('\t');
-      // PT(currentX);
-      // PT('\t');
-      // PTL(currentY);
-
-      // if (abs(currentX) < 60) {
-      int8_t base[] = {0, tiltBase, 0, 0,
-                       0, 0, 0, 0,
-                       frontUp, frontUp, backUp, backUp,
-                       frontDown, frontDown, backDown, backDown};
-      int8_t feedBackArray[][2] = {
-          {pan, 0},
-          {0, tilt},
-          {0, 0},
-          {0, 0},
-          {0, 0},
-          {0, 0},
-          {0, 0},
-          {0, 0},
-          {frontUpX, (int8_t)-frontUpY}, // explicitly convert the calculation result to int8_t
-          {(int8_t)-frontUpX, (int8_t)-frontUpY},
-          {(int8_t)-backUpX, backUpY},
-          {backUpX, backUpY},
-          {(int8_t)-frontDownX, frontDownY},
-          {frontDownX, frontDownY},
-          {backDownX, (int8_t)-backDownY},
-          {(int8_t)-backDownX, (int8_t)-backDownY},
-      };
-      transformSpeed = tranSpeed;
-      for (int i = 0; i < DOF; i++)
-      {
-        float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
-        newCmd[i] = min(125, max(-125, int(adj)));
-        if (i == 0)
-        {
-          PT(i);
-          PT('\t');
-          PT(adj);
-          PT('\t');
-          PT(int8_t(newCmd[i]));
-          PTF(",\t");
-        }
-      }
-      // PTL();
-      cmdLen = DOF;
-      token = T_LISTED_BIN;
-
-      newCmd[cmdLen] = '~';
-      newCmdIdx = 6;
-      //      printList(newCmd);}
-      // }
-#ifdef ROTATE
-      else
-      {
-        tQueue->addTask('k', (currentX < 0 ? "vtR" : "vtL"), abs(currentX) * 40); // spin its body to follow you
-        tQueue->addTask('k', "sit");
-        tQueue->addTask('i', "");
-        currentX = 0;
-      }
+      tQueue->addTask('k', "bk", 1000); // the robot will walk backward if you get too close!
+      tQueue->addTask('k', "sit");
+      tQueue->addTask('i', "");
+      widthCounter = 0;
+      currentX = 0;
+    }
+    else
 #endif
+    {
+      xDiff = (xCoord - imgRangeX / 2.0); // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
+      yDiff = (yCoord - imgRangeY / 2.0); // atan((yCoord - imgRangeY / 2.0) / (imgRangeX / 2.0)) * degPerRad;
+      if (abs(xDiff) > 1 || abs(yDiff) > 1)
+      {
+        xDiff = xDiff / (lensFactor / 10.0);
+        yDiff = yDiff / (lensFactor / 10.0);
+        currentX = max(min(currentX - xDiff, 125), -125) / (proportion / 10.0);
+        currentY = max(min(currentY - yDiff, 125), -125) / (proportion / 10.0);
+
+        // PT('\t');
+        // PT(currentX);
+        // PT('\t');
+        // PTL(currentY);
+
+        // if (abs(currentX) < 60) {
+        int8_t base[] = {0, tiltBase, 0, 0,
+                         0, 0, 0, 0,
+                         frontUp, frontUp, backUp, backUp,
+                         frontDown, frontDown, backDown, backDown};
+        int8_t feedBackArray[][2] = {
+            {pan, 0},
+            {0, tilt},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {frontUpX, (int8_t)-frontUpY}, // explicitly convert the calculation result to int8_t
+            {(int8_t)-frontUpX, (int8_t)-frontUpY},
+            {(int8_t)-backUpX, backUpY},
+            {backUpX, backUpY},
+            {(int8_t)-frontDownX, frontDownY},
+            {frontDownX, frontDownY},
+            {backDownX, (int8_t)-backDownY},
+            {(int8_t)-backDownX, (int8_t)-backDownY},
+        };
+        transformSpeed = tranSpeed;
+        for (int i = 0; i < DOF; i++)
+        {
+          float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
+          newCmd[i] = min(125, max(-125, int(adj)));
+          // if (i == 0)//print adjustment of head pan joint
+          // {
+          //   PT(i);
+          //   PT('\t');
+          //   PT(adj);
+          //   PT('\t');
+          //   PT(int8_t(newCmd[i]));
+          //   PTF(",\t");
+          // }
+        }
+        // PTL();
+        cmdLen = DOF;
+        token = T_LISTED_BIN;
+
+        newCmd[cmdLen] = '~';
+        newCmdIdx = 6;
+        //      printList(newCmd);}
+        // }
+#ifdef ROTATE
+        else
+        {
+          tQueue->addTask('k', (currentX < 0 ? "vtR" : "vtL"), abs(currentX) * 40); // spin its body to follow you
+          tQueue->addTask('k', "sit");
+          tQueue->addTask('i', "");
+          currentX = 0;
+        }
+#endif
+      }
     }
   }
 }
@@ -277,6 +284,14 @@ void read_camera()
 #ifdef GROVE_VISION_AI_V2
   read_GroveVision();
 #endif
+  if (cameraPrintQ)
+  {
+    PTL();
+    if (cameraPrintQ == 1)
+      cameraPrintQ = 0; // if the command is XCp, the camera will print the result only once
+    else
+      FPS();
+  }
 }
 
 #ifdef MU_CAMERA
@@ -373,7 +388,6 @@ void read_MuCamera()
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
 
       cameraBehavior(xCoord, yCoord, width);
-      // FPS();
     }
     else if (millis() - noResultTime > 2000)
     { // if no object is detected for 2 seconds, switch object
@@ -459,7 +473,6 @@ void read_Sentry1Camera()
                                   //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
                                   // do something ......
       cameraBehavior(xCoord, yCoord, width);
-      FPS();
       delay(10);
     }
   }
@@ -490,23 +503,25 @@ void read_GroveVision()
       height = AI.boxes()[0].h; // read height value
 
       cameraBehavior(xCoord, yCoord, width);
-      FPS();
-      for (int i = 0; i < AI.boxes().size(); i++)
+      if (cameraPrintQ)
       {
-        Serial.print("Box[");
-        Serial.print(i);
-        Serial.print("] target=");
-        Serial.print(AI.boxes()[i].target);
-        Serial.print(", score=");
-        Serial.print(AI.boxes()[i].score);
-        Serial.print(", x=");
-        Serial.print(AI.boxes()[i].x);
-        Serial.print(", y=");
-        Serial.print(AI.boxes()[i].y);
-        Serial.print(", w=");
-        Serial.print(AI.boxes()[i].w);
-        Serial.print(", h=");
-        Serial.println(AI.boxes()[i].h);
+        for (int i = 0; i < AI.boxes().size(); i++)
+        {
+          Serial.print("Box[");
+          Serial.print(i);
+          Serial.print("] target=");
+          Serial.print(AI.boxes()[i].target);
+          Serial.print(", score=");
+          Serial.print(AI.boxes()[i].score);
+          Serial.print(", x=");
+          Serial.print(AI.boxes()[i].x);
+          Serial.print(", y=");
+          Serial.print(AI.boxes()[i].y);
+          Serial.print(", w=");
+          Serial.print(AI.boxes()[i].w);
+          Serial.print(", h=");
+          Serial.print(AI.boxes()[i].h);
+        }
       }
     }
   }

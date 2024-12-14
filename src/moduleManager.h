@@ -254,6 +254,7 @@ void showModuleStatus() {
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
+  bool statusChangedQ = false;
   // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
     if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     // if the modules is active and different from the new module
@@ -262,6 +263,7 @@ void reconfigureTheActiveModule(char *moduleCode) {
       PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);
       moduleActivatedQ[i] = false;
+      statusChangedQ = true;
 #ifdef I2C_EEPROM_ADDRESS
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, false);
 #endif
@@ -274,9 +276,11 @@ void reconfigureTheActiveModule(char *moduleCode) {
     if (moduleList[i] == moduleCode[0] && !moduleActivatedQ[i]) {
       PTHL("+  enable", moduleNames[i]);
       initModule(moduleList[i]);
+      statusChangedQ = true;
     }
   }
-  showModuleStatus();
+  if (statusChangedQ)  // if the status of the modules has changed, show the new status
+    showModuleStatus();
 }
 
 void initModuleManager() {
@@ -454,40 +458,49 @@ String decision() {
   return "";
 }
 
-void i2cDetect() {
+void i2cDetect(TwoWire &wirePort) {
+  if (&wirePort == &Wire1)
+    wirePort.begin(UART_TX2, UART_RX2, 400000);
   byte error, address;
   int nDevices;
-  int8_t i2cAddress[] = { 0x54, 0x68, 0x69, 0 };
-  String i2cAddressName[] = { "EEPROM", "MPU6050", "ICM42670", "Misc." };
+  int8_t i2cAddress[] = {
+    0x50, 0x54, 0x60, 0x62, 0x68, 0x69
+  };
+  String i2cAddressName[] = { "Mu3 Camera", "EEPROM", "Sentry1", "AI Vision", "MPU6050", "ICM42670" };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
     // The i2c_scanner uses the return value of
     // the Write.endTransmisstion to see if
     // a device did acknowledge to the address.
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-
+    wirePort.beginTransmission(address);
+    error = wirePort.endTransmission();
     if (error == 0) {
       Serial.print("- I2C device found at address 0x");
       if (address < 16)
         Serial.print("0");
       Serial.print(address, HEX);
       Serial.print(":\t");
-      for (byte i = nDevices; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
+      for (byte i = 0; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
         if (address == i2cAddress[i]) {
           PT(i2cAddressName[i]);
           if (i == 0)
-            eepromQ = true;
+            MuQ = true;
           else if (i == 1)
-            mpuQ = true;
+            eepromQ = true;
           else if (i == 2)
+            SentryQ = true;
+          else if (i == 3)
+            GroveVisionQ = true;
+          else if (i == 4)
+            mpuQ = true;
+          else if (i == 5)
             icmQ = true;
           nDevices++;
           break;
         }
         if (i == sizeof(i2cAddress) / sizeof(int8_t) - 1) {
-          PT(i2cAddressName[i]);
+          PT("Misc.");
         }
       }
       PTL();
@@ -506,6 +519,8 @@ void i2cDetect() {
     Serial.println("- No I2C devices found");
   else
     Serial.println("- done");
+  if (&wirePort == &Wire1)
+    wirePort.end();
 }
 
 void read_sound() {
