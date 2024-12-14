@@ -1,22 +1,25 @@
 // #include <Wire.h>
 
-// #define MU_CAMERA
-// #define SENTRY1_CAMERA
+#define MU_CAMERA
+#define SENTRY1_CAMERA
 #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
 int8_t cameraPrintQ = 0;
 bool cameraReactionQ = false;
+bool detectedObjectQ = false;
 
 #ifdef BiBoard_V1_0
 #define USE_WIRE1 // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
 #endif
 
 #ifdef USE_WIRE1
-#define I2C_WIRE Wire1
+#define CAMERA_WIRE Wire1
 #else
-#define I2C_WIRE Wire
+#define CAMERA_WIRE Wire
 #endif
+
+TwoWire & wirePort;
 
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
@@ -64,21 +67,11 @@ bool cameraSetupSuccessful = false;
 int xCoord, yCoord, width, widthCounter; // the x y returned by the sensor
 int xDiff, yDiff;                        // the scaled distance from the center of the frame
 int currentX = 0, currentY = 0;          // the current x y of the camera's direction in the world coordinate
-
-#if defined MU_CAMERA
-int imgRangeX = 100; // the frame size 0~100 on X and Y direction
+int imgRangeX = 100;                     // the frame size 0~100 on X and Y direction
 int imgRangeY = 100;
-#elif defined GROVE_VISION_AI_V2
-int imgRangeX = 240; // the frame size 0~100 on X and Y direction
-int imgRangeY = 240;
-#elif defined SENTRY1_CAMERA
-#elif defined TALL_TARGET
-#else
-#error "Please define the camera type"
-#endif
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
-
+int8_t sizePars;
 #ifdef ROBOT_ARM
 float adjustmentFactor = 1.5;
 #else
@@ -86,25 +79,26 @@ float adjustmentFactor = 1;
 #endif
 
 #ifdef NYBBLE
-int8_t initPars[] = {
+int8_t nybblePars[] = {
     30, 11, 4, 10, 15,
     60, -50, 31, -50,
     45, -40, 40, -36,
     0, 25, -60, 60, 16};
 #else // BITTLE or CUB
-int8_t initPars[] = {
 #ifdef MU_CAMERA
+int8_t bittleMuPars[] = {
     30, 10, 4, 15, 15,
     60, 80, 30, 80,
     60, 30, 30, 70,
-    40, 40, 60, 40, -30
-#elif defined GROVE_VISION_AI_V2
+    40, 40, 60, 40, -30};
+#endif
+#if defined GROVE_VISION_AI_V2
+int8_t bittleGroveVisionPars[] = {
     20, 20, 6, 10, 12,
     int8_t(60 * adjustmentFactor), int8_t(75 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(75 * adjustmentFactor),
     20, 25, 10, 25,
-    0, 30, 60, 40, -10
+    0, 30, 60, 40, -10};
 #endif
-};
 #endif
 
 int8_t *par[] = {&lensFactor, &proportion, &tranSpeed, &pan, &tilt,
@@ -127,25 +121,55 @@ void groveVisionSetup();
 void read_GroveVision();
 #endif
 
+int8_t *initPars;
 bool cameraSetup()
 {
-#ifdef USE_WIRE1
-  I2C_WIRE.begin(UART_TX2, UART_RX2, 400000);
+  if (MuQ || GroveVisionQ || SentryQ)
+    cameraSetupSuccessful = true;
+  else
+    return false;
+#ifdef NYBBLE
+  initPars = nybblePars;
+  sizePars = sizeof(nybblePars) / sizeof(int8_t);
+#else // BITTLE or CUB
+#ifdef MU_CAMERA
+  sizePars = sizeof(bittleMuPars) / sizeof(int8_t);
+  if (MuQ)
+    initPars = bittleMuPars;
 #endif
-  for (byte i = 0; i < sizeof(initPars) / sizeof(int8_t); i++)
+#ifdef GROVE_VISION_AI_V2
+  sizePars = sizeof(bittleGroveVisionPars) / sizeof(int8_t);
+  if (GroveVisionQ)
+  {
+    initPars = bittleGroveVisionPars;
+    imgRangeX = 240; // the frame size 0~240 on X and Y direction
+    imgRangeY = 240;
+  }
+#endif
+#endif
+
+#ifdef USE_WIRE1
+  CAMERA_WIRE.begin(UART_TX2, UART_RX2, 400000);
+#endif
+  for (byte i = 0; i < sizePars; i++)
     *par[i] = initPars[i];
   transformSpeed = 0;
   widthCounter = 0;
 #ifdef MU_CAMERA
-  muCameraSetup();
+  if (MuQ)
+    muCameraSetup();
 #endif
 #ifdef SENTRY1_CAMERA
-  lensFactor = 10;
-  proportion = 20;
-  sentry1CameraSetup();
+  if (SentryQ)
+  {
+    lensFactor = 10;
+    proportion = 20;
+    sentry1CameraSetup();
+  }
 #endif
 #ifdef GROVE_VISION_AI_V2
-  groveVisionSetup();
+  if (GroveVisionQ)
+    groveVisionSetup();
 #endif
   fps = 0;
   loopTimer = millis();
@@ -276,17 +300,22 @@ void cameraBehavior(int xCoord, int yCoord, int width)
 void read_camera()
 {
 #ifdef MU_CAMERA
-  read_MuCamera();
+  if (MuQ)
+    read_MuCamera();
 #endif
 #ifdef SENTRY1_CAMERA
-  read_Sentry1Camera();
+  if (SentryQ)
+    read_Sentry1Camera();
 #endif
 #ifdef GROVE_VISION_AI_V2
-  read_GroveVision();
+  if (GroveVisionQ)
+    read_GroveVision();
 #endif
   if (cameraPrintQ)
   {
-    PTL();
+    if (detectedObjectQ)
+      PTL();
+    detectedObjectQ = false;
     if (cameraPrintQ == 1)
       cameraPrintQ = 0; // if the command is XCp, the camera will print the result only once
     else
@@ -312,7 +341,7 @@ void muCameraSetup()
   do
   {
     MuVisionSensor *Mu0 = new MuVisionSensor(MU_ADDRESS);
-    err = Mu0->begin(&I2C_WIRE);
+    err = Mu0->begin(&CAMERA_WIRE);
     if (err == MU_OK)
     {
       PTLF("MU initialized at 0x50");
@@ -330,7 +359,7 @@ void muCameraSetup()
       }
       delete Mu0;
       MuVisionSensor *Mu1 = new MuVisionSensor(ALT_MU_ADDRESS);
-      err = Mu1->begin(&I2C_WIRE);
+      err = Mu1->begin(&CAMERA_WIRE);
       if (err == MU_OK)
       {
         PTLF("MU initialized at 0x60");
@@ -388,6 +417,7 @@ void read_MuCamera()
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
 
       cameraBehavior(xCoord, yCoord, width);
+      detectedObjectQ = true;
     }
     else if (millis() - noResultTime > 2000)
     { // if no object is detected for 2 seconds, switch object
@@ -405,26 +435,26 @@ void read_MuCamera()
 
 #define SENTRY_ADDR 0x60 // 0x61 0x62 0x63
 
-char writeRegData(char reg_addr, char reg_data)
+void writeRegData(char reg_addr, char reg_data)
 {
-  I2C_WIRE.beginTransmission(SENTRY_ADDR);
-  I2C_WIRE.write(reg_addr);
-  I2C_WIRE.write(reg_data);
-  I2C_WIRE.endTransmission();
+  CAMERA_WIRE.beginTransmission(SENTRY_ADDR);
+  CAMERA_WIRE.write(reg_addr);
+  CAMERA_WIRE.write(reg_data);
+  CAMERA_WIRE.endTransmission();
   delay(1);
 }
 
 char readRegData(char reg_addr)
 {
-  I2C_WIRE.beginTransmission(SENTRY_ADDR);
-  I2C_WIRE.write(reg_addr); // read label
-  I2C_WIRE.endTransmission();
+  CAMERA_WIRE.beginTransmission(SENTRY_ADDR);
+  CAMERA_WIRE.write(reg_addr); // read label
+  CAMERA_WIRE.endTransmission();
 
-  I2C_WIRE.requestFrom(SENTRY_ADDR, 1); // request 1 byte from slave device
+  CAMERA_WIRE.requestFrom(SENTRY_ADDR, 1); // request 1 byte from slave device
   char ret = 0;
-  while (I2C_WIRE.available())
+  while (CAMERA_WIRE.available())
   {
-    ret = I2C_WIRE.read(); // receive a byte
+    ret = CAMERA_WIRE.read(); // receive a byte
   }
   return ret;
   delay(1);
@@ -432,7 +462,7 @@ char readRegData(char reg_addr)
 
 void sentry1CameraSetup()
 {
-  // I2C_WIRE.begin();  // join i2c bus (address optional for master)
+  // CAMERA_WIRE.begin();  // join i2c bus (address optional for master)
   delay(2000); // wait for sentry1 startup, not necessary
   PTLF("Setup Sentry1");
   writeRegData(0x20, 0x07); // set vision id: 7 (body for Sentry1)
@@ -473,6 +503,7 @@ void read_Sentry1Camera()
                                   //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
                                   // do something ......
       cameraBehavior(xCoord, yCoord, width);
+      detectedObjectQ = true;
       delay(10);
     }
   }
@@ -486,8 +517,8 @@ int height;
 void groveVisionSetup()
 {
   PTL("Setup Vision AI 2");
-  // I2C_WIRE.begin(10, 9, 400000);
-  AI.begin(&I2C_WIRE);
+  // CAMERA_WIRE.begin(10, 9, 400000);
+  AI.begin(&CAMERA_WIRE);
   cameraSetupSuccessful = true;
 }
 
@@ -503,6 +534,7 @@ void read_GroveVision()
       height = AI.boxes()[0].h; // read height value
 
       cameraBehavior(xCoord, yCoord, width);
+      detectedObjectQ = true;
       if (cameraPrintQ)
       {
         for (int i = 0; i < AI.boxes().size(); i++)

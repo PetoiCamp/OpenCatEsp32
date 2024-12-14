@@ -676,7 +676,7 @@ void reaction() {
             } while (pch != NULL);
 #ifdef T_TUNER
             if (token == T_TUNER) {
-              for (byte p = 0; p < sizeof(initPars) / sizeof(int8_t); p++) {
+              for (byte p = 0; p < sizePars; p++) {
                 PT(*par[p]);
                 PT('\t');
               }

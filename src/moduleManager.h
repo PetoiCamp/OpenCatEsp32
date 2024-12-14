@@ -466,7 +466,7 @@ void i2cDetect(TwoWire &wirePort) {
   int8_t i2cAddress[] = {
     0x50, 0x54, 0x60, 0x62, 0x68, 0x69
   };
-  String i2cAddressName[] = { "Mu3 Camera", "EEPROM", "Sentry1", "AI Vision", "MPU6050", "ICM42670" };
+  String i2cAddressName[] = { "Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -489,7 +489,7 @@ void i2cDetect(TwoWire &wirePort) {
           else if (i == 1)
             eepromQ = true;
           else if (i == 2)
-            SentryQ = true;
+            MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
           else if (i == 3)
             GroveVisionQ = true;
           else if (i == 4)
