@@ -6,7 +6,7 @@
 // #define TALL_TARGET
 
 int8_t cameraPrintQ = 0;
-bool cameraReactionQ = false;
+bool cameraReactionQ = true;
 bool detectedObjectQ = false;
 
 #ifdef BiBoard_V1_0
@@ -18,8 +18,6 @@ bool detectedObjectQ = false;
 #else
 #define CAMERA_WIRE Wire
 #endif
-
-TwoWire & wirePort;
 
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
@@ -352,7 +350,6 @@ void muCameraSetup()
       PTHL("Trial ", trial);
       if (!trial++)
       { // only print once for the first time
-        PTLF("Failed to initialize the camera!");
         PTLF("Set the four dial switches on the camera as v ^ v v (the second switch dialed up to I2C)");
         PTLF("Then connect the camera to the I2C Grove socket with SDA and SCL pins!");
         PTLF("The battery should be turned on to drive the servos");
@@ -378,6 +375,8 @@ void muCameraSetup()
   cameraSetupSuccessful = (err == MU_OK);
   if (cameraSetupSuccessful)
     (*Mu).VisionBegin(object[objectIdx]);
+  else
+    PTL("Failed to initialize the camera!");
   noResultTime = millis();
 }
 
@@ -514,11 +513,49 @@ void read_Sentry1Camera()
 #ifdef GROVE_VISION_AI_V2
 SSCMA AI;
 int height;
+// OPT_ANGLE values
+enum OptAngle : uint16_t
+{
+  OPT_ANGLE_0 = 0,
+  OPT_ANGLE_90 = 0xffff & (1 << 12),
+  OPT_ANGLE_180 = 0xffff & (1 << 13),
+  OPT_ANGLE_270 = 0xffff & (1 << 14),
+};
+
+// OPT_DETAIL values
+enum OptResolution : uint8_t
+{
+  OPT_DETAIL_240 = 0, // 240*240 Auto
+  OPT_DETAIL_480,     // 480*480 Auto
+  OPT_DETAIL_640,     // 640*480 Auto
+};
 void groveVisionSetup()
 {
-  PTL("Setup Vision AI 2");
+  PTLF("Setup Grove Vision AI Module");
   // CAMERA_WIRE.begin(10, 9, 400000);
   AI.begin(&CAMERA_WIRE);
+
+  uint8_t count = 0;
+  bool sensorEnable = true;
+  uint16_t sensorVal = OPT_DETAIL_240 + (strcmp(MODEL, "Bittle R") ? OPT_ANGLE_90 : OPT_ANGLE_0); // 240*240, rotate 90 degrees if Bittle R
+
+  Serial.println("Set sensor angle and resolution...");
+  while (CMD_OK != AI.setSensor(sensorEnable, sensorVal))
+  {
+    delay(10);
+    count++;
+    if (count > 10)
+    {
+      cameraSetupSuccessful = false;
+      Serial.println("set failed!");
+      break;
+    }
+  }
+  if (count <= 10)
+  {
+    Serial.println("set successfully!");
+    // PTHL("count:", count);
+  }
   cameraSetupSuccessful = true;
 }
 

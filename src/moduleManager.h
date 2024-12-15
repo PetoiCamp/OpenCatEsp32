@@ -254,6 +254,10 @@ void showModuleStatus() {
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
+  if (moduleCode[0] == '?') {
+    showModuleStatus();
+    return;
+  }
   bool statusChangedQ = false;
   // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
   for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
