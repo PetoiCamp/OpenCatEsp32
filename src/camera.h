@@ -55,7 +55,7 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN);
 #endif
 
 #ifdef GROVE_VISION_AI_V2
-#include <Seeed_Arduino_SSCMA.h>
+#include "Seeed_Arduino_SSCMA/src/Seeed_Arduino_SSCMA.h"
 // You need to install Seeed_Arduino_SSCMA via Arduino's library manager
 // or download the library as a zip from https://github.com/Seeed-Studio/Seeed_Arduino_SSCMA
 #endif
