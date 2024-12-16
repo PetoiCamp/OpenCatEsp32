@@ -623,7 +623,9 @@ void initRobot()
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
   i2cDetect(Wire);
+#ifdef BiBoard_V1_0
   i2cDetect(Wire1);
+#endif
 #ifdef I2C_EEPROM_ADDRESS
   soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
   buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
