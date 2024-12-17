@@ -7,6 +7,7 @@
 
 int8_t cameraPrintQ = 0;
 bool cameraReactionQ = true;
+bool updateCoordinateLock = false;
 bool detectedObjectQ = false;
 
 #ifdef BiBoard_V1_0
@@ -78,7 +79,7 @@ float adjustmentFactor = 1;
 
 #ifdef NYBBLE
 int8_t nybblePars[] = {
-  30, 11, 4, 10, 15,
+  30, 11, 8, 10, 15,
   60, -50, 31, -50,
   45, -40, 40, -36,
   0, 25, -60, 60, 16
@@ -86,7 +87,7 @@ int8_t nybblePars[] = {
 #else  // BITTLE or CUB
 #ifdef MU_CAMERA
 int8_t bittleMuPars[] = {
-  30, 10, 4, 15, 15,
+  30, 10, 8, 15, 15,
   60, 80, 30, 80,
   60, 30, 30, 70,
   40, 40, 60, 40, -30
@@ -94,7 +95,7 @@ int8_t bittleMuPars[] = {
 #endif
 #if defined GROVE_VISION_AI_V2
 int8_t bittleGroveVisionPars[] = {
-  20, 20, 6, 10, 12,
+  20, 20, 8, 10, 12,
   int8_t(60 * adjustmentFactor), int8_t(75 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(75 * adjustmentFactor),
   20, 25, 10, 25,
   0, 30, 60, 40, -10
@@ -190,10 +191,15 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
 // #define WALK  //let the robot move its body to follow people rather than sitting at the original position \
               // it works the best on the table so the robot doesn't need to loop upward.
 // #define ROTATE
+
+TaskHandle_t TASK_HandleCamera = NULL;
+bool cameraTaskActiveQ = 0;
+
 void cameraBehavior(int xCoord, int yCoord, int width) {
-  if (cameraPrintQ)
-    showRecognitionResult(xCoord, yCoord, width);
   if (cameraReactionQ) {
+    while (updateCoordinateLock)
+      ;
+      // delay(1);
 #ifdef WALK
     if (width > 45 && width != 52)  // 52 maybe a noise signal
       widthCounter++;
@@ -249,7 +255,7 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
           { backDownX, (int8_t)-backDownY },
           { (int8_t)-backDownX, (int8_t)-backDownY },
         };
-        transformSpeed = tranSpeed;
+        transformSpeed = tranSpeed / 4.0;
         for (int i = 0; i < DOF; i++) {
           float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
           newCmd[i] = min(125, max(-125, int(adj)));
@@ -264,12 +270,9 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
           // }
         }
         // PTL();
-        cmdLen = DOF;
-        token = T_LISTED_BIN;
-
-        newCmd[cmdLen] = '~';
-        newCmdIdx = 6;
-        //      printList(newCmd);}
+        // newCmd[16] = '~';
+        // printList((int8_t *)newCmd);
+        transform((int8_t *)newCmd, 1, transformSpeed);
         // }
 #ifdef ROTATE
         else {
@@ -283,31 +286,58 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
     }
   }
 }
+int coords[3];
 
-void read_camera() {
+void taskReadCamera(void *par) {
+  while (cameraTaskActiveQ) {
 #ifdef MU_CAMERA
-  if (MuQ)
-    read_MuCamera();
+    if (MuQ)
+      read_MuCamera();
 #endif
 #ifdef SENTRY1_CAMERA
-  if (SentryQ)
-    read_Sentry1Camera();
+    if (SentryQ)
+      read_Sentry1Camera();
 #endif
 #ifdef GROVE_VISION_AI_V2
-  if (GroveVisionQ)
-    read_GroveVision();
+    if (GroveVisionQ)
+      read_GroveVision();
 #endif
-  if (cameraPrintQ) {
-    if (detectedObjectQ)
-      PTL();
-    detectedObjectQ = false;
-    if (cameraPrintQ == 1)
-      cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
-    else
-      FPS();
+    // vTaskDelay(1);
   }
+  vTaskDelete(NULL);
 }
 
+void read_camera() {
+  if (!cameraTaskActiveQ) {
+    PTLF("Create Camera Task...");
+    xTaskCreatePinnedToCore(
+      taskReadCamera,      // task function
+      "TaskReadCamera",    // name
+      10000,               // task stack size​​
+      NULL,                // parameters
+      0,                   // priority
+      &TASK_HandleCamera,  // handle
+      0);                  // core
+    cameraTaskActiveQ = 1;
+    PTLF("Camera task activated.");
+  }
+  // long waitingTime = millis();
+  // while (!detectedObjectQ && millis() - waitingTime < 20)
+  //   delay(1); // wait for the camera to detect an object in another core
+
+  if (detectedObjectQ) {
+    cameraBehavior(xCoord, yCoord, width);
+    if (cameraPrintQ) {
+      showRecognitionResult(xCoord, yCoord, width);
+      PTL();
+      if (cameraPrintQ == 1)
+        cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
+      else
+        FPS();
+    }
+    detectedObjectQ = false;
+  }
+}
 #ifdef MU_CAMERA
 MuVisionSensor *Mu;
 int skip = 1;  //, counter; //an efforts to reduce motion frequency without using delay. set skip >1 to take effect
@@ -363,10 +393,12 @@ void read_MuCamera() {
     if ((*Mu).GetValue(object[objectIdx], kStatus)) {  // update vision result and get status, 0: undetected, other:
       // PTL(objectName[objectIdx]);
       noResultTime = millis();  // update the timer
+      updateCoordinateLock = true;
       xCoord = (int)(*Mu).GetValue(object[objectIdx], kXValue);
       yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
       width = (int)(*Mu).GetValue(object[objectIdx], kWidthValue);
       // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
+      updateCoordinateLock = false;
       // vvvvvvvvvvvv ball vvvvvvvvvvvvv
       if (objectIdx == 1) {
         int ballType = (*Mu).GetValue(object[objectIdx], kLabel);
@@ -386,8 +418,6 @@ void read_MuCamera() {
         }
       }
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
-
-      cameraBehavior(xCoord, yCoord, width);
       detectedObjectQ = true;
     } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
       (*Mu).VisionEnd(object[objectIdx]);
@@ -395,6 +425,7 @@ void read_MuCamera() {
       (*Mu).VisionBegin(object[objectIdx]);
       PTL(objectName[objectIdx]);
       noResultTime = millis();
+      beep(25, 50, 50, objectIdx + 1);
     }
   }
 }
@@ -457,13 +488,14 @@ void read_Sentry1Camera() {
     char label = readRegData(0x89);  // read label/ value Low Byte, 1=detected, 0=undetected
     //  Serial.print("label: ");
     //  Serial.println(label);//
-    if (label == 1) {              // have detected
+    if (label == 1) {  // have detected
+      updateCoordinateLock = true;
       xCoord = readRegData(0x81);  // read x value Low Byte, 0~100, (LB is enought for sentry 1)
       yCoord = readRegData(0x83);  // read y value Low Byte, 0~100
       width = readRegData(0x85);   // read width value Low Byte, 0~100
                                    //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
                                    // do something ......
-      cameraBehavior(xCoord, yCoord, width);
+      updateCoordinateLock = false;
       detectedObjectQ = true;
       delay(10);
     }
@@ -513,31 +545,33 @@ void groveVisionSetup() {
 void read_GroveVision() {
   if (cameraSetupSuccessful && !AI.invoke()) {
     if (AI.boxes().size() >= 1) {
+      updateCoordinateLock = true;
       xCoord = AI.boxes()[0].x;  // read x value
       yCoord = AI.boxes()[0].y;  // read y value
       width = AI.boxes()[0].w;   // read width value
       height = AI.boxes()[0].h;  // read height value
-
-      cameraBehavior(xCoord, yCoord, width);
+      updateCoordinateLock = false;
       detectedObjectQ = true;
-      if (cameraPrintQ) {
-        for (int i = 0; i < AI.boxes().size(); i++) {
-          Serial.print("Box[");
-          Serial.print(i);
-          Serial.print("] target=");
-          Serial.print(AI.boxes()[i].target);
-          Serial.print(", score=");
-          Serial.print(AI.boxes()[i].score);
-          Serial.print(", x=");
-          Serial.print(AI.boxes()[i].x);
-          Serial.print(", y=");
-          Serial.print(AI.boxes()[i].y);
-          Serial.print(", w=");
-          Serial.print(AI.boxes()[i].w);
-          Serial.print(", h=");
-          Serial.print(AI.boxes()[i].h);
-        }
-      }
+      // if (cameraPrintQ)
+      // {
+      //   for (int i = 0; i < AI.boxes().size(); i++)
+      //   {
+      //     Serial.print("Box[");
+      //     Serial.print(i);
+      //     Serial.print("] target=");
+      //     Serial.print(AI.boxes()[i].target);
+      //     Serial.print(", score=");
+      //     Serial.print(AI.boxes()[i].score);
+      //     Serial.print(", x=");
+      //     Serial.print(AI.boxes()[i].x);
+      //     Serial.print(", y=");
+      //     Serial.print(AI.boxes()[i].y);
+      //     Serial.print(", w=");
+      //     Serial.print(AI.boxes()[i].w);
+      //     Serial.print(", h=");
+      //     Serial.println(AI.boxes()[i].h);
+      //   }
+      // }
     }
   }
 }

@@ -540,7 +540,7 @@ void reaction() {
                   }
                   servoCalib[target[0]] = target[1];
                 }
-#ifdef ROBOT_ARM
+#if defined ROBOT_ARM && defined GYRO_PIN
                 if (target[0] == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
@@ -1005,8 +1005,11 @@ void reaction() {
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
-  } else {
-    // wdtTimer = millis();
+  } else
+#ifdef CAMERA
+    if (!cameraTaskActiveQ)
+#endif
+  {
     delay(1);  // avoid triggering WDT
   }
 }

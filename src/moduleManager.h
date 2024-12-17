@@ -232,6 +232,7 @@ void stopModule(char moduleCode) {
       {
         // cameraStop();   // Todo
         cameraSetupSuccessful = false;
+        cameraTaskActiveQ = 0;
         break;
       }
 #endif

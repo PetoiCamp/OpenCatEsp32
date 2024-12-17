@@ -210,10 +210,12 @@ void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte of
     // }
     for (int s = 0; s <= steps; s++)
     {
+#ifdef GYRO_PIN
       if (updateGyroQ && printGyroQ)
       {
         print6Axis();
       }
+#endif
       for (byte i = offset; i < DOF; i++)
       {
 #ifdef ESP_PWM
@@ -354,6 +356,7 @@ float adjust(byte i)
   return currentAdjust[i];
 }
 
+#ifdef GYRO_PIN
 int calibratePincerByVibration(int start, int end, int step, int threshold = 10000 * gFactor)
 {
   PTT("Try ", start);
@@ -398,7 +401,7 @@ int calibratePincerByVibration(int start, int end, int step, int threshold = 100
   }
   return end;
 }
-
+#endif
 int calibrationReference[] = {
 // the angle difference between P1L and P1S is significant for auto calibration.
 #ifdef NYBBLE // with plastic servo P1L

@@ -1,4 +1,4 @@
-/* BiBoard
+/* BiBoard V0
     PWM:
                         |--------------------------------
                         |    PWM[0]           PWM[6]    |
@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241215" // YYMMDD
+#define DATE "241217" // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
