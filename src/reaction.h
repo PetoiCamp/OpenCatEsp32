@@ -859,10 +859,12 @@ void reaction() {
       case T_LEARN:
         {
           if (newCmd[0] == 'l') {  // learn
+            bool gyroLag = gyroBalanceQ;
             gyroBalanceQ = false;
             loadBySkillName("up");
             delay(500);
             learnByDrag();
+            gyroBalanceQ = gyroLag;
           } else if (newCmd[0] = 'p') {  // perform
             loadBySkillName("up");
             performLearn();

@@ -623,7 +623,7 @@ void initRobot()
   PTF("Software version: ");
   printToAllPorts(SoftwareVersion);
   i2cDetect(Wire);
-#ifdef BiBoard_V1_0
+#if defined BiBoard_V1_0 && !defined NYBBLE
   i2cDetect(Wire1);
 #endif
 #ifdef I2C_EEPROM_ADDRESS
