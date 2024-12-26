@@ -50,23 +50,6 @@
 // #define GYRO_PIN 0
 #endif
 
-int8_t indexOfModule(char moduleName) {
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-    if (moduleName == moduleList[i])
-      return i;
-  return -1;
-}
-bool moduleActivatedQfunction(char moduleCode) {
-  return moduleActivatedQ[indexOfModule(moduleCode)];
-}
-
-int8_t activeModuleIdx() {  // designed to work if only one active module is allowed
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-    if (moduleActivatedQ[i])
-      return i;
-  return -1;
-}
-
 void initModule(char moduleCode) {
   bool successQ = true;
   int8_t index = indexOfModule(moduleCode);
@@ -148,7 +131,8 @@ void initModule(char moduleCode) {
 #ifdef CAMERA
     case EXTENSION_CAMERA:
       {
-        loadBySkillName("sit");
+        // loadBySkillName("sit");
+        gyroBalanceQ = false;
         if (!cameraSetup()) {
           int i = indexOfModule(moduleCode);
           PTHL("*** Fail to start ", moduleNames[i]);
@@ -233,6 +217,7 @@ void stopModule(char moduleCode) {
         // cameraStop();   // Todo
         cameraSetupSuccessful = false;
         cameraTaskActiveQ = 0;
+        gyroBalanceQ = true;
         break;
       }
 #endif

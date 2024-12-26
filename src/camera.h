@@ -5,11 +5,6 @@
 #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
-int8_t cameraPrintQ = 0;
-bool cameraReactionQ = true;
-bool updateCoordinateLock = false;
-bool detectedObjectQ = false;
-
 #ifdef BiBoard_V1_0
 #define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
 #endif
@@ -64,12 +59,13 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN);
 #define T_TUNER '>'
 bool cameraSetupSuccessful = false;
 int xCoord, yCoord, width, widthCounter;  // the x y returned by the sensor
-int xDiff, yDiff;                         // the scaled distance from the center of the frame
-int currentX = 0, currentY = 0;           // the current x y of the camera's direction in the world coordinate
-int imgRangeX = 100;                      // the frame size 0~100 on X and Y direction
+float xError, xIntegral, xDerivative, xLastError = 0;
+float yError, yIntegral, yDerivative, yLastError = 0;  // the scaled distance from the center of the frame
+int outputX = 0, outputY = 0;                          // the current x y of the camera's direction in the world coordinate
+int imgRangeX = 100;                                   // the frame size 0~100 on X and Y direction
 int imgRangeY = 100;
 
-int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
+int8_t Kp, Ki, Kd, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 int8_t sizePars;
 #ifdef ROBOT_ARM
 float adjustmentFactor = 1.5;
@@ -77,9 +73,13 @@ float adjustmentFactor = 1.5;
 float adjustmentFactor = 1;
 #endif
 
+#define K_INT_TO_FLOAT 100.0
+#define JOINT_INT_TO_FLOAT 10.0
+#define CAM_COOL_DOWN 1000
+
 #ifdef NYBBLE
 int8_t nybblePars[] = {
-  30, 11, 8, 10, 15,
+  30, 11, 2, 20, 10, 15,
   60, -50, 31, -50,
   45, -40, 40, -36,
   0, 25, -60, 60, 16
@@ -87,7 +87,7 @@ int8_t nybblePars[] = {
 #else  // BITTLE or CUB
 #ifdef MU_CAMERA
 int8_t bittleMuPars[] = {
-  30, 10, 8, 15, 15,
+  30, 10, 2, 20, 15, 15,
   60, 80, 30, 80,
   60, 30, 30, 70,
   40, 40, 60, 40, -30
@@ -95,7 +95,7 @@ int8_t bittleMuPars[] = {
 #endif
 #if defined GROVE_VISION_AI_V2
 int8_t bittleGroveVisionPars[] = {
-  20, 20, 8, 10, 12,
+  10, 1, 2, 20, 10, 10,
   int8_t(60 * adjustmentFactor), int8_t(75 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(75 * adjustmentFactor),
   20, 25, 10, 25,
   0, 30, 60, 40, -10
@@ -103,7 +103,7 @@ int8_t bittleGroveVisionPars[] = {
 #endif
 #endif
 
-int8_t *par[] = { &lensFactor, &proportion, &tranSpeed, &pan, &tilt,
+int8_t *par[] = { &Kp, &Ki, &Kd, &tranSpeed, &pan, &tilt,
                   &frontUpX, &backUpX, &frontDownX, &backDownX,
                   &frontUpY, &backUpY, &frontDownY, &backDownY,
                   &tiltBase, &frontUp, &backUp, &frontDown, &backDown };
@@ -141,6 +141,7 @@ bool cameraSetup() {
   sizePars = sizeof(bittleGroveVisionPars) / sizeof(int8_t);
   if (GroveVisionQ) {
     initPars = bittleGroveVisionPars;
+    printList(initPars, sizePars);
     imgRangeX = 240;  // the frame size 0~240 on X and Y direction
     imgRangeY = 240;
   }
@@ -150,9 +151,9 @@ bool cameraSetup() {
 #ifdef USE_WIRE1
   CAMERA_WIRE.begin(UART_TX2, UART_RX2, 400000);
 #endif
-  for (byte i = 0; i < sizePars; i++)
+  for (byte i = 0; i < sizePars; i++) {
     *par[i] = initPars[i];
-  transformSpeed = 0;
+  }
   widthCounter = 0;
 #ifdef MU_CAMERA
   if (MuQ)
@@ -160,8 +161,6 @@ bool cameraSetup() {
 #endif
 #ifdef SENTRY1_CAMERA
   if (SentryQ) {
-    lensFactor = 10;
-    proportion = 20;
     sentry1CameraSetup();
   }
 #endif
@@ -194,45 +193,81 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
 
 TaskHandle_t TASK_HandleCamera = NULL;
 bool cameraTaskActiveQ = 0;
-
 void cameraBehavior(int xCoord, int yCoord, int width) {
-  if (cameraReactionQ) {
-    while (updateCoordinateLock)
-      ;
-      // delay(1);
+  if (cameraReactionQ && detectedObjectQ) {
 #ifdef WALK
     if (width > 45 && width != 52)  // 52 maybe a noise signal
       widthCounter++;
     else
       widthCounter = 0;
-    if (width < 25 && width != 16) {                                                                      // 16 maybe a noise signal
-      tQueue->addTask('k', currentX < -15 ? "wkR" : (currentX > 15 ? "wkL" : "wkF"), (50 - width) * 50);  // walk towards you
+    if (width < 25 && width != 16) {                                                                    // 16 maybe a noise signal
+      tQueue->addTask('k', outputX < -15 ? "wkR" : (outputX > 15 ? "wkL" : "wkF"), (50 - width) * 50);  // walk towards you
       tQueue->addTask('k', "sit");
       tQueue->addTask('i', "");
-      currentX = 0;
+      outputX = 0;
     } else if (widthCounter > 2) {
       tQueue->addTask('k', "bk", 1000);  // the robot will walk backward if you get too close!
       tQueue->addTask('k', "sit");
       tQueue->addTask('i', "");
       widthCounter = 0;
-      currentX = 0;
+      outputX = 0;
     } else
 #endif
     {
-      xDiff = (xCoord - imgRangeX / 2.0);  // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
-      yDiff = (yCoord - imgRangeY / 2.0);  // atan((yCoord - imgRangeY / 2.0) / (imgRangeX / 2.0)) * degPerRad;
-      if (abs(xDiff) > 1 || abs(yDiff) > 1) {
-        xDiff = xDiff / (lensFactor / 10.0);
-        yDiff = yDiff / (lensFactor / 10.0);
-        currentX = max(min(currentX - xDiff, 125), -125) / (proportion / 10.0);
-        currentY = max(min(currentY - yDiff, 125), -125) / (proportion / 10.0);
+      xError = (imgRangeX / 2.0 - xCoord);                                                                        // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
+      yError = (imgRangeY / 2.0 - yCoord);                                                                        // atan((yCoord - imgRangeY / 2.0) / (imgRangeX / 2.0)) * degPerRad;
+      if ((abs(xError) > 1 || abs(yError) > 1) && (abs(xError - xLastError) > 0 || abs(yError - yLastError) > 0)  // the camera is not stable
+                                                                                                                  // && (abs(xError - xLastError) < 50) && (abs(xError - xLastError) < 50)                                  // the camera is not moving too fast
+          )
+      // {
+      //   detectedObjectQ = true;
+      //   cameraCoolDown = CAM_COOL_DOWN;
+      // }
+      // else
+      // {
+      //   detectedObjectQ = false;
+      //   cameraCoolDown = max(0, cameraCoolDown - 1);
+      // }
+      {
+        if (detectedObjectQ) {
+          xIntegral += xError;
+          yIntegral += yError;
+          xIntegral = max(min(xIntegral, float(5000)), float(-5000));
+          yIntegral = max(min(yIntegral, float(5000)), float(-5000));
+          xDerivative = xError - xLastError;
+          yDerivative = yError - yLastError;
+          xLastError = xError;
+          yLastError = yError;
+          outputX = max(min(xError * Kp / K_INT_TO_FLOAT + xIntegral * Ki / K_INT_TO_FLOAT + xDerivative * Kd / K_INT_TO_FLOAT, double(85)), double(-85));
+          outputY = max(min(yError * Kp / K_INT_TO_FLOAT + yIntegral * Ki / K_INT_TO_FLOAT + yDerivative * Kd / K_INT_TO_FLOAT, double(85)), double(-85));
+        } else if (!detectedObjectQ && cameraCoolDown > 0 && cameraCoolDown < CAM_COOL_DOWN - 100) {
+          outputX = 0.95 * outputX;
+          outputY = 0.95 * outputY;
+        }
+        PTT("\tcoord:", xCoord);
+        PTT("\terror: ", xError);
+        PTT("\tintegral: ", xIntegral);
+        PTT("\tderivative: ", xDerivative);
+        if (outputX || outputY)
+          PTT("\toutput: ", outputX);
+        PTL();
 
+        // else
+        // {
+        //   PTLF("Camera centered...");
+        //   outputX /= 2;
+        //   outputY /= 2;
+        //   xError = 0;
+        //   yError = 0;
+        //   xIntegral = 0;
+        //   yIntegral = 0;
+        //   delay(50);
+        // }
         // PT('\t');
-        // PT(currentX);
+        // PT(outputX);
         // PT('\t');
-        // PTL(currentY);
-
-        // if (abs(currentX) < 60) {
+        // PTL(outputY);
+        // if (abs(outputX) < 60) {
         int8_t base[] = { 0, tiltBase, 0, 0,
                           0, 0, 0, 0,
                           frontUp, frontUp, backUp, backUp,
@@ -255,9 +290,9 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
           { backDownX, (int8_t)-backDownY },
           { (int8_t)-backDownX, (int8_t)-backDownY },
         };
-        transformSpeed = tranSpeed / 4.0;
+        transformSpeed = tranSpeed / JOINT_INT_TO_FLOAT / 5.0;
         for (int i = 0; i < DOF; i++) {
-          float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
+          float adj = float(base[i]) + (feedBackArray[i][0] ? outputX * JOINT_INT_TO_FLOAT / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? outputY * JOINT_INT_TO_FLOAT / feedBackArray[i][1] : 0);
           newCmd[i] = min(125, max(-125, int(adj)));
           // if (i == 0)//print adjustment of head pan joint
           // {
@@ -272,14 +307,15 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
         // PTL();
         // newCmd[16] = '~';
         // printList((int8_t *)newCmd);
+        detectedObjectQ = false;
         transform((int8_t *)newCmd, 1, transformSpeed);
         // }
 #ifdef ROTATE
         else {
-          tQueue->addTask('k', (currentX < 0 ? "vtR" : "vtL"), abs(currentX) * 40);  // spin its body to follow you
+          tQueue->addTask('k', (outputX < 0 ? "vtR" : "vtL"), abs(outputX) * 40);  // spin its body to follow you
           tQueue->addTask('k', "sit");
           tQueue->addTask('i', "");
-          currentX = 0;
+          outputX = 0;
         }
 #endif
       }
@@ -324,9 +360,8 @@ void read_camera() {
   // long waitingTime = millis();
   // while (!detectedObjectQ && millis() - waitingTime < 20)
   //   delay(1); // wait for the camera to detect an object in another core
-
   if (detectedObjectQ) {
-    cameraBehavior(xCoord, yCoord, width);
+    cameraCoolDown = CAM_COOL_DOWN;
     if (cameraPrintQ) {
       showRecognitionResult(xCoord, yCoord, width);
       PTL();
@@ -335,7 +370,12 @@ void read_camera() {
       else
         FPS();
     }
-    detectedObjectQ = false;
+  }
+  cameraBehavior(xCoord, yCoord, width);
+  if (!cameraCoolDown) {
+    if (!(cameraCoolDown % 20))
+      PTL(cameraCoolDown);
+    cameraCoolDown--;
   }
 }
 #ifdef MU_CAMERA
@@ -400,6 +440,7 @@ void read_MuCamera() {
       // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
       updateCoordinateLock = false;
       // vvvvvvvvvvvv ball vvvvvvvvvvvvv
+      detectedObjectQ = true;
       if (objectIdx == 1) {
         int ballType = (*Mu).GetValue(object[objectIdx], kLabel);
         if (lastBallType != ballType) {
@@ -418,7 +459,6 @@ void read_MuCamera() {
         }
       }
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
-      detectedObjectQ = true;
     } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
       (*Mu).VisionEnd(object[objectIdx]);
       objectIdx = (objectIdx + 1) % (sizeof(object) / 2);
@@ -466,9 +506,6 @@ void sentry1CameraSetup() {
   // writeRegData(0x22, 0x10);  // set vision level: 0x10=Sensitive/Speed 0x20=balance(default if not set) 0x30=accurate ..........[UPDATE]
   delay(1000);
   PTLF("Sentry1 ready");
-  lensFactor = 10;  // default value is 30 ..........[UPDATE]
-  proportion = 30;  // default value is 20 ..........[UPDATE]
-  pan = 20;         // default value is 15 ..........[UPDATE]
   tranSpeed = 1;
   cameraSetupSuccessful = true;
 }

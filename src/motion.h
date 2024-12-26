@@ -210,6 +210,12 @@ void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte of
     // }
     for (int s = 0; s <= steps; s++)
     {
+      if (detectedObjectQ)
+      {
+        PTT(s, '/');
+        PTHL(steps, " steps interrupted");
+        break; // if the camera returns new object, stop the motion
+      }
 #ifdef GYRO_PIN
       if (updateGyroQ && printGyroQ)
       {
@@ -223,15 +229,19 @@ void transform(T *target, byte angleDataRatio = 1, float speedRatio = 1, byte of
           continue;
         if (manualHeadQ && i < HEAD_GROUP_LEN && token == T_SKILL) // the head motion will be handled by skill.perform()
           continue;
-        if (WALKING_DOF == 8 && i > 3 && i < 8)
-          continue;
+        if (WALKING_DOF == 8 && i == 4)
+          i = 8;
         if (WALKING_DOF == 12 && i < 4)
-          continue;
+          i = 4;
 #endif
+        // PTHL("i", i);
         float dutyAng = (target[i - offset] * angleDataRatio + (steps == 0 ? 0 : (1 + cos(M_PI * s / steps)) / 2 * diff[i - offset]));
         calibratedPWM(i, dutyAng);
       }
-      delay((DOF - offset) / 2);
+      if (moduleActivatedQfunction(EXTENSION_CAMERA))
+        delay(5);
+      else
+        delay((DOF - offset) / 2);
     }
     delete[] diff;
   }

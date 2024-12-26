@@ -81,10 +81,10 @@ String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
-#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+// #define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
+#define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -283,7 +283,7 @@ bool newBoard = false;
 #define T_GYRO_PRINT 'P'        // always print gyro data
 #define T_GYRO_PRINT_OFF 'p'    // print gyro data once then stop
 
-#define T_HELP_INFO 'h'                // hold the loop to check printed information.
+#define T_HOLD 'h'                     // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i' //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
                                         //a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I' // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
@@ -298,11 +298,12 @@ bool newBoard = false;
 #define T_NAME 'n'                   // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 // #define T_MELODY 'o'
-#define T_SIGNAL_GEN 'o'
-#define T_CPG 'r'   // Oscillator for Central Pattern Generator
-#define T_PAUSE 'p' // pause
-#define T_POWER 'P' // power, print the voltage
-#define T_TASK_QUEUE 'q'
+#define T_SIGNAL_GEN 'o' // generate a signal: o resolution, speed, jointIdx, midpoint, amp, freq,phase. e.g. o 1 8, 0  0 30 4 0
+#define T_CPG 'r'        // Oscillator for Central Pattern Generator
+#define T_PAUSE 'p'      // pause
+#define T_POWER 'P'      // power, print the voltage
+#define T_TASK_QUEUE 'q' // q followed by commands, followed by ':' and delay time, followed by '>' to end. e.g. q ksit:500>m0 -30 0 30:0>
+
 #define T_ROBOT_ARM 'R'
 #define T_SAVE 's'
 #define T_TILT 't'
@@ -387,13 +388,18 @@ bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool workingStiffness = true;
 bool manualEyeColorQ = false;
+int8_t cameraPrintQ = 0;
+bool cameraReactionQ = true;
+bool updateCoordinateLock = false;
+bool detectedObjectQ = false;
+int cameraCoolDown = 10;
 // bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4 // used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
 int8_t imuException = 0;
-byte transformSpeed = 2;
+float transformSpeed = 2;
 float protectiveShift; // reduce the wearing of the potentiometer
 
 int8_t moduleList[] = {
@@ -412,6 +418,26 @@ int8_t moduleList[] = {
 
 String moduleNames[] = {"Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo"};
 bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+int8_t indexOfModule(char moduleName)
+{
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+    if (moduleName == moduleList[i])
+      return i;
+  return -1;
+}
+bool moduleActivatedQfunction(char moduleCode)
+{
+  return moduleActivatedQ[indexOfModule(moduleCode)];
+}
+
+int8_t activeModuleIdx()
+{ // designed to work if only one active module is allowed
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+    if (moduleActivatedQ[i])
+      return i;
+  return -1;
+}
 bool moduleDemoQ = false;
 byte moduleIndex;
 bool icmQ = false;

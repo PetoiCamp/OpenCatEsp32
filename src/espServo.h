@@ -286,7 +286,7 @@ void readAllFeedbackFast()  // returns the pulse width in microseconds
   //if(!servo[s].attached())// adding this condition will cause servos to jig. why?
   for (int s = 0; s < 12; s++)
     servo[s].attach(PWM_pin[s], modelObj[s]);  // sometimes servo[s].attach() is true, but it still needs to be attached. why there's no conflict?
-  delay(3);                                   // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
+  delay(3);                                    // it takes time to attach. potentially it can be avoided using the attached() check. but it doesn't work for now.
 
   for (int jointIdx = 0; jointIdx < DOF; jointIdx++) {
     if (jointIdx == 3) jointIdx = 8;

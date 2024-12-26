@@ -237,8 +237,8 @@ void reaction() {
     lowerToken = tolower(token);
     if (initialBoot) {  //-1 for marking the bootup calibration state
       fineAdjustQ = true;
-      // updateGyroQ = true;
-      gyroBalanceQ = true;
+      updateGyroQ = true;
+      // gyroBalanceQ = true;
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
     }
@@ -274,11 +274,13 @@ void reaction() {
 #endif
 
     switch (token) {
-      case T_HELP_INFO:
+      case T_HOLD:
         {
           PTLF("* Please refer to docs.petoi.com.\nEnter any character to continue.");
           while (!Serial.available())
-            ;
+            delay(100);
+          while (Serial.available())
+            Serial.read();
           break;
         }
       case T_QUERY:
@@ -663,7 +665,8 @@ void reaction() {
                   PT(target[0]);
                   PT('\t');
                   PTL(target[1]);
-                }
+                } else if (newCmd[0] == '?')
+                  printList(initPars, sizePars);
               }
 #endif
               else if (token == T_BALANCE_SLOPE) {
