@@ -198,6 +198,7 @@ bool lowBattery() {
       //         strip.show();
       // #endif
       // #ifdef PWM_LED_PIN
+      // if (autoLedQ)
       //         analogWrite(PWM_LED_PIN, 255 - brightness);
       // #endif
       //         if (brightness == 255)
@@ -243,7 +244,8 @@ void reaction() {
       initialBoot = false;
     }
 #ifdef PWM_LED_PIN
-    digitalWrite(PWM_LED_PIN, HIGH);
+    if (autoLedQ)
+      digitalWrite(PWM_LED_PIN, HIGH);
 #endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
@@ -951,13 +953,15 @@ void reaction() {
     }
     resetCmd();
 #ifdef PWM_LED_PIN
-    digitalWrite(PWM_LED_PIN, LOW);
+    if (autoLedQ)
+      digitalWrite(PWM_LED_PIN, LOW);
 #endif
   }
 
   if (tolower(token) == T_SKILL) {
 #ifdef PWM_LED_PIN
-    analogWrite(PWM_LED_PIN, abs(currentAng[8]));
+    if (autoLedQ)
+      analogWrite(PWM_LED_PIN, abs(currentAng[8]));
 #endif
     skill->perform();
     if (skill->period > 1)

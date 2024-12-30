@@ -89,7 +89,7 @@ String SoftwareVersion = "";
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
 #ifdef NYBBLE
-#define MODEL "Nybble"
+#define MODEL "Nybble Q"
 #define HEAD
 #define TAIL
 #define X_LEG
@@ -377,6 +377,7 @@ long lastSerialTime = 0;
 
 bool interruptedDuringBehavior = false;
 bool lowBatteryQ = false;
+bool autoLedQ = false;
 bool updateGyroQ = true;
 bool fineAdjustQ = true;
 bool gyroBalanceQ = true;

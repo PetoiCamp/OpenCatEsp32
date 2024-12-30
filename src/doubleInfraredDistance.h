@@ -157,8 +157,8 @@ void readDistancePins()
   //   rawL = analogRead(ANALOG4);
   //   rawR = analogRead(ANALOG3);
   // #else
-  dL = fit(analogRead(ANALOG3));
-  dR = fit(analogRead(ANALOG4));
+  dL = fit(analogRead(ANALOG1));
+  dR = fit(analogRead(ANALOG2));
   // #endif
 
   // meanD = (dL + dR) / 2;
