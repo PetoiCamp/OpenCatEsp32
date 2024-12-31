@@ -1,4 +1,4 @@
-/* Write and read parameters to the permanent memory. 
+/* Write and read parameters to the permanent memory.
    Maximum bytes of I2C EEPROM is 65536 bit. i.e. address stops at 65535.
    Extra data will wrap over to address 0
 
@@ -33,9 +33,9 @@
 #include <Preferences.h>
 Preferences config;
 
-#define WIRE_BUFFER 30  //Arduino wire allows 32 byte buffer, with 2 byte for address.
-#define WIRE_LIMIT 16   //That leaves 30 bytes for data. use 16 to balance each writes
-#define PAGE_LIMIT 32   //AT24C32D 32-byte Page Write Mode. Partial Page Writes Allowed
+#define WIRE_BUFFER 30  // Arduino wire allows 32 byte buffer, with 2 byte for address.
+#define WIRE_LIMIT 16   // That leaves 30 bytes for data. use 16 to balance each writes
+#define PAGE_LIMIT 32   // AT24C32D 32-byte Page Write Mode. Partial Page Writes Allowed
 #define SIZE (65535 / 8)
 #define EEPROM_SIZE (65535 / 8)
 bool EEPROMOverflow = false;
@@ -53,12 +53,79 @@ bool EEPROMOverflow = false;
 
 int dataLen(int8_t p) {
   byte skillHeader = p > 0 ? 4 : 7;
-  int frameSize = p > 1 ? WALKING_DOF :  //gait
+  int frameSize = p > 1 ? WALKING_DOF :  // gait
                     p == 1 ? DOF
-                           :  //posture
-                    DOF + 4;  //behavior
+                           :  // posture
+                    DOF + 4;  // behavior
   int len = skillHeader + abs(p) * frameSize;
   return len;
+}
+
+void i2cDetect(TwoWire &wirePort) {
+  if (&wirePort == &Wire1)
+    wirePort.begin(UART_TX2, UART_RX2, 400000);
+  byte error, address;
+  int nDevices;
+  int8_t i2cAddress[] = {
+    0x50, 0x54, 0x60, 0x62, 0x68, 0x69
+  };
+  String i2cAddressName[] = { "Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
+  Serial.println("Scanning I2C network...");
+  nDevices = 0;
+  for (address = 1; address < 127; address++) {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    wirePort.beginTransmission(address);
+    error = wirePort.endTransmission();
+    if (error == 0) {
+      Serial.print("- I2C device found at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.print(":\t");
+      for (byte i = 0; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
+        if (address == i2cAddress[i]) {
+          PT(i2cAddressName[i]);
+          if (i == 0)
+            MuQ = true;
+          else if (i == 1)
+            eepromQ = true;
+          else if (i == 2)
+            MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
+          else if (i == 3)
+            GroveVisionQ = true;
+          else if (i == 4)
+            mpuQ = true;
+          else if (i == 5)
+            icmQ = true;
+          nDevices++;
+          break;
+        }
+        if (i == sizeof(i2cAddress) / sizeof(int8_t) - 1) {
+          PT("Misc.");
+        }
+      }
+      PTL();
+    } else if (error == 4) {
+      Serial.print("- Unknown error at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+  if (!icmQ && !mpuQ) {
+    updateGyroQ = false;
+    PTL("No IMU detected!");
+  }
+  if (nDevices == 0)
+    Serial.println("- No I2C devices found");
+  else
+    Serial.println("- done");
+  if (&wirePort == &Wire1)
+    wirePort.end();
+  PTHL("GroveVisionQ", GroveVisionQ);
+  PTHL("MuQ", MuQ);
 }
 
 #ifdef I2C_EEPROM_ADDRESS
@@ -79,11 +146,12 @@ byte i2c_eeprom_read_byte(unsigned int eeaddress) {
   Wire.write((int)(eeaddress & 0xFF));  // LSB
   Wire.endTransmission();
   Wire.requestFrom(I2C_EEPROM_ADDRESS, 1);
-  if (Wire.available()) rdata = Wire.read();
+  if (Wire.available())
+    rdata = Wire.read();
   return rdata;
 }
 
-//This function will write a 2-byte integer to the EEPROM at the specified address and address + 1
+// This function will write a 2-byte integer to the EEPROM at the specified address and address + 1
 void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
   byte lowByte = ((p_value >> 0) & 0xFF);
   byte highByte = ((p_value >> 8) & 0xFF);
@@ -99,7 +167,7 @@ void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
   //  EEPROM.update(p_address + 1, highByte);
 }
 
-//This function will read a 2-byte integer from the EEPROM at the specified address and address + 1
+// This function will read a 2-byte integer from the EEPROM at the specified address and address + 1
 int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
@@ -111,7 +179,6 @@ int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
   return (int16_t((lowByte << 0) & 0xFF) + ((highByte << 8) & 0xFF00));
 }
 
-
 void i2c_eeprom_read_buffer(unsigned int eeaddress, byte *buffer, int length) {
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
@@ -120,13 +187,14 @@ void i2c_eeprom_read_buffer(unsigned int eeaddress, byte *buffer, int length) {
   Wire.requestFrom(I2C_EEPROM_ADDRESS, length);
   int c = 0;
   for (c = 0; c < length; c++) {
-    if (Wire.available()) buffer[c] = Wire.read();
+    if (Wire.available())
+      buffer[c] = Wire.read();
     //    PT((char)buffer[c]);
   }
 }
 
 void writeLong(unsigned int eeAddress, char *data, int len) {
-  //byte locationInPage = eeAddress % PAGE_LIMIT;
+  // byte locationInPage = eeAddress % PAGE_LIMIT;
   if (eeAddress + len >= SIZE) {
     PTL();
     PTL("EEPROM overflow!\n");
@@ -176,7 +244,8 @@ void readLong(unsigned int eeAddress, char *data) {
     Wire.requestFrom(I2C_EEPROM_ADDRESS, min(WIRE_BUFFER, len));
     readToWire = 0;
     do {
-      if (Wire.available()) data[readFromEE] = Wire.read();
+      if (Wire.available())
+        data[readFromEE] = Wire.read();
       PT((char)data[readFromEE]);
       readFromEE++;
     } while (--len > 0 && ++readToWire < WIRE_BUFFER);
@@ -217,8 +286,8 @@ void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
       Wire.write((byte)newCmd[writtenToEE++]);
       writtenToWire++;
       eeAddress++;
-    } while ((--len > 0) && (eeAddress % PAGE_LIMIT) && (writtenToWire < WIRE_LIMIT));  //be careful with the chained conditions
-    //self-increment may not work as expected
+    } while ((--len > 0) && (eeAddress % PAGE_LIMIT) && (writtenToWire < WIRE_LIMIT));  // be careful with the chained conditions
+    // self-increment may not work as expected
     Wire.endTransmission();
     delay(6);  // needs 5ms for page write
     //    PTL("\nwrote " + String(writtenToWire) + " bytes.");
@@ -238,11 +307,12 @@ void loadDataFromI2cEeprom(unsigned int eeAddress) {
   int readFromEE = 0;
   int readToWire = 0;
   while (bufferLen > 0) {
-    //PTL("request " + String(min(WIRE_BUFFER, len)));
+    // PTL("request " + String(min(WIRE_BUFFER, len)));
     Wire.requestFrom((uint8_t)I2C_EEPROM_ADDRESS, (uint8_t)min(WIRE_BUFFER, bufferLen));
     readToWire = 0;
     do {
-      if (Wire.available()) newCmd[1 + readFromEE++] = Wire.read();
+      if (Wire.available())
+        newCmd[1 + readFromEE++] = Wire.read();
       //      PT( (int8_t)newCmd[readFromEE - 1]);
       //      PT('\t');
     } while (--bufferLen > 0 && ++readToWire < WIRE_BUFFER);
@@ -275,7 +345,7 @@ void resetAsNewBoard(char mark) {
 char data[] = " The quick brown fox jumps over the lazy dog. \
 The five boxing wizards jump quickly. Pack my box with five dozen liquor jugs.";  // data to write
 
-//char data[]={16,-3,5,7,9};
+// char data[]={16,-3,5,7,9};
 
 void genBleID(int suffixDigits = 2) {
   const char *prefix =
@@ -317,7 +387,7 @@ void resetIfVersionOlderThan(String versionStr) {
   char *savedVersionDate = readLongByBytes(EEPROM_VERSION_DATE);
   long savedDate = atoi(savedVersionDate + strlen(savedVersionDate) - 6);
 #else
-  String savedVersionDate = config.getString("versionDate", "P_000101");  //default YYMMDD: 00 01 01
+  String savedVersionDate = config.getString("versionDate", "P_000101");  // default YYMMDD: 00 01 01
   long savedDate = savedVersionDate.substring(savedVersionDate.length() - 6).toInt();
 #endif
   long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
@@ -345,7 +415,7 @@ void configSetup() {
     buzzerVolume = 5;
     PTLF("Unmute and set volume to 5/10");
 
-    int bufferLen = dataLen(rest[0]);  //save a preset skill to the temp skill
+    int bufferLen = dataLen(rest[0]);  // save a preset skill to the temp skill
     arrayNCPY(newCmd, rest, bufferLen);
 #ifdef I2C_EEPROM_ADDRESS
     PTL("Using constants from I2C EEPROM");
@@ -354,7 +424,7 @@ void configSetup() {
     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
-    //save a preset skill to the temp skill in case its called before assignment
+    // save a preset skill to the temp skill in case its called before assignment
     unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
     i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
     copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
@@ -365,7 +435,7 @@ void configSetup() {
     config.putBool("bootSndState", soundState);
     config.putChar("buzzerVolume", buzzerVolume);
     config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
-    //save a preset skill to the temp skill in case its called before assignment
+    // save a preset skill to the temp skill in case its called before assignment
     config.putInt("tmpLen", bufferLen);
     config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
 #endif
@@ -408,8 +478,8 @@ void configSetup() {
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
 #else
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
-    PT(config.freeEntries());                                // show remaining entries of the preferences.
-    PTL(" entries are available in the namespace table.\n");  //this method works regardless of the mode in which the namespace is opened.
+    PT(config.freeEntries());                                 // show remaining entries of the preferences.
+    PTL(" entries are available in the namespace table.\n");  // this method works regardless of the mode in which the namespace is opened.
 #endif
   }
 }

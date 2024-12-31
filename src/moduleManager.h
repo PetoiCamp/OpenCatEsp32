@@ -148,6 +148,11 @@ void initModule(char moduleCode) {
 #ifdef CAMERA
     case EXTENSION_CAMERA:
       {
+        updateGyroQ = false;
+        i2cDetect(Wire);
+#if defined BiBoard_V1_0 && !defined NYBBLE
+        i2cDetect(Wire1);
+#endif
         loadBySkillName("sit");
         if (!cameraSetup()) {
           int i = indexOfModule(moduleCode);
@@ -464,71 +469,6 @@ void readHuman() {
 // — generate behavior by fusing all sensors and instruction
 String decision() {
   return "";
-}
-
-void i2cDetect(TwoWire &wirePort) {
-  if (&wirePort == &Wire1)
-    wirePort.begin(UART_TX2, UART_RX2, 400000);
-  byte error, address;
-  int nDevices;
-  int8_t i2cAddress[] = {
-    0x50, 0x54, 0x60, 0x62, 0x68, 0x69
-  };
-  String i2cAddressName[] = { "Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
-  Serial.println("Scanning I2C network...");
-  nDevices = 0;
-  for (address = 1; address < 127; address++) {
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    wirePort.beginTransmission(address);
-    error = wirePort.endTransmission();
-    if (error == 0) {
-      Serial.print("- I2C device found at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.print(":\t");
-      for (byte i = 0; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
-        if (address == i2cAddress[i]) {
-          PT(i2cAddressName[i]);
-          if (i == 0)
-            MuQ = true;
-          else if (i == 1)
-            eepromQ = true;
-          else if (i == 2)
-            MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
-          else if (i == 3)
-            GroveVisionQ = true;
-          else if (i == 4)
-            mpuQ = true;
-          else if (i == 5)
-            icmQ = true;
-          nDevices++;
-          break;
-        }
-        if (i == sizeof(i2cAddress) / sizeof(int8_t) - 1) {
-          PT("Misc.");
-        }
-      }
-      PTL();
-    } else if (error == 4) {
-      Serial.print("- Unknown error at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.println(address, HEX);
-    }
-  }
-  if (!icmQ && !mpuQ) {
-    updateGyroQ = false;
-    PTL("No IMU detected!");
-  }
-  if (nDevices == 0)
-    Serial.println("- No I2C devices found");
-  else
-    Serial.println("- done");
-  if (&wirePort == &Wire1)
-    wirePort.end();
 }
 
 void read_sound() {

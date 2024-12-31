@@ -134,8 +134,11 @@ bool cameraSetup() {
 #else  // BITTLE or CUB
 #ifdef MU_CAMERA
   sizePars = sizeof(bittleMuPars) / sizeof(int8_t);
-  if (MuQ)
+  if (MuQ) {
     initPars = bittleMuPars;
+    imgRangeX = 100;  // the frame size 0~240 on X and Y direction
+    imgRangeY = 100;
+  }
 #endif
 #ifdef GROVE_VISION_AI_V2
   sizePars = sizeof(bittleGroveVisionPars) / sizeof(int8_t);
@@ -199,7 +202,6 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
   if (cameraReactionQ) {
     while (updateCoordinateLock)
       ;
-      // delay(1);
 #ifdef WALK
     if (width > 45 && width != 52)  // 52 maybe a noise signal
       widthCounter++;
@@ -273,6 +275,7 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
         // newCmd[16] = '~';
         // printList((int8_t *)newCmd);
         transform((int8_t *)newCmd, 1, transformSpeed);
+        token = '\0'; // avoid  conflicting with the balancing reaction
         // }
 #ifdef ROTATE
         else {
@@ -290,6 +293,11 @@ int coords[3];
 
 void taskReadCamera(void *par) {
   while (cameraTaskActiveQ) {
+#ifndef USE_WIRE1
+    while (imuLockI2c)
+      delay(1);  //wait for the imu to release lock. potentially to cause dead lock with camera
+    cameraLockI2c = true;
+#endif
 #ifdef MU_CAMERA
     if (MuQ)
       read_MuCamera();
@@ -302,6 +310,7 @@ void taskReadCamera(void *par) {
     if (GroveVisionQ)
       read_GroveVision();
 #endif
+    cameraLockI2c = false;
     // vTaskDelay(1);
   }
   vTaskDelete(NULL);
@@ -324,7 +333,6 @@ void read_camera() {
   // long waitingTime = millis();
   // while (!detectedObjectQ && millis() - waitingTime < 20)
   //   delay(1); // wait for the camera to detect an object in another core
-
   if (detectedObjectQ) {
     cameraBehavior(xCoord, yCoord, width);
     if (cameraPrintQ) {
@@ -392,7 +400,6 @@ void read_MuCamera() {
   if (cameraSetupSuccessful) {
     if ((*Mu).GetValue(object[objectIdx], kStatus)) {  // update vision result and get status, 0: undetected, other:
       // PTL(objectName[objectIdx]);
-      noResultTime = millis();  // update the timer
       updateCoordinateLock = true;
       xCoord = (int)(*Mu).GetValue(object[objectIdx], kXValue);
       yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
@@ -419,6 +426,7 @@ void read_MuCamera() {
       }
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
       detectedObjectQ = true;
+      noResultTime = millis();                    // update the timer
     } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
       (*Mu).VisionEnd(object[objectIdx]);
       objectIdx = (objectIdx + 1) % (sizeof(object) / 2);

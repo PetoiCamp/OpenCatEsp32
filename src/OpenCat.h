@@ -76,15 +76,15 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "241217" // YYMMDD
+#define DATE "241231" // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 #define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
-#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -388,6 +388,8 @@ bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool workingStiffness = true;
 bool manualEyeColorQ = false;
+bool cameraLockI2c = false;
+bool imuLockI2c = false;
 // bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4 // used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];

@@ -6,8 +6,8 @@
 
 
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
-// #define BiBoard_V0_2
-#define BiBoard_V1_0
+#define BiBoard_V0_2
+// #define BiBoard_V1_0
 // #define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
@@ -24,7 +24,7 @@
 #define GESTURE                   // for Gesture module
 #define CAMERA                    // for Mu Vision camera
 #define QUICK_DEMO                // for quick demo
-#define ROBOT_ARM                 // for attaching head clip arm
+// #define ROBOT_ARM                 // for attaching head clip arm
 #include "src/OpenCat.h"
 
 void setup() {

@@ -518,6 +518,11 @@ void print6Axis() {
 bool readIMU() {
   bool updated = false;
   if (updateGyroQ && !(frame % imuSkip)) {
+#ifndef USE_WIRE1
+    while (cameraLockI2c)
+      delay(1);  // wait for the i2c bus to be released by the camera. potentially to cause dead lock with imu.
+    imuLockI2c = true;
+#endif
 #ifdef IMU_ICM42670
     if (icmQ) {
       updated = true;
@@ -540,6 +545,7 @@ bool readIMU() {
       }
     }
 #endif
+    imuLockI2c = false;
     // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 
     // Acceleration Real
