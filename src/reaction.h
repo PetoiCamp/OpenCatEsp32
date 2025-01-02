@@ -440,8 +440,10 @@ void reaction() {
           PTLF("save offset");
           saveCalib(servoCalib);
 #ifdef VOICE
-          if (newCmdIdx == 2)
-            SERIAL_VOICE.println("XAc");
+          if (newCmdIdx == 2) {
+            char setCmd[] = "Ac~";  // turn on voice
+            set_voice(setCmd);
+          }
 #endif
           break;
         }
@@ -454,8 +456,10 @@ void reaction() {
           config.getBytes("calib", servoCalib, DOF);
 #endif
 #ifdef VOICE
-          if (newCmdIdx == 2)
-            SERIAL_VOICE.println("XAc");
+          if (newCmdIdx == 2) {
+            char setCmd[] = "Ac~";  // turn on voice
+            set_voice(setCmd);
+          }
 #endif
           break;
         }
@@ -528,8 +532,11 @@ void reaction() {
                   workingStiffness = false;
 #endif
 #ifdef VOICE
-                  if (newCmdIdx == 2)  // only deactivate the voice module via serial port
-                    SERIAL_VOICE.println("XAd");
+                  if (newCmdIdx == 2) {  // only deactivate the voice module via serial port
+
+                    char setCmd[] = "Ad~";  // turn off voice
+                    set_voice(setCmd);
+                  }
 #endif
                   strcpy(newCmd, "calib");
                   loadBySkillName(newCmd);

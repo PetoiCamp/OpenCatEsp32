@@ -27,8 +27,8 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-  // "xl",
-  // "xp",
+// "xl",
+// "xp",
 #ifdef BITTLE
 #ifdef ROBOT_ARM
   "kpickF",                          //pick front 捡起来
@@ -65,10 +65,10 @@ String customizedCmdList[] = {
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
-  "T", //repeat
-  "xl",//learn a new trick 学习动作
-  "xp",//play the trick 表演动作
-  "10th"  // define up to 10 customized commands.
+  "T",                                                                     //repeat
+  "xl",                                                                    //learn a new trick 学习动作
+  "xp",                                                                    //play the trick 表演动作
+  "10th"                                                                   // define up to 10 customized commands.
 #endif
 };
 int listLength = 0;
@@ -103,7 +103,7 @@ void voiceStop() {
   PTLF("Turn off the audio response");
   enableVoiceQ = false;
 }
-void set_voice() {  // send some control command directly to the module
+void set_voice(char *cmd = newCmd) {  // send some control command directly to the module
   // XAa: switch English
   // XAb: switch Chinese
   // XAc: turn on the sound response
@@ -112,29 +112,29 @@ void set_voice() {  // send some control command directly to the module
   // XAf: stop learning
   // XAg: clear the learning data
   byte c = 0;
-  while (newCmd[c++] != '~')
+  while (cmd[c++] != '~' )
     ;
-  newCmd[c - 1] = '\0';
+  cmd[c - 1] = '\0';
   // Serial.print('X');
-  // Serial.println(newCmd);
+  // Serial.println(cmd);
   SERIAL_VOICE.print('X');
-  SERIAL_VOICE.println(newCmd);
+  SERIAL_VOICE.println(cmd);
   delay(10);
   while (!SERIAL_VOICE.available()) {  //the serial port has to be re-opened for the first time after rebooting. Don't know why.
     SERIAL_VOICE.end();
     beginVoiceSerial();
     SERIAL_VOICE.print('X');
-    SERIAL_VOICE.println(newCmd);
+    SERIAL_VOICE.println(cmd);
     delay(10);
   }
   while (SERIAL_VOICE.available())  //avoid echo
     PT(char(SERIAL_VOICE.read()));
   PTL();
-  if (!strcmp(newCmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
-                              // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
+  if (!strcmp(cmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+                           // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
     enableVoiceQ = true;
-  else if (!strcmp(newCmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
-                                   // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
+  else if (!strcmp(cmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+                                // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
     enableVoiceQ = false;
   printToAllPorts('X');  // the blue read runs on a separate core.
   // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
