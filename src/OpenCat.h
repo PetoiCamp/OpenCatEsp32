@@ -83,7 +83,6 @@ String SoftwareVersion = "";
 
 #define BT_BLE // toggle Bluetooth Low Energy (BLE）
 #define BT_SSP // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
 #define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
@@ -140,6 +139,9 @@ String SoftwareVersion = "";
 #define INTERRUPT_PIN 26 // use pin 2 on Arduino Uno & most boards
 #define BUZZER 25
 #define IR_PIN 23
+#ifndef IR_PIN
+#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
+#endif
 #define ANALOG1 34
 #define ANALOG2 35
 #define ANALOG3 36
@@ -162,6 +164,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define PWM_NUM 12
 // #define INTERRUPT_PIN 26  // use pin 2 on Arduino Uno & most boards
 #define BUZZER 2
+#define BT_CLIENT // toggle Bluetooth client (BLE） for Micro:Bit
 // #define IR_PIN 23
 
 #define LOW_VOLTAGE 7.0 // for 2S 7.4V power
