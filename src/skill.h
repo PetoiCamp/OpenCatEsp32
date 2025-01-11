@@ -325,8 +325,15 @@ public:
             if (
               ((180 - fabs(currentYpr) > 2)                                                                                           // skip the angle when the reading jumps from 180 to -180
                && (triggerAxis * currentYpr > triggerAxis * triggerAngle && triggerAxis * previousYpr < triggerAxis * triggerAngle))  // the sign of triggerAxis will deterine whether the current angle should be larger or smaller than the trigger angle
-              || millis() - triggerTimer > 3000)                                                                                      // if the robot stucks by the trigger for more than 3 seconds, it will break.
+              || millis() - triggerTimer > 2000) {                                                                                    // if the robot stucks by the trigger for more than 3 seconds, it will break.
+              PT(previousYpr);
+              PT(" => ");
+              PT(triggerAngle);
+              PT(" => ");
+              PTL(currentYpr);
+              PTLF("Trigger released");
               break;
+            }
             previousYpr = currentYpr;
           }
         }

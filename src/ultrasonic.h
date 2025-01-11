@@ -28,8 +28,8 @@ bool ultrasonicLEDinitializedQ = false;
 void rgbUltrasonicSetup() {
   ultrasonic.SetupLED();
   PTL("Show Petoi Logo color");
-  ultrasonic.SetRgbEffect(E_RGB_LEFT, ultrasonic.color(0, 28, 255), E_EFFECT_STEADY);
-  ultrasonic.SetRgbEffect(E_RGB_RIGHT, ultrasonic.color(255, 171, 0), E_EFFECT_STEADY);
+  ultrasonic.SetRgbEffect(E_RGB_RIGHT, ultrasonic.color(0, 28, 255), E_EFFECT_STEADY); // the side is defined subjectively as the cat
+  ultrasonic.SetRgbEffect(E_RGB_LEFT, ultrasonic.color(255, 171, 0), E_EFFECT_STEADY);
   ultrasonicLEDinitializedQ = true;
 }
 

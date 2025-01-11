@@ -1,143 +1,150 @@
 #include "esp32-hal.h"
 void dealWithExceptions() {
 #ifdef GYRO_PIN
-  if (gyroBalanceQ && imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
-    switch (imuException) {
-      case -1:
-        {
-          PTL("EXCEPTION 1");
-          strcpy(newCmd, "lnd");
-          loadBySkillName(newCmd);
-          shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
-          delay(1000);
-          token = 'k';
-          strcpy(newCmd, "up");
-          newCmdIdx = -1;
-          break;
-        }
-      case -2:
-        {
-          PTL("EXCEPTION: Fall over");
-          soundFallOver();
-          //  for (int m = 0; m < 2; m++)
-          //    meow(30 - m * 12, 42 - m * 12, 20);
-          token = 'k';
-          manualHeadQ = false;
-          strcpy(newCmd, "rc");
-          newCmdIdx = -2;
-          // tQueue->addTaskToFront('k', "rc");
-          break;
-        }
-      case -3:
-        {
-          if (tQueue->cleared() && skill->period == 1) {
-            PTL("EXCEPTION: Knocked");
-            tQueue->addTask('k', "knock");
-#if defined NYBBLE && defined ULTRASONIC
-            if (!moduleActivatedQ[0]) {  // serial2)
-              int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
-              int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
-              tQueue->addTask('C', clrRed, 1);
-              tQueue->addTask('C', clrBlue);
-            }
-#endif
-            tQueue->addTask('k', "up");
+  if (gyroBalanceQ) {
+    if (imuException == -2
+        || (skill->period == 1 && abs(xyzReal[2]) >= 15)
+        || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
+      delay(200);
+    }
+    if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
+      switch (imuException) {
+        case -1:
+          {
+            PTL("EXCEPTION 1");
+            strcpy(newCmd, "lnd");
+            loadBySkillName(newCmd);
+            shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
+            delay(1000);
+            token = 'k';
+            strcpy(newCmd, "up");
+            newCmdIdx = -1;
+            break;
           }
-          break;
-        }
-      case -4:
-        {
-          PTL("EXCEPTION: Pushed");
-          // Acceleration Real
-          //      ^ head
-          //        ^ x+
-          //        |
-          //  y+ <------ y-
-          //        |
-          //        | x-
-          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
-            char xSymbol[] = { '^', 'v' };
-            char ySymbol[] = { '<', '>' };
-            char xDirection = xSymbol[sign(ARX) > 0];
-            char yDirection = ySymbol[sign(ARY) > 0];
-            float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
-            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
-            PTHL(" ForceAngle:", forceAngle);
-            if (tQueue->cleared()) {
-              if (xDirection == '^') {
-                // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
-                if (abs(forceAngle) < 75)
-                  // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
-                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
-                // tQueue->addTask('i', "");
-                else {
-                  tQueue->addTask('k', "wkF", 700);
+        case -2:
+          {
+            PTL("EXCEPTION: Fall over");
+            soundFallOver();
+            //  for (int m = 0; m < 2; m++)
+            //    meow(30 - m * 12, 42 - m * 12, 20);
+            token = 'k';
+            manualHeadQ = false;
+            strcpy(newCmd, "rc");
+            newCmdIdx = -2;
+            // tQueue->addTaskToFront('k', "rc");
+            break;
+          }
+        case -3:
+          {
+            if (tQueue->cleared() && skill->period == 1) {
+              PTL("EXCEPTION: Knocked");
+              tQueue->addTask('k', "knock");
+#if defined NYBBLE && defined ULTRASONIC
+              if (!moduleActivatedQ[0]) {  // serial2)
+                int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
+                int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
+                tQueue->addTask('C', clrRed, 1);
+                tQueue->addTask('C', clrBlue);
+              }
+#endif
+              tQueue->addTask('k', "up");
+            }
+            break;
+          }
+        case -4:
+          {
+            PTL("EXCEPTION: Pushed");
+            // Acceleration Real
+            //      ^ head
+            //        ^ x+
+            //        |
+            //  y+ <------ y-
+            //        |
+            //        | x-
+            if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
+              char xSymbol[] = { '^', 'v' };
+              char ySymbol[] = { '<', '>' };
+              char xDirection = xSymbol[sign(ARX) > 0];
+              char yDirection = ySymbol[sign(ARY) > 0];
+              float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
+              PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+              PTHL(" ForceAngle:", forceAngle);
+              if (tQueue->cleared()) {
+                if (xDirection == '^') {
+                  // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
+                  if (abs(forceAngle) < 75)
+                    // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
+                    tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
                   // tQueue->addTask('i', "");
-                  tQueue->addTask('k', "bkF", 500);
-                }
-              } else {
-                // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
-                if (abs(forceAngle) < 75)
-                  tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
-                else {
-                  tQueue->addTask('k', "bkF", 500);
-                  tQueue->addTask('k', "wkF", 700);
+                  else {
+                    tQueue->addTask('k', "wkF", 700);
+                    // tQueue->addTask('i', "");
+                    tQueue->addTask('k', "bkF", 500);
+                  }
+                } else {
+                  // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                  if (abs(forceAngle) < 75)
+                    tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
+                  else {
+                    tQueue->addTask('k', "bkF", 500);
+                    tQueue->addTask('k', "wkF", 700);
+                  }
                 }
               }
-            }
-            tQueue->addTask('k', "up");
-            delayPrevious = runDelay;
-            runDelay = 3;
-            PTL();
-          }
-          break;
-        }
-      case -5:
-        {
-          PTL("EXCEPTION: Turned");
-          char *currentGait = skill->skillName;  // it may not be gait
-          char gaitDirection = currentGait[strlen(currentGait) - 1];
-          float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
-          if (tQueue->cleared()) {
-            if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  // not gait or stepping
-              tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
-              // tQueue->addTask('k', "up", 100);
+              tQueue->addTask('k', "up");
               delayPrevious = runDelay;
               runDelay = 3;
-            } else {
-              // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
-              previous_ypr[0] = ypr[0];
+              PTL();
             }
-            // else {
-            //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
-            //     previous_ypr[0] = ypr[0];
-            //   } else {
-            //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
-            //     PTL(currentGait);
-            //     tQueue->addTask('k', currentGait, round(abs(yawDiff) * 15));
-            //     currentGait[strlen(currentGait) - 1] = 'F';
-            //     PTL(currentGait);
-            //     tQueue->addTask('k', currentGait);
-            //   }
-            // }
+            break;
           }
-          break;
-        }
-      default:
-        {
-          break;
-        }
-    }
-    // if (imuException != -4)
-    print6Axis();
-    // readIMU();  // flush the IMU to avoid static readings and infinite loop
+        case -5:
+          {
+            PTL("EXCEPTION: Turned");
+            char *currentGait = skill->skillName;  // it may not be gait
+            char gaitDirection = currentGait[strlen(currentGait) - 1];
+            float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
+            if (tQueue->cleared()) {
+              if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  // not gait or stepping
+                tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
+                // tQueue->addTask('k', "up", 100);
+                delayPrevious = runDelay;
+                runDelay = 3;
+              } else {
+                // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
+                previous_ypr[0] = ypr[0];
+              }
+              // else {
+              //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
+              //     previous_ypr[0] = ypr[0];
+              //   } else {
+              //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
+              //     PTL(currentGait);
+              //     tQueue->addTask('k', currentGait, round(abs(yawDiff) * 15));
+              //     currentGait[strlen(currentGait) - 1] = 'F';
+              //     PTL(currentGait);
+              //     tQueue->addTask('k', currentGait);
+              //   }
+              // }
+            }
+            break;
+          }
+        default:
+          {
+            break;
+          }
+      }
+      // if (imuException != -4)
+      print6Axis();
+      // readIMU();  // flush the IMU to avoid static readings and infinite loop
 
-    // if (tQueue->lastTask == NULL) {
-    //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
-    //     PTH("save last task ", lastCmd);
-    //     tQueue->lastTask = new Task('k', lastCmd);
-    //   }
-    // }
+      // if (tQueue->lastTask == NULL) {
+      //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
+      //     PTH("save last task ", lastCmd);
+      //     tQueue->lastTask = new Task('k', lastCmd);
+      //   }
+      // }
+    }
   }
 // if (tQueue->cleared() && runDelay <= delayException)
 //   runDelay = delayPrevious;
@@ -217,12 +224,18 @@ bool lowBattery() {
     lastVoltage = voltage;
     if ((voltage > LOW_VOLTAGE + 0.2                                         // powered by 7.4V
          || (voltage > LOW_VOLTAGE2 + 0.2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-        && lowBatteryQ)                                                      // +0.1 to avoid fluctuation around the threshold
+        && lowBatteryQ)                                                      // +0.2 to avoid fluctuation around the threshold
     {
-      if (voltage > LOW_VOLTAGE + 0.2)
-        PTL("Got 7.4 V power");
-      else
-        PTL("Got 6.0 V power");
+      // if (voltage > LOW_VOLTAGE + 0.2){
+      //   PT("Got ");
+      //   PT(voltage);
+      //   PTL(" V power");
+      // }
+      // else
+      //   PTL("Got 6.0 V power");
+      PT("Got ");
+      PT(voltage);
+      PTL(" V power");
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
       batteryWarningCounter = 0;
@@ -466,6 +479,28 @@ void reaction() {
       case T_RESET:
         {
           resetAsNewBoard('R');
+          break;
+        }
+      case T_JOYSTICK:
+        {
+          PTL("raw input newCmd");
+          for (int i = 0; i < cmdLen; i++)
+            PTH(int8_t(newCmd[i]), char(newCmd[i]));
+          int flush126 = 0;
+          PTL();
+          PT("trimmed newCmd\t");
+          while ((char)newCmd[flush126] == '~')
+            flush126++;
+          if ((int8_t)newCmd[flush126] == -126) {
+            PTHL("string cmd", (char *)newCmd + flush126 + 1)
+          } else {
+            for (int i = flush126; i < cmdLen; i++) {
+              if (newCmd[i] == 126)
+                break;
+              PTT(int8_t(newCmd[i]), '\t');
+            }
+            PTL("||");
+          }
           break;
         }
       case T_CALIBRATE:                 // calibration
@@ -996,7 +1031,13 @@ void reaction() {
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
-      printToAllPorts(token);  // behavior can confirm completion by sending the token back
+      printToAllPorts(token);                                          // behavior can confirm completion by sending the token back
+      if (xyzReal[2] > 0 && (abs(ypr[1]) > 45 || abs(ypr[2]) > 45)) {  // wait for imu to update
+        while (abs(ypr[1]) > 10 || abs(ypr[2]) > 10) {
+          // print6Axis();
+          delay(IMU_PERIOD);
+        }
+      }
     }
     // if (imuException && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')

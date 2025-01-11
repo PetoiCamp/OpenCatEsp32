@@ -10,12 +10,15 @@ float previous_ypr[3];
 #define AWY aaWorld.y
 #define AWZ aaWorld.z
 #define GRAVITY 10.0
+#define IMU_PERIOD 5
 float gFactor = GRAVITY / 8192;
 byte imuSkip = IMU_SKIP;
 float previousXYZ[3];
 int8_t yprTilt[3];
 float xyzReal[3];
 int thresX, thresY, thresZ;
+byte imuBad2[] = { 20, 12, 18, 12, 16, 12,
+                   16, 16, 16, 16, 16, 8 };  // fail during calibration
 #ifdef IMU_MPU6050
 
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v6.12)
@@ -441,7 +444,20 @@ void icm42670Setup(bool calibrateQ = true) {
       icm.offset_gyro[i] = 0;
     }
     PTLF("Calibrate ICM42670...");
-    icm.getOffset(2000);
+    icm.getOffset(200);
+    if (icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768) {
+      PT("Reading error: ");
+      PT(icm.offset_gyro[0]);
+      PT('\t');
+      PT(icm.offset_gyro[1]);
+      PT('\t');
+      PT(icm.offset_gyro[2]);
+      PTL('\t');
+      while (!Serial.available()) {
+        playMelody(imuBad2, sizeof(imuBad2) / 2);
+      }
+      while (Serial.available()) Serial.read();
+    }
     config.putFloat("icm_accel0", icm.offset_accel[0]);
     config.putFloat("icm_accel1", icm.offset_accel[1]);
     config.putFloat("icm_accel2", icm.offset_accel[2]);
@@ -546,31 +562,7 @@ bool readIMU() {
     }
 #endif
     imuLockI2c = false;
-    // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
 
-    // Acceleration Real
-    //      ^ head
-    //        ^ x+
-    //        |
-    //  y+ <------ y-
-    //        |
-    //        | x-
-    // if (AWZ < -8500 && AWZ > -8600)
-    //   imuException = -1;  //dropping
-    // else
-    if (xyzReal[2] < 1 && fabs(ypr[2]) > 80)  //  imuException = aaReal.z < 0;
-      imuException = -2;                      // flipped
-#ifndef ROBOT_ARM
-    else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
-      imuException = -3;
-    else if (!moduleDemoQ && (abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[0]) > thresX * gFactor || abs(xyzReal[1] - previousXYZ[1]) > 5000 * gFactor && abs(xyzReal[1]) > thresY * gFactor))
-      imuException = -4;
-#endif
-    // else if (  //keepDirectionQ &&
-    //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-    //   imuException = -5;
-    else
-      imuException = 0;
     // however, its change is very slow.
     for (byte m = 0; m < 3; m++) {
       previousXYZ[m] = xyzReal[m];
@@ -585,11 +577,43 @@ bool readIMU() {
   }
 }
 
+void getImuException() {
+  // imuException = aaReal.z < 0 && fabs(ypr[2]) > 85;  //the second condition is used to filter out some noise
+
+  // Acceleration Real
+  //      ^ head
+  //        ^ x+
+  //        |
+  //  y+ <------ y-
+  //        |
+  //        | x-
+  // if (AWZ < -8500 && AWZ > -8600)
+  //   imuException = -1;  //dropping
+  // else
+
+  if (xyzReal[2] < 1 && fabs(ypr[2]) > 80) {  //  imuException = aaReal.z < 0;
+    imuException = -2;                        // flipped
+  }
+#ifndef ROBOT_ARM
+  else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
+    imuException = -3;
+  else if (!moduleDemoQ && (abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[0]) > thresX * gFactor || abs(xyzReal[1] - previousXYZ[1]) > 5000 * gFactor && abs(xyzReal[1]) > thresY * gFactor)) {
+    imuException = -4;
+  }
+#endif
+  // else if (  //keepDirectionQ &&
+  //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
+  //   imuException = -5;
+  else
+    imuException = 0;
+}
+
 long imuTime = 0;
 void taskIMU(void *parameter) {
   while (true) {
-    if (millis() - imuTime > 10) {
+    if (millis() - imuTime > 5) {
       imuUpdated = readIMU();
+      getImuException();
       imuTime = millis();
     } else
       delay(1);  // to avoid the task to be blocked the wdt

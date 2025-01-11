@@ -64,7 +64,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         token = rxValue[0];
         lowerToken = tolower(token);
         terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';
-        serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
+        serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP || token == T_TASK_QUEUE) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
         newCmd[cmdLen++] = rxValue[i];

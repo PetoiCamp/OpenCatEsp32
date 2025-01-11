@@ -326,6 +326,7 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 float adjust(byte i)
 {
   float rollAdj, pitchAdj, adj;
+  pitchAdj = adaptiveParameterArray[i][1] * RollPitchDeviation[1];
   if (i == 1 || i > 3)
   { // check idx = 1
     bool leftQ = (i - 1) % 4 > 1 ? true : false;
@@ -340,19 +341,19 @@ float adjust(byte i)
   }
   else
     rollAdj = RollPitchDeviation[0] * adaptiveParameterArray[i][0];
-
   float idealAdjust = radPerDeg * (
 #ifdef POSTURE_WALKING_FACTOR
                                       (i > 3 ? POSTURE_WALKING_FACTOR : 1) *
 #endif
                                           balanceSlope[0] * rollAdj -
-                                      balanceSlope[1] * adaptiveParameterArray[i][1] * ((i % 4 < 2) ? (RollPitchDeviation[1]) : RollPitchDeviation[1]));
+                                      balanceSlope[1] * pitchAdj);
 #ifdef ADJUSTMENT_DAMPER
   currentAdjust[i] += max(min(idealAdjust - currentAdjust[i], float(ADJUSTMENT_DAMPER)), -float(ADJUSTMENT_DAMPER));
 #else
   currentAdjust[i] = idealAdjust;
 #endif
-  currentAdjust[i] = max(float(-45), min(float(45), currentAdjust[i]));
+  int thres = (i > 3 && i % 4 < 2) ? 15 : 45;
+  currentAdjust[i] = max(float(-thres), min(float(thres), currentAdjust[i]));
   return currentAdjust[i];
 }
 

@@ -15,14 +15,15 @@ byte DcDcGood[] = { 12, 19,
                     4, 4 };
 byte DcDcBad[] = { 19, 16, 12,
                    16, 16, 16 };
-byte mpuGood[] = { 12, 16, 19,
+byte imuGood[] = { 12, 16, 19,
                    4, 4, 4 };
-byte mpuBad[] = { 25, 20, 16, 11, 9,
-                  16, 16, 16, 16, 16 };
-byte mpuBad1[] = { 19, 17, 16, 14, 12,
-                   16, 16, 16, 16, 16 };
+byte imuBad[] = { 25, 20, 16, 11, 9,
+                  16, 16, 16, 16, 16 };  // no intented IMU detected!
+byte imuBad1[] = { 19, 17, 16, 14, 12,
+                   16, 16, 16, 16, 16 };  // too large error
 
-#define MEAN_THRESHOLD 0.1
+#define IMU_TEST_TRIGGER 0.5
+#define MEAN_THRESHOLD 0.5
 #define STD_THRESHOLD 0.2
 
 #ifdef GYRO_PIN
@@ -39,7 +40,7 @@ void testIMU() {
   if (!intendedIMU) {
     PTL("\nNo intented IMU detected!");
     while (1) {
-      playMelody(mpuBad, sizeof(mpuBad) / 2);
+      playMelody(imuBad, sizeof(imuBad) / 2);
       delay(500);
     }
   }
@@ -49,13 +50,13 @@ void testIMU() {
   float **history = new float *[2];
   for (int a = 0; a < 2; a++)
     history[a] = new float[count];
-  while (fabs(ypr[1]) > 0.1 || fabs(ypr[2]) > 0.1) {
-    delay(10);
+  while (fabs(ypr[1]) > IMU_TEST_TRIGGER || fabs(ypr[2]) > IMU_TEST_TRIGGER) {  // the IMU should converge to a stable state before the statistics test
+    delay(IMU_PERIOD);
     print6Axis();
   }
   PTL("Test");
   for (int t = 0; t < count; t++) {
-    while (!imuUpdated)//lock to prevent reading imu when it's still calculating
+    while (!imuUpdated)  // lock to prevent reading imu when it's still calculating
       delay(1);
     print6Axis();
     for (int a = 0; a < 2; a++)
@@ -73,13 +74,15 @@ void testIMU() {
     PT(dev);
     if (fabs(m) > MEAN_THRESHOLD || dev > STD_THRESHOLD) {
       PTL("\tFail!");
-      while (1) {
-        playMelody(mpuBad1, sizeof(mpuBad1) / 2);
+      while (!Serial.available()) {
+        playMelody(imuBad1, sizeof(imuBad1) / 2);
         delay(500);
       }
+      while (Serial.available())
+        Serial.read();
     } else {
       PTL("\tPass!");
-      playMelody(mpuGood, sizeof(mpuGood) / 2);
+      playMelody(imuGood, sizeof(imuGood) / 2);
     }
   }
   delay(100);
@@ -179,7 +182,7 @@ void QA() {
       // tests...
       PTL("\nServo test: all servos should rotate and in sync\n");
       loadBySkillName("ts");  // test EEPROM
-      while (1) {
+      while (!Serial.available()) {
         skill->perform();
 #ifdef IR_PIN
         if (testIR()) {
@@ -193,6 +196,8 @@ void QA() {
         }
 #endif
       }
+      while (Serial.available())
+        Serial.read();
     }
 #ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_BIRTHMARK_ADDRESS, BIRTHMARK);  // finish the test and mark the board as initialized

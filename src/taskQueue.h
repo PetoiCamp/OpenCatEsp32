@@ -68,7 +68,7 @@ public:
       this->addTask(subToken, subCmd, subDuration);
       delete[] subCmd;
     }
-    this->addTask('k', "up");
+    // this->addTask('k', "up");
   }
   bool cleared() {
     return this->size() == 0 && long(millis() - taskTimer) > taskInterval;

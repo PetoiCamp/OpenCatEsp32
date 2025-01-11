@@ -28,7 +28,7 @@ void imu42670p::getOffset(int num) {
 
   Serial.println("Start IMU calibration...");
   Serial.println("Please put the sensor on a leveled plane!");
-
+  Serial.println("Calculate mean");
   for (int i = 0; i < num; i++) {
     getDataFromRegisters(temp);
     offset_accel[0] += temp.accel[0];
@@ -37,6 +37,13 @@ void imu42670p::getOffset(int num) {
     offset_gyro[0] += temp.gyro[0];
     offset_gyro[1] += temp.gyro[1];
     offset_gyro[2] += temp.gyro[2];
+    Serial.print(temp.gyro[0]);
+    Serial.print('\t');
+    Serial.print(temp.gyro[1]);
+    Serial.print('\t');
+    Serial.print(temp.gyro[2]);
+    Serial.println('\t');
+    delay(5);
   }
 
   offset_accel[0] = offset_accel[0] / num;
@@ -208,7 +215,7 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
   // transform quaternion to euler
   yprHistory[index][0] = -(atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3])) * 180.0f / PI;
   float diff = yprHistory[index][0] - yprHistory[(index - 1) % MEAN_FILTER_SIZE][0];
-  if (abs(diff) < 0.05)
+  if (abs(diff) < 0.1)
     yawDrift += diff;
   ypr[0] = yaw = yprHistory[index][0] - yawDrift;
   ypr[1] = ypr[1] * MEAN_FILTER_SIZE - yprHistory[index][1];
