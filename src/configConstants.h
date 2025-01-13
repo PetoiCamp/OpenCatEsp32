@@ -48,7 +48,8 @@ bool EEPROMOverflow = false;
 #define EEPROM_BUZZER_VOLUME 57        // 1 byte
 #define EEPROM_MODULE_ENABLED_LIST 58  // 9 bytes
 #define EEPROM_VERSION_DATE 70         // 11 bytes
-#define EEPROM_RESERVED 82
+#define EEPROM_DEFAULT_LAN 82          // 1 byte. 0: English, 1: Chinese
+#define EEPROM_RESERVED 83             // reserved for future use
 #define SERIAL_BUFF 100
 
 int dataLen(int8_t p) {
@@ -95,10 +96,14 @@ void i2cDetect(TwoWire &wirePort) {
             MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
           else if (i == 3)
             GroveVisionQ = true;
+#ifdef IMU_MPU6050
           else if (i == 4)
             mpuQ = true;
+#endif
+#ifdef IMU_ICM42670
           else if (i == 5)
             icmQ = true;
+#endif
           nDevices++;
           break;
         }
@@ -401,12 +406,6 @@ void resetIfVersionOlderThan(String versionStr) {
 
 void configSetup() {
   newBoard = newBoardQ();
-  PT("Using constants from ");
-#ifdef I2C_EEPROM_ADDRESS
-  PTL("I2C EEPROM");
-#else
-  PTL("on-board Flash");
-#endif
   if (newBoard) {
     PTLF("Set up the new board...");
     char tempStr[12];
@@ -417,6 +416,7 @@ void configSetup() {
 
     int bufferLen = dataLen(rest[0]);  // save a preset skill to the temp skill
     arrayNCPY(newCmd, rest, bufferLen);
+
 #ifdef I2C_EEPROM_ADDRESS
     PTL("Using constants from I2C EEPROM");
     writeLong(EEPROM_VERSION_DATE, tempStr, SoftwareVersion.length());
@@ -424,6 +424,7 @@ void configSetup() {
     i2c_eeprom_write_byte(EEPROM_BUZZER_VOLUME, buzzerVolume);
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
+    i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'a');  // a for English, b for Chinese
     // save a preset skill to the temp skill in case its called before assignment
     unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
     i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
@@ -435,6 +436,7 @@ void configSetup() {
     config.putBool("bootSndState", soundState);
     config.putChar("buzzerVolume", buzzerVolume);
     config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+    config.putChar("defaultLan", 'a');  // a for English, b for Chinese
     // save a preset skill to the temp skill in case its called before assignment
     config.putInt("tmpLen", bufferLen);
     config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
@@ -457,7 +459,6 @@ void configSetup() {
 #else
     PTL("- Reset the joints' calibration offsets...");
 #endif
-
 #ifdef I2C_EEPROM_ADDRESS
       for (byte c = 0; c < DOF; c++)
         i2c_eeprom_write_byte(EEPROM_CALIB + c, 0);
@@ -474,13 +475,16 @@ void configSetup() {
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
-    for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-      moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
+      for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+        moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
+    defaultLan = (char)i2c_eeprom_read_byte(EEPROM_DEFAULT_LAN);
 #else
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
+    defaultLan = config.getChar("defaultLan");
     PT(config.freeEntries());                                 // show remaining entries of the preferences.
     PTL(" entries are available in the namespace table.\n");  // this method works regardless of the mode in which the namespace is opened.
 #endif
+    PTHL("Default language: ", defaultLan == 'b' ? " Chinese" : " English");
   }
 }
 

@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250110"  // YYMMDD
+#define DATE "250113"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -130,7 +130,7 @@ String SoftwareVersion = "";
 #define REGULAR P1S
 #define KNEE P2K
 #include "InstinctCubESP.h"
-// #define MPU_YAW180
+
 #endif
 
 #if defined BiBoard_V0_1 || defined BiBoard_V0_2
@@ -151,7 +151,7 @@ String SoftwareVersion = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 // #define IMU_ICM42670
-#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
+#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip 
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -350,6 +350,7 @@ bool newBoard = false;
 #define T_CAMERA_REACTION 'R'
 #define T_CAMERA_REACTION_OFF 'r'
 
+char defaultLan = 'a';
 // bool updated[10];
 float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;

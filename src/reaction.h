@@ -2,9 +2,7 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ) {
-    if (imuException == -2
-        || (skill->period == 1 && abs(xyzReal[2]) >= 15)
-        || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
+    if (imuException == -2 || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
       delay(200);
     }
     if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
@@ -825,7 +823,7 @@ void reaction() {
 #ifdef VOICE
             case EXTENSION_VOICE:
               {
-                set_voice();
+                set_voice(newCmd);
                 break;
               }
 #endif

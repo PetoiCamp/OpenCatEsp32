@@ -7,7 +7,6 @@
 // Petoi LLC
 // Jan 12, 2023
 
-
 #define SERIAL_VOICE_BAUD_RATE 9600
 #define MAX_CUSTOMIZED_CMD 10
 
@@ -31,16 +30,16 @@ String customizedCmdList[] = {
 // "xp",
 #ifdef BITTLE
 #ifdef ROBOT_ARM
-  "kpickF",                          //pick front 捡起来
-  "kputD",                           //put down 放下
-  "khuntL",                          //hunt 捕猎
-  "kshowOff",                        //show off 展示
-  "kputL",                           //put left 收起来
-  "ktossL",                          //toss left 左抛
-  "klaunchL",                        //launch 发射
-  "kclapL",                          //clap 鼓掌
-  "ktossF",                          //toss front 前抛
-  "qc-2:0>kclap:1000>kpickF:1000>",  //calibrate arm (for QA) 校准(工厂用)
+  "kpickF",                          // pick front 捡起来
+  "kputD",                           // put down 放下
+  "khuntL",                          // hunt 捕猎
+  "kshowOff",                        // show off 展示
+  "kputL",                           // put left 收起来
+  "ktossL",                          // toss left 左抛
+  "klaunchL",                        // launch 发射
+  "kclapL",                          // clap 鼓掌
+  "ktossF",                          // toss front 前抛
+  "qc-2:0>kclap:1000>kpickF:1000>",  // calibrate arm (for QA) 校准(工厂用)
 #else
   "kpu1",                                                                  // single-handed pushups
   "m0 80 0 -80 0 0",                                                       // wave head
@@ -56,18 +55,18 @@ String customizedCmdList[] = {
   "10th"  // define up to 10 customized commands.
 #endif
 #elif defined NYBBLE
-  "kluckyL",   //lucky cat 招财猫
-  "klkPawsL",  //lick paws 舔爪子
+  "kluckyL",   // lucky cat 招财猫
+  "klkPawsL",  // lick paws 舔爪子
   "qksit:100>i0 20 1 0 8 -70 12 0 15 10:0>o1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10 10 4 0, 15 10 0 4 0:100>m0 0 1 -20 2 0:0>ksit:0",
   // "kwsfL",                                                                 //wash face 洗脸
-  "khuntL",                                                                //hunt 捕猎
+  "khuntL",                                                                // hunt 捕猎
   "m0 80 0 -80 0 0",                                                       // wave head                                                                //
   "b14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4,\
   21,8,21,8,19,8,19,8,18,8,18,8,16,4,21,8,21,8,19,8,19,8,18,8,18,8,16,4,\
   14,8,14,8,21,8,21,8,23,8,23,8,21,4,19,8,19,8,18,8,18,8,16,8,16,8,14,4",  // twinkle star
-  "T",                                                                     //repeat
-  "xl",                                                                    //learn a new trick 学习动作
-  "xp",                                                                    //play the trick 表演动作
+  "T",                                                                     // repeat
+  "xl",                                                                    // learn a new trick 学习动作
+  "xp",                                                                    // play the trick 表演动作
   "10th"                                                                   // define up to 10 customized commands.
 #endif
 };
@@ -82,15 +81,77 @@ void beginVoiceSerial() {
     SERIAL_VOICE.begin(SERIAL_VOICE_BAUD_RATE);
 #endif
     SERIAL_VOICE.setTimeout(5);
-    delay(5);
   }
+  delay(20);
 }
+
+void set_voice(char *cmd) {  // send some control command directly to the module
+  // XAa: switch English
+  // XAb: switch Chinese
+  // XAc: turn on the sound response
+  // XAd: turn off the sound response
+  // XAe: start learning
+  // XAf: stop learning
+  // XAg: clear the learning data
+  if (cmd[1] == 'a' || cmd[1] == 'b') {  // enter "XAa" in the serial monitor or add button "X65,97" in the mobile app to switch to English
+    // 在串口监视器输入指令“XAa”或在手机app创建按键"X65,97"来切换到英文
+    defaultLan = cmd[1];
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, defaultLan);
+#else
+    config.putChar("defaultLan", defaultLan);
+#endif
+    PTHL("Default language: ", defaultLan == 'b' ? " Chinese" : " English");
+  }
+  byte c = 0;
+  while (cmd[c] != '\0' && cmd[c] != '~')
+    ;
+  cmd[c] = '\0';
+  SERIAL_VOICE.print("X");
+  SERIAL_VOICE.println(cmd);
+  delay(10);
+  if (cmd[1] != 'a' && cmd[1] != 'b') {
+    while (!SERIAL_VOICE.available()) {  // the serial port has to be re-opened for the first time after rebooting. Don't know why.
+      SERIAL_VOICE.end();
+      PTLF("Reopen Voice Serial port");
+      beginVoiceSerial();
+      delay(10);
+      SERIAL_VOICE.print("X");
+      SERIAL_VOICE.println(cmd);
+      delay(10);
+    }
+    while (SERIAL_VOICE.available())  // avoid echo
+      PT(char(SERIAL_VOICE.read()));
+    PTL();
+    if (!strcmp(cmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+                             // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
+      enableVoiceQ = true;
+    else if (!strcmp(cmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+                                  // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
+      enableVoiceQ = false;
+  }
+
+  printToAllPorts('X');  // the blue read runs on a separate core.
+  // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
+  resetCmd();
+}
+
 void voiceSetup() {
   PTLF("Init voice");
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
   PTLF("Number of customized voice commands on the main board: ");
   PTL(listLength);
   beginVoiceSerial();
+  if (defaultLan == 'b') {
+    // set_voice("Ab~");
+    SERIAL_VOICE.println("XAb");
+    PTLF("Switch Chinese");
+  } else {
+    // set_voice("Aa~");
+    SERIAL_VOICE.println("XAa");
+    PTLF("Switch English");
+  }
+
   SERIAL_VOICE.println("XAc");
   PTLF("Turn on the audio response");
   enableVoiceQ = true;
@@ -103,43 +164,7 @@ void voiceStop() {
   PTLF("Turn off the audio response");
   enableVoiceQ = false;
 }
-void set_voice(char *cmd = newCmd) {  // send some control command directly to the module
-  // XAa: switch English
-  // XAb: switch Chinese
-  // XAc: turn on the sound response
-  // XAd: turn off the sound response
-  // XAe: start learning
-  // XAf: stop learning
-  // XAg: clear the learning data
-  byte c = 0;
-  while (cmd[c++] != '~' )
-    ;
-  cmd[c - 1] = '\0';
-  // Serial.print('X');
-  // Serial.println(cmd);
-  SERIAL_VOICE.print('X');
-  SERIAL_VOICE.println(cmd);
-  delay(10);
-  while (!SERIAL_VOICE.available()) {  //the serial port has to be re-opened for the first time after rebooting. Don't know why.
-    SERIAL_VOICE.end();
-    beginVoiceSerial();
-    SERIAL_VOICE.print('X');
-    SERIAL_VOICE.println(cmd);
-    delay(10);
-  }
-  while (SERIAL_VOICE.available())  //avoid echo
-    PT(char(SERIAL_VOICE.read()));
-  PTL();
-  if (!strcmp(cmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
-                           // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
-    enableVoiceQ = true;
-  else if (!strcmp(cmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
-                                // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
-    enableVoiceQ = false;
-  printToAllPorts('X');  // the blue read runs on a separate core.
-  // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
-  resetCmd();
-}
+
 void read_voice() {
   if (SERIAL_VOICE.available()) {
     String raw = SERIAL_VOICE.readStringUntil('\n');
@@ -183,11 +208,30 @@ void read_voice() {
         case 'a':  // say "Bing-bing" to switch English /说“冰冰”切换英文
           {
             PTLF("Switch English");
+            if (lastToken == 'c') {  // only change the default language in calibration mode.
+                                     //otherwise the language will roll back to default after reboot
+              defaultLan = 'a';
+#ifdef I2C_EEPROM_ADDRESS
+              i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'a');
+#else
+              config.putChar("defaultLan", 'a');
+#endif
+              PTHL("Default language: ", defaultLan == 'b' ? " Chinese" : " English");
+            }
             break;
           }
         case 'b':  // say "Di-di" to switch Chinese /说“滴滴”切换中文
           {
             PTLF("Switch Chinese");
+            if (lastToken == 'c') {
+              defaultLan = 'b';
+#ifdef I2C_EEPROM_ADDRESS
+              i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'b');
+#else
+              config.putChar("defaultLan", 'b');
+#endif
+              PTHL("Default language: ", defaultLan == 'b' ? " Chinese" : " English");
+            }
             break;
           }
         case 'c':  // say "play sound" to enable voice reactions / 说“打开音效”激活语音动作

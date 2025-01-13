@@ -196,7 +196,7 @@ public:
       for (byte i = 0; i < 3; i++) {  // no need to flip yaw
         ypr[i] *= degPerRad;
         a_real[i] = *xyzReal[i] / 8192.0 * GRAVITY;
-#ifdef BiBoard_V0_1
+#ifdef BiBoard_V0_1  // # rotate 180 degree
         ypr[i] = -ypr[i];
         if (i != 2)
           a_real[i] = -a_real[i];
@@ -456,7 +456,8 @@ void icm42670Setup(bool calibrateQ = true) {
       while (!Serial.available()) {
         playMelody(imuBad2, sizeof(imuBad2) / 2);
       }
-      while (Serial.available()) Serial.read();
+      while (Serial.available())
+        Serial.read();
     }
     config.putFloat("icm_accel0", icm.offset_accel[0]);
     config.putFloat("icm_accel1", icm.offset_accel[1]);
@@ -633,6 +634,8 @@ void imuSetup() {
       PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
       beep(8, 500, 500, 5);
     }
+#else
+    calibrateQ = true;
 #endif
     beep(15, 500, 500, 1);
   }
