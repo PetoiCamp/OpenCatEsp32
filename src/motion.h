@@ -353,7 +353,7 @@ float adjust(byte i)
   currentAdjust[i] = idealAdjust;
 #endif
   int thres = (i > 3 && i % 4 < 2) ? 15 : 45;
-  currentAdjust[i] = max(float(-thres), min(float(thres), currentAdjust[i]));
+  currentAdjust[i] = max(float(-45), min(float(thres), currentAdjust[i]));
   return currentAdjust[i];
 }
 

@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250113"  // YYMMDD
+#define DATE "250114"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -441,7 +441,7 @@ byte buzzerVolume;
 float amplifierFactor = 100.0;  // to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
-int delayMid = 8;
+int delayMid = 6;
 int delayException = 5;
 int delayShort = 3;
 int delayStep = 1;

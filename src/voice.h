@@ -105,13 +105,13 @@ void set_voice(char *cmd) {  // send some control command directly to the module
   }
   byte c = 0;
   while (cmd[c] != '\0' && cmd[c] != '~')
-    ;
+    c++;
   cmd[c] = '\0';
   SERIAL_VOICE.print("X");
   SERIAL_VOICE.println(cmd);
   delay(10);
   if (cmd[1] != 'a' && cmd[1] != 'b') {
-    while (!SERIAL_VOICE.available()) {  // the serial port has to be re-opened for the first time after rebooting. Don't know why.
+    if (!SERIAL_VOICE.available()) {  // the serial port has to be re-opened for the first time after rebooting. Don't know why.
       SERIAL_VOICE.end();
       PTLF("Reopen Voice Serial port");
       beginVoiceSerial();

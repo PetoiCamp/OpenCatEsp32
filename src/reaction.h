@@ -2,9 +2,9 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ) {
-    if (imuException == -2 || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
-      delay(200);
-    }
+    // if (imuException == -2 || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
+    //   delay(50);
+    // } 
     if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
       switch (imuException) {
         case -1:
@@ -1004,12 +1004,13 @@ void reaction() {
       analogWrite(PWM_LED_PIN, abs(currentAng[8]));
 #endif
     skill->perform();
-    if (skill->period > 1)
+    if (skill->period > 1){
       delay(delayShort + max(0, int(runDelay
 #ifdef GYRO_PIN
-                                    - gyroBalanceQ * (max(abs(ypr[1]), abs(ypr[2])) / 10)  // accelerate gait when tilted
+                                    - gyroBalanceQ * (max(abs(ypr[1]), abs(ypr[2])) / 20)  // accelerate gait when tilted
 #endif
                                     )));
+    }
     if (skill->period < 0) {
       if (!strcmp(skill->skillName, "fd")) {  // need to optimize logic to combine "rest" and "fold"
         shutServos();
