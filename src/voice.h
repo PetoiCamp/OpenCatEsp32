@@ -110,26 +110,25 @@ void set_voice(char *cmd) {  // send some control command directly to the module
   SERIAL_VOICE.print("X");
   SERIAL_VOICE.println(cmd);
   delay(10);
-  if (cmd[1] != 'a' && cmd[1] != 'b') {
-    if (!SERIAL_VOICE.available()) {  // the serial port has to be re-opened for the first time after rebooting. Don't know why.
-      SERIAL_VOICE.end();
-      PTLF("Reopen Voice Serial port");
-      beginVoiceSerial();
-      delay(10);
-      SERIAL_VOICE.print("X");
-      SERIAL_VOICE.println(cmd);
-      delay(10);
-    }
-    while (SERIAL_VOICE.available())  // avoid echo
-      PT(char(SERIAL_VOICE.read()));
-    PTL();
-    if (!strcmp(cmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
-                             // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
-      enableVoiceQ = true;
-    else if (!strcmp(cmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
-                                  // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
-      enableVoiceQ = false;
+  if (!SERIAL_VOICE.available()) {  // the serial port may need to re-open for the first time after rebooting. Don't know why.
+    SERIAL_VOICE.end();
+    PTLF("Reopen Voice Serial port");
+    beginVoiceSerial();
+    delay(10);
+    SERIAL_VOICE.print("X");
+    SERIAL_VOICE.println(cmd);
+    delay(10);
   }
+  while (SERIAL_VOICE.available())  // avoid echo
+    PT(char(SERIAL_VOICE.read()));
+  PTL();
+  if (!strcmp(cmd, "Ac"))  // enter "XAc" in the serial monitor or add button "X65,99" in the mobile app to enable voice reactions
+                           // 在串口监视器输入指令“XAc”或在手机app创建按键"X65,99"来激活语音动作
+    enableVoiceQ = true;
+  else if (!strcmp(cmd, "Ad"))  // enter "XAd" in the serial monitor or add button "X65,100" in the mobile app to disable voice reactions
+                                // 在串口监视器输入指令“XAd”或在手机app创建按键"X65,100"来禁用语音动作
+    enableVoiceQ = false;
+
 
   printToAllPorts('X');  // the blue read runs on a separate core.
   // if the message arrives after the reaction(), it may not reply 'X' to BLE and the mobile app will keep waiting for it.
