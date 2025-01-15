@@ -406,6 +406,7 @@ public:
         duty =
 #ifdef GYRO_PIN
           +gyroBalanceQ * (!imuException ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
+          /(!fineAdjustQ&&!mpuQ?4:1) // reduce the adjust if not using mpu6050
 #endif
           + duty;
         calibratedPWM(jointIndex, duty);

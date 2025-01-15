@@ -592,8 +592,12 @@ void getImuException() {
   //   imuException = -1;  //dropping
   // else
 
-  if (xyzReal[2] < 1 && fabs(ypr[2]) > 80) {  //  imuException = aaReal.z < 0;
-    imuException = -2;                        // flipped
+  if (fabs(ypr[2]) > 90) {  //  imuException = aaReal.z < 0;
+    if (mpuQ) { //mpu is faster in detecting instant acceleration which may lead to false positive
+      if (xyzReal[2] < 1)
+        imuException = -2;  // flipped
+    } else if (xyzReal[2] < -1) 
+      imuException = -2;  // flipped
   }
 #ifndef ROBOT_ARM
   else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
