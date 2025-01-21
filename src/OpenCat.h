@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250115"  // YYMMDD
+#define DATE "250121"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -351,6 +351,7 @@ bool newBoard = false;
 #define T_CAMERA_REACTION_OFF 'r'
 
 char defaultLan = 'a';
+char currentLan;
 // bool updated[10];
 float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
@@ -380,6 +381,7 @@ int8_t periodGlobal = 0;
 #define BUFF_LEN 2507  // 1524 =125*20+7=2507
 char *newCmd = new char[BUFF_LEN + 1];
 int spaceAfterStoringData = BUFF_LEN;
+char buttonCmd[20];
 int serialTimeout;
 char terminator;
 // int serialTimeout;
@@ -441,7 +443,7 @@ byte buzzerVolume;
 float amplifierFactor = 100.0;  // to fit the actual amplifier range of BiBoard
 
 int delayLong = 20;
-int delayMid = 6;
+int delayMid = 8;
 int delayException = 5;
 int delayShort = 3;
 int delayStep = 1;

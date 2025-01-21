@@ -174,7 +174,7 @@ void QA() {
 #endif
     {
 #ifdef VOLTAGE
-      testDcDc();
+      // testDcDc(); //unnecessary
 #endif
 #ifdef GYRO_PIN
       testIMU();

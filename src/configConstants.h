@@ -49,7 +49,8 @@ bool EEPROMOverflow = false;
 #define EEPROM_MODULE_ENABLED_LIST 58  // 9 bytes
 #define EEPROM_VERSION_DATE 70         // 11 bytes
 #define EEPROM_DEFAULT_LAN 82          // 1 byte. 0: English, 1: Chinese
-#define EEPROM_RESERVED 83             // reserved for future use
+#define EEPROM_CURRENT_LAN 83          // 1 byte. 0: English, 1: Chinese
+#define EEPROM_RESERVED 84             // reserved for future use
 #define SERIAL_BUFF 100
 
 int dataLen(int8_t p) {
@@ -425,6 +426,7 @@ void configSetup() {
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
     i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'a');  // a for English, b for Chinese
+    i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'b');  // a for English, b for
     // save a preset skill to the temp skill in case its called before assignment
     unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
     i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
@@ -437,6 +439,7 @@ void configSetup() {
     config.putChar("buzzerVolume", buzzerVolume);
     config.putBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
     config.putChar("defaultLan", 'a');  // a for English, b for Chinese
+    config.putChar("currentLan", 'b');  // a for English, b for Chinese
     // save a preset skill to the temp skill in case its called before assignment
     config.putInt("tmpLen", bufferLen);
     config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
@@ -475,12 +478,14 @@ void configSetup() {
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
-      for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
-        moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
+    for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
+      moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
     defaultLan = (char)i2c_eeprom_read_byte(EEPROM_DEFAULT_LAN);
+    currentLan = (char)i2c_eeprom_read_byte(EEPROM_CURRENT_LAN);
 #else
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
     defaultLan = config.getChar("defaultLan");
+    currentLan = config.getChar("currentLan");
     PT(config.freeEntries());                                 // show remaining entries of the preferences.
     PTL(" entries are available in the namespace table.\n");  // this method works regardless of the mode in which the namespace is opened.
 #endif

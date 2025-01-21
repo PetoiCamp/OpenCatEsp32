@@ -98,8 +98,10 @@ void set_voice(char *cmd) {  // send some control command directly to the module
     defaultLan = cmd[1];
 #ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, defaultLan);
+    i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, currentLan);
 #else
     config.putChar("defaultLan", defaultLan);
+    config.putChar("currentLan", currentLan);
 #endif
     PTHL("Default language: ", defaultLan == 'b' ? " Chinese" : " English");
   }
@@ -141,14 +143,16 @@ void voiceSetup() {
   PTLF("Number of customized voice commands on the main board: ");
   PTL(listLength);
   beginVoiceSerial();
-  if (defaultLan == 'b') {
-    // set_voice("Ab~");
-    SERIAL_VOICE.println("XAb");
-    PTLF("Switch Chinese");
-  } else {
-    // set_voice("Aa~");
-    SERIAL_VOICE.println("XAa");
-    PTLF("Switch English");
+  if (currentLan != defaultLan) {
+    char temp[4] = "XA\0";
+    temp[2] = defaultLan;
+    SERIAL_VOICE.println(temp);
+    currentLan = defaultLan;
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, currentLan);
+#else
+    config.putChar("currentLan", currentLan);
+#endif
   }
 
   SERIAL_VOICE.println("XAc");
@@ -207,6 +211,12 @@ void read_voice() {
         case 'a':  // say "Bing-bing" to switch English /说“冰冰”切换英文
           {
             PTLF("Switch English");
+            currentLan = 'a';
+#ifdef I2C_EEPROM_ADDRESS
+            i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'a');
+#else
+            config.putChar("currentLan", 'a');
+#endif
             if (lastToken == 'c') {  // only change the default language in calibration mode.
                                      //otherwise the language will roll back to default after reboot
               defaultLan = 'a';
@@ -222,6 +232,12 @@ void read_voice() {
         case 'b':  // say "Di-di" to switch Chinese /说“滴滴”切换中文
           {
             PTLF("Switch Chinese");
+            currentLan = 'b';
+#ifdef I2C_EEPROM_ADDRESS
+            i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'b');
+#else
+            config.putChar("currentLan", 'b');
+#endif
             if (lastToken == 'c') {
               defaultLan = 'b';
 #ifdef I2C_EEPROM_ADDRESS

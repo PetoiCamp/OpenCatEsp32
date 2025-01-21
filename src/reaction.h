@@ -260,7 +260,7 @@ void reaction() {
 #endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
-    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
+    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE && token != T_JOYSTICK)
       beep(15 + newCmdIdx, 5);  // ToDo: check the muted sound when newCmdIdx = -1
     if (!workingStiffness && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
@@ -381,11 +381,13 @@ void reaction() {
       case T_ACCELERATE:
         {
           runDelay = max(0, runDelay - 1);
+          PTHL("Run delay", runDelay);
           break;
         }
       case T_DECELERATE:
         {
           runDelay = min(delayLong, runDelay + 1);
+          PTHL("Run delay", runDelay);
           break;
         }
       case T_REST:
@@ -481,25 +483,66 @@ void reaction() {
         }
       case T_JOYSTICK:
         {
-          PTL("raw input newCmd");
-          for (int i = 0; i < cmdLen; i++)
-            PTH(int8_t(newCmd[i]), char(newCmd[i]));
+          // PTL("raw input newCmd");
+          // for (int i = 0; i < cmdLen; i++)
+          //   PTH(int8_t(newCmd[i]), char(newCmd[i]));
           int flush126 = 0;
           PTL();
-          PT("trimmed newCmd\t");
           while ((char)newCmd[flush126] == '~')
             flush126++;
-          if ((int8_t)newCmd[flush126] == -126) {
-            PTHL("string cmd", (char *)newCmd + flush126 + 1)
-          } else {
-            for (int i = flush126; i < cmdLen; i++) {
-              if (newCmd[i] == 126)
+          if ((int8_t)newCmd[flush126] == -126) {  // case: button
+            strcpy(buttonCmd, newCmd + flush126 + 1);
+            int j = 0;
+            while (buttonCmd[j] != '\0') {
+              if (buttonCmd[j] == '\n' || buttonCmd[j] == '~') {
+                buttonCmd[j] = '\0';
                 break;
-              PTT(int8_t(newCmd[i]), '\t');
+              }
+              j++;
             }
-            PTL("||");
+            PTHL("string cmd", buttonCmd);
+          } else {  // case: joystick
+            int8_t currX, currY, dirX, dirY;
+            int8_t center = 255 / 2 / 10, center1 = 125 / 2 / 2;
+            currX = newCmd[flush126];
+            currY = newCmd[flush126 + 1];
+            dirX = sign(currX);  //-1,0,1
+            if (abs(currX) <= center1)
+              dirX = 0;
+            else if (currX < -center1)
+              dirX = -1;
+            else if (currX > center1)
+              dirX = 1;
+
+            if (abs(currY) <= center)
+              dirY = 0;
+            else if (currY > center)
+              dirY = 1;
+            else if (currY < -center1)
+              dirY = -2;
+            else
+              dirY = -1;
+            byte dirMap[][3] = {
+              { 11, 9, 10 },
+              { 8, 1, 2 },
+              { 7, 0, 3 },
+              { 6, 5, 4 }
+            };
+            char joystickDirCmd[] = { '\0', 'F', 'R', 'R', 'R', 'D', 'L', 'L', 'L', 'f', 'r', 'l' };
+            PTHL(currX, currY);
+            PTHL(dirX, dirY);
+            char suffix[2] = { joystickDirCmd[dirMap[dirY + 2][dirX + 1]] };
+            PTHL("suffix", suffix[0]);
+            if (buttonCmd[0] != '\0') {
+              strcat(buttonCmd, suffix);
+              PTHL("joystick cmd", buttonCmd + 1);
+              tQueue->addTask(buttonCmd[0], buttonCmd + 1);
+              buttonCmd[0] = '\0';
+              delay(500);
+            }
           }
-          break;
+          if (buttonCmd[0] == '\0')
+            break;
         }
       case T_CALIBRATE:                 // calibration
       case T_INDEXED_SEQUENTIAL_ASC:    // move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
@@ -1007,8 +1050,8 @@ void reaction() {
     if (skill->period > 1) {
       delay(delayShort + max(0, int(runDelay
 #ifdef GYRO_PIN
-                                    - gyroBalanceQ * (max(abs(ypr[1]), abs(ypr[2])) / 20)  // accelerate gait when tilted
-                                    /(!fineAdjustQ&&!mpuQ?4:1) // reduce the adjust if not using mpu6050
+                                    - gyroBalanceQ * (max(abs(ypr[1]) / 2, abs(ypr[2])) / 20)  // accelerate gait when tilted
+                                        / (!fineAdjustQ && !mpuQ ? 4 : 1)                      // reduce the adjust if not using mpu6050
 #endif
                                     )));
     }

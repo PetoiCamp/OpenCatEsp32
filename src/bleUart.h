@@ -83,6 +83,7 @@ void readBle() {
     // PTH("* BLE", millis() - lastSerialTime);
     cmdLen = (newCmd[cmdLen - 1] == terminator) ? cmdLen - 1 : cmdLen;
     newCmd[cmdLen] = (token >= 'A' && token <= 'Z') ? '~' : '\0';
+    newCmd[cmdLen + 1] = '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
     if (token == 'g' && cmdLen == 0) {  //adapt for the mobile app where 'g' toggles acceleration
@@ -90,7 +91,6 @@ void readBle() {
       newCmd[0] = fineAdjustQ ? 'f' : 'F';
       newCmd[1] = '\0';
     }
-    // PTL(cmdLen);
   }
 }
 
