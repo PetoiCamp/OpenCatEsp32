@@ -496,7 +496,7 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
 #define MAX_FRAME 125
 #define IDLE_LEARN 2000
 #define SMALL_DIFF 3
-#define READY_COUNTDOWN 10
+#define READY_COUNTDOWN 2
 int totalFrame = 0;
 int8_t learnData[11 * MAX_FRAME];
 int8_t learnDataPrev[11];
@@ -532,7 +532,7 @@ void learnByDrag()
          && millis() - idleLearnTimer < IDLE_LEARN) // not idle for a long time
   {
     if (!(totalFrame % 10))
-      PTT(totalFrame, '\t');
+      PTL(totalFrame);
     readAllFeedbackFast();
     int diff = 0;
     for (int i = 0; i < 11; i++)

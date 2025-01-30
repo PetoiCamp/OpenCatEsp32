@@ -689,6 +689,8 @@ void reaction() {
                   measureServoPin = target[0];
               } else if (token == T_SERVO_FOLLOW) {
                 setServoP(P_SOFT);
+                shutServos();
+                delay(100);
                 workingStiffness = false;
                 gyroBalanceQ = false;
                 measureServoPin = 16;
@@ -948,13 +950,15 @@ void reaction() {
             gyroBalanceQ = false;
             loadBySkillName("up");
             delay(500);
+            shutServos();
+            delay(100);
             learnByDrag();
             gyroBalanceQ = gyroLag;
           } else if (newCmd[0] = 'p') {  // perform
             loadBySkillName("up");
             performLearn();
-            delay(1000);
             loadBySkillName("up");
+            shutServos(0);
           }
           break;
         }

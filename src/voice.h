@@ -28,6 +28,7 @@
 String customizedCmdList[] = {
 // "xl",
 // "xp",
+// "F",
 #ifdef BITTLE
 #ifdef ROBOT_ARM
   "kpickF",                          // pick front 捡起来
