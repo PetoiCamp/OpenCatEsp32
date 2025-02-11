@@ -76,13 +76,14 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250130"  // YYMMDD
+#define DATE "250211"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
 #define BT_BLE    // toggle Bluetooth Low Energy (BLE）
 #define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+// #define WEB_SERVER // toggle web server
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
@@ -151,7 +152,7 @@ String SoftwareVersion = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 // #define IMU_ICM42670
-#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip 
+#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -600,6 +601,9 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #ifdef BT_CLIENT
 #include "bleClient.h"
 #endif
+#ifdef WEB_SERVER
+#include "webServer.h"
+#endif
 #include "io.h"
 #ifdef GYRO_PIN
 #include "imu.h"
@@ -662,6 +666,9 @@ void initRobot() {
 #endif
 #ifdef BT_SSP
   blueSspSetup();
+#endif
+#ifdef WEB_SERVER
+  setupWebServer();
 #endif
   servoSetup();
   lastCmd[0] = '\0';

@@ -1079,12 +1079,14 @@ void reaction() {
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
       printToAllPorts(token);                                          // behavior can confirm completion by sending the token back
+#ifdef GYRO_PIN
       if (xyzReal[2] > 0 && (abs(ypr[1]) > 45 || abs(ypr[2]) > 45)) {  // wait for imu to update
         while (abs(ypr[1]) > 10 || abs(ypr[2]) > 10) {
           // print6Axis();
           delay(IMU_PERIOD);
         }
       }
+#endif
     }
     // if (imuException && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
     //   if (lastCmd[0] != '\0')

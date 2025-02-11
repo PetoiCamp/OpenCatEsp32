@@ -141,7 +141,7 @@ void set_voice(char *cmd) {  // send some control command directly to the module
 void voiceSetup() {
   PTLF("Init voice");
   listLength = min(int(sizeof(customizedCmdList) / sizeof(customizedCmdList[0])), MAX_CUSTOMIZED_CMD);
-  PTLF("Number of customized voice commands on the main board: ");
+  PTF("Number of customized voice commands on the main board: ");
   PTL(listLength);
   beginVoiceSerial();
   if (currentLan != defaultLan) {

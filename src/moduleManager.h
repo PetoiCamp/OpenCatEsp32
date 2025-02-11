@@ -298,7 +298,7 @@ void reconfigureTheActiveModule(char *moduleCode) {
 
 void initModuleManager() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
-  PTL(moduleCount);
+  PTHL("Module count: ",moduleCount);
   for (byte i = 0; i < moduleCount; i++) {
     if (moduleActivatedQ[i]) {
       initModule(moduleList[i]);
@@ -400,6 +400,10 @@ void readSignal() {
 #endif
 #ifdef BT_CLIENT
   readBleClient();
+#endif
+#ifdef WEB_SERVER
+  if (webServerConnected)
+    webServer.handleClient();
 #endif
 #ifdef VOICE
   if (moduleActivatedQ[indexOfModule(EXTENSION_VOICE)])

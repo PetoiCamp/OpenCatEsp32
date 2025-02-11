@@ -94,6 +94,12 @@ void printToAllPorts(T text, bool newLine = true) {
   if (BTconnected)
     SerialBT.println(text);
 #endif
+#ifdef WEB_SERVER
+  if (cmdFromWeb) {
+    webServer.send(200, "text/plain", String(text));
+    cmdFromWeb = false;
+  }
+#endif
   if (moduleActivatedQ[0])  // serial2
     Serial2.println(text);
   PT(text);
