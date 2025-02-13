@@ -275,8 +275,8 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
         // newCmd[16] = '~';
         // printList((int8_t *)newCmd);
         transform((int8_t *)newCmd, 1, transformSpeed);
-        token = '\0'; // avoid  conflicting with the balancing reaction
-        // }
+        token = '\0';  // avoid  conflicting with the balancing reaction
+                       // }
 #ifdef ROTATE
         else {
           tQueue->addTask('k', (currentX < 0 ? "vtR" : "vtL"), abs(currentX) * 40);  // spin its body to follow you
@@ -294,8 +294,12 @@ int coords[3];
 void taskReadCamera(void *par) {
   while (cameraTaskActiveQ) {
 #ifndef USE_WIRE1
-    while (imuLockI2c)
-      delay(1);  //wait for the imu to release lock. potentially to cause dead lock with camera
+    while (
+#ifdef GYRO_PIN
+      imuLockI2c ||//wait for the imu to release lock. potentially to cause dead lock with camera
+#endif
+      gestureLockI2c)
+      delay(1);  //wait for the gesture to release lock. potentially to cause dead lock with camera
     cameraLockI2c = true;
 #endif
 #ifdef MU_CAMERA

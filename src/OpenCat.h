@@ -76,13 +76,13 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250211"  // YYMMDD
+#define DATE "250213"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE    // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP    // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 // #define WEB_SERVER // toggle web server
 #define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
@@ -403,6 +403,7 @@ bool workingStiffness = true;
 bool manualEyeColorQ = false;
 bool cameraLockI2c = false;
 bool imuLockI2c = false;
+bool gestureLockI2c = false;
 // bool keepDirectionQ = true;
 #define HEAD_GROUP_LEN 4  // used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];

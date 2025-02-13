@@ -69,9 +69,9 @@ void i2cDetect(TwoWire &wirePort) {
   byte error, address;
   int nDevices;
   int8_t i2cAddress[] = {
-    0x50, 0x54, 0x60, 0x62, 0x68, 0x69
+    0x39, 0x50, 0x54, 0x60, 0x62, 0x68, 0x69
   };
-  String i2cAddressName[] = { "Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
+  String i2cAddressName[] = { "APDS9960 Gesture","Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -89,20 +89,20 @@ void i2cDetect(TwoWire &wirePort) {
       for (byte i = 0; i < sizeof(i2cAddress) / sizeof(int8_t); i++) {
         if (address == i2cAddress[i]) {
           PT(i2cAddressName[i]);
-          if (i == 0)
+          if (i == 1)
             MuQ = true;
-          else if (i == 1)
-            eepromQ = true;
           else if (i == 2)
-            MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
+            eepromQ = true;
           else if (i == 3)
+            MuQ = true;  // The older Mu3 Camera and Sentry share the same address. Sentry is not supported yet.
+          else if (i == 4)
             GroveVisionQ = true;
 #ifdef IMU_MPU6050
-          else if (i == 4)
+          else if (i == 5)
             mpuQ = true;
 #endif
 #ifdef IMU_ICM42670
-          else if (i == 5)
+          else if (i == 6)
             icmQ = true;
 #endif
           nDevices++;

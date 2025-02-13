@@ -43,6 +43,15 @@ int8_t melody12345[] = { 12, 64, 14, 64, 16, 64, 17, 64, 19, 32, '~' };
 int8_t melody67345[] = { 21, 16, 23, 32, 16, 64, 17, 64, 19, 64, '~' };
 int8_t melody32654[] = { 16, 64, 14, 16, 21, 64, 19, 32, 17, 16, '~' };
 void read_gesture() {
+#ifndef USE_WIRE1
+  while (cameraLockI2c)
+    delay(1);  //wait for the camera to release lock. potentially to cause dead lock with camera
+#endif
+#ifdef GYRO_PIN
+  while (imuLockI2c)
+    delay(1);  //wait for the imu to release lock. potentially to cause dead lock with camera
+#endif
+  gestureLockI2c = true;
   if (APDS.gestureAvailable()) {
     // a gesture was detected, read and print to Serial Monitor
     int gesture = APDS.readGesture();
@@ -96,4 +105,5 @@ void read_gesture() {
         break;
     }
   }
+  gestureLockI2c = false;
 }

@@ -531,15 +531,23 @@ void print6Axis() {
   // #endif
   //   PTL();
 }
-
+TaskHandle_t TASK_imu = NULL;
 bool readIMU() {
   bool updated = false;
   if (updateGyroQ && !(frame % imuSkip)) {
 #ifndef USE_WIRE1
     while (cameraLockI2c)
       delay(1);  // wait for the i2c bus to be released by the camera. potentially to cause dead lock with imu.
-    imuLockI2c = true;
 #endif
+    while (gestureLockI2c)
+      delay(1);  // wait for the i2c bus to be released by the gesture. potentially to cause dead lock with imu.
+    imuLockI2c = true;
+    // Get the stack high water mark
+    // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(TASK_imu);
+
+    // Serial.print("IMU task stack : ");
+    // Serial.print(stackHighWaterMark);
+    // Serial.println(" bytes");
 #ifdef IMU_ICM42670
     if (icmQ) {
       updated = true;
@@ -593,10 +601,10 @@ void getImuException() {
   // else
 
   if (fabs(ypr[2]) > 90) {  //  imuException = aaReal.z < 0;
-    if (mpuQ) { //mpu is faster in detecting instant acceleration which may lead to false positive
+    if (mpuQ) {             //mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
         imuException = -2;  // flipped
-    } else if (xyzReal[2] < -1) 
+    } else if (xyzReal[2] < -1)
       imuException = -2;  // flipped
   }
 #ifndef ROBOT_ARM
@@ -624,7 +632,6 @@ void taskIMU(void *parameter) {
       delay(1);  // to avoid the task to be blocked the wdt
   }
 }
-TaskHandle_t TASK_imu = NULL;
 
 void imuSetup() {
   if (newBoard) {
@@ -659,11 +666,13 @@ void imuSetup() {
   xTaskCreatePinnedToCore(
     taskIMU,    // task function
     "TaskIMU",  // name
-    10000,      // task stack size​​
+    9000,       // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
     NULL,       // parameters
     1,          // priority
     &TASK_imu,  // handle
     0);         // core
   delay(100);
+  TASK_imu = xTaskGetHandle("TaskIMU");
+
   // imuException = xyzReal[3] < 0;
 }
