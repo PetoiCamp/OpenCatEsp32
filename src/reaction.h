@@ -331,13 +331,13 @@ void reaction() {
             } else {
               byte i = 0;
               while (newCmd[i] != '\0') {
-                if (toupper(newCmd[i]) == T_GYRO_FINENESS) {
-                  fineAdjustQ = newCmd[i] == T_GYRO_FINENESS;
-                  token = fineAdjustQ ? 'G' : 'g';  // G for activated gyro
-                } else if (toupper(newCmd[i]) == T_GYRO_BALANCE)
-                  gyroBalanceQ = newCmd[i] == T_GYRO_BALANCE;
-                else if (toupper(newCmd[i]) == T_GYRO_PRINT) {
-                  printGyroQ = newCmd[i] == T_GYRO_PRINT;
+                if (toupper(newCmd[i]) == T_GYRO_FINENESS) {      // if newCmd[i] is 'f' or 'F'
+                  fineAdjustQ = (newCmd[i] == T_GYRO_FINENESS);   // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else is false.
+                  token = fineAdjustQ ? 'G' : 'g';                // G for activated gyro
+                } else if (toupper(newCmd[i]) == T_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
+                  gyroBalanceQ = (newCmd[i] == T_GYRO_BALANCE);   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
+                else if (toupper(newCmd[i]) == T_GYRO_PRINT) {    // if newCmd[i] is 'p' or 'P'
+                  printGyroQ = (newCmd[i] == T_GYRO_PRINT);       // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
                   print6Axis();
                 } else if (newCmd[i] == '?') {
                   PTF("Gyro state:");
@@ -1078,7 +1078,7 @@ void reaction() {
       }
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
-      printToAllPorts(token);                                          // behavior can confirm completion by sending the token back
+      printToAllPorts(token);  // behavior can confirm completion by sending the token back
 #ifdef GYRO_PIN
       if (xyzReal[2] > 0 && (abs(ypr[1]) > 45 || abs(ypr[2]) > 45)) {  // wait for imu to update
         while (abs(ypr[1]) > 10 || abs(ypr[2]) > 10) {
