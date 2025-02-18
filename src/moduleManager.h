@@ -501,7 +501,7 @@ void readEnvironment() {
   // if (updateGyroQ && !(frame % imuSkip))
   //   imuUpdated = readIMU();
   if (updateGyroQ)
-    if (imuUpdated & printGyroQ)
+    if (imuUpdated && printGyroQ)
       print6Axis();
 #endif
   read_sound();

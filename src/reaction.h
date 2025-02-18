@@ -331,13 +331,13 @@ void reaction() {
             } else {
               byte i = 0;
               while (newCmd[i] != '\0') {
-                if (toupper(newCmd[i]) == T_GYRO_FINENESS) {      // if newCmd[i] is 'f' or 'F'
-                  fineAdjustQ = (newCmd[i] == T_GYRO_FINENESS);   // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else is false.
+                if (toupper(newCmd[i]) == C_GYRO_FINENESS) {      // if newCmd[i] is 'f' or 'F'
+                  fineAdjustQ = (newCmd[i] == C_GYRO_FINENESS);   // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else newCmd[i] == C_GYRO_FINENESS_OFF, fineAdjustQ is false.
                   token = fineAdjustQ ? 'G' : 'g';                // G for activated gyro
-                } else if (toupper(newCmd[i]) == T_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
-                  gyroBalanceQ = (newCmd[i] == T_GYRO_BALANCE);   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
-                else if (toupper(newCmd[i]) == T_GYRO_PRINT) {    // if newCmd[i] is 'p' or 'P'
-                  printGyroQ = (newCmd[i] == T_GYRO_PRINT);       // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
+                } else if (toupper(newCmd[i]) == C_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
+                  gyroBalanceQ = (newCmd[i] == C_GYRO_BALANCE);   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
+                else if (toupper(newCmd[i]) == C_PRINT) {         // if newCmd[i] is 'p' or 'P'
+                  printGyroQ = (newCmd[i] == C_PRINT);            // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
                   print6Axis();
                 } else if (newCmd[i] == '?') {
                   PTF("Gyro state:");

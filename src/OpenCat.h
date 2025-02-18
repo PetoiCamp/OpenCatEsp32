@@ -284,13 +284,13 @@ bool newBoard = false;
 #define T_SERVO_FEEDBACK 'f'     //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
 #define T_SERVO_FOLLOW 'F'       // make the other legs follow the moved legs
-#define T_GYRO 'g'               // gyro-related commands
-#define T_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
-#define T_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
-#define T_GYRO_BALANCE 'B'       // turn on the gyro balancing
-#define T_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
-#define T_GYRO_PRINT 'P'         // always print gyro data
-#define T_GYRO_PRINT_OFF 'p'     // print gyro data once then stop
+#define T_GYRO 'g'               // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
+#define C_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
+#define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
+#define C_GYRO_BALANCE 'B'       // turn on the gyro balancing
+#define C_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
+#define C_PRINT 'P'         // always print gyro data
+#define C_PRINT_OFF 'p'     // print gyro data once then stop
 
 #define T_HELP_INFO 'h'                 // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
@@ -395,6 +395,9 @@ bool updateGyroQ = true;
 bool fineAdjustQ = true;
 bool gyroBalanceQ = true;
 bool printGyroQ = false;
+bool readFeedbackQ = false;
+bool followFeedbackQ = false;
+bool printFeedbackQ = false;
 bool autoSwitch = false;
 bool walkingQ = false;
 bool manualHeadQ = false;
