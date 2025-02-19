@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250218"  // YYMMDD
+#define DATE "250219"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -283,6 +283,10 @@ bool newBoard = false;
                          //"d index" can turn off a single servo
 #define T_SERVO_FEEDBACK 'f'     //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
+#define C_FOLLOW  'F'
+#define C_FOLLOW_OFF 'f'
+#define C_LEARN 'l'
+#define C_REPLAY 'r'
 #define T_SERVO_FOLLOW 'F'       // make the other legs follow the moved legs
 #define T_GYRO 'g'               // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
 #define C_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
