@@ -93,33 +93,31 @@ String SoftwareVersion = "";
 #define HEAD
 #define TAIL
 #define X_LEG
-#define REGULAR P1S  // G41
-#define KNEE P1S     // G41
+#define REGULAR P1L  // G41
+#define KNEE P1L     // G41
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
 #ifdef ROBOT_ARM
 #define MODEL "Bittle R"
+#include "InstinctBittleESP_arm.h"
+#define REGULAR P1S
+#define KNEE P1S
 #else
 #define MODEL "Bittle X"
+#include "InstinctBittleESP.h"
+#define REGULAR P1L
+#define KNEE P1L
 #endif
 
 #define HEAD
 #define TAIL  // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
 
-#ifndef MINI
-#define REGULAR P1S
-#define KNEE P1S
-#else
-#define REGULAR P50
-#define KNEE P50
-#endif
-#ifdef ROBOT_ARM
-#include "InstinctBittleESP_arm.h"
-#else
-#include "InstinctBittleESP.h"
-#endif
+// #ifdef MINI
+// #define REGULAR P50
+// #define KNEE P50
+// #endif
 
 #elif defined CUB
 #define MODEL "DoF16"
@@ -254,6 +252,7 @@ double rate = 1.0 * MAX_READING / BASE_RANGE;
 enum ServoModel_t {
   G41 = 0,
   P1S,
+  P1L,
   P2K,
   P50
 };
