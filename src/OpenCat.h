@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250218"  // YYMMDD
+#define DATE "250221"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -431,7 +431,7 @@ int8_t moduleList[] = {
 };
 
 String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
-bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
 bool moduleDemoQ = false;
 byte moduleIndex;
 bool icmQ = false;

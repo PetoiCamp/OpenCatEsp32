@@ -60,7 +60,8 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "1,60,2,120", 1000);
 #else
-            tQueue->addTask('k', "scrh", 0);
+            tQueue->addTask('k', "up", 0);
+            tQueue->addTask('k', "hg", 0);
 #endif
 
 #ifdef NYBBLE

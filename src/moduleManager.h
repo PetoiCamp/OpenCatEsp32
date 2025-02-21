@@ -93,9 +93,7 @@ void initModule(char moduleCode) {
     case EXTENSION_ULTRASONIC:
       {
         loadBySkillName("sit");
-#ifdef NYBBLE
         rgbUltrasonicSetup();
-#endif
         break;
       }
 #endif
@@ -308,7 +306,7 @@ void initModuleManager() {
       voiceStop();
     }
 #endif
-#ifdef ULTRASONIC
+#ifdef ULTRASONIC && defined NYBBLE
     else if (moduleList[i] == EXTENSION_ULTRASONIC) {
       rgbUltrasonicSetup();
     }
