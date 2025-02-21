@@ -495,7 +495,7 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
 }
 #define MAX_FRAME 125
 #define IDLE_LEARN 2000
-#define SMALL_DIFF 3
+#define SMALL_DIFF 7
 #define READY_COUNTDOWN 2
 int totalFrame = 0;
 int8_t learnData[11 * MAX_FRAME];

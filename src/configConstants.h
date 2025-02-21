@@ -446,7 +446,7 @@ void configSetup() {
 #endif
 #ifndef AUTO_INIT
 #ifdef VOLTAGE
-    if (!lowBatteryQ)  // won't play sound if only powerd by USB. It avoid noise when developing codes
+    if (!lowBatteryQ)  // won't play sound if only powered by USB. It avoid noise when developing codes
 #endif
       playMelody(melodyInit, sizeof(melodyInit) / 2);
 #endif
@@ -474,7 +474,7 @@ void configSetup() {
   } else {
     resetIfVersionOlderThan(SoftwareVersion);
 #ifdef VOLTAGE
-    if (!lowBatteryQ)  // won't play sound if only powerd by USB. It avoid noise when developing codes
+    if (!lowBatteryQ)  // won't play sound if only powered by USB. It avoid noise when developing codes
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
