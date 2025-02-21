@@ -247,13 +247,14 @@ void servoFeedback(int8_t index = 16) {
   if (infoPrinted)
     PTL();
 }
+
 bool servoFollow() {
   bool checkAll = true, moved = false;
   byte movedJointList[DOF];
   byte movedJointCount = 0;
   for (byte i = 0; i < PWM_NUM; i++) {  // decide if to check all servos.
     byte jointIdx = i < 4 ? i : i + 4;
-    if (movedJoint[jointIdx]) {  // only the previouslly moved joints will be checked.
+    if (movedJoint[jointIdx]) {  // only the previously moved joints will be checked.
       servoFeedback(jointIdx);
       checkAll = false;
       movedJointList[movedJointCount++] = jointIdx;
