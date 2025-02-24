@@ -406,7 +406,6 @@ void resetIfVersionOlderThan(String versionStr) {
 }
 
 void configSetup() {
-  newBoard = newBoardQ();
   if (newBoard) {
     PTLF("Set up the new board...");
     char tempStr[12];

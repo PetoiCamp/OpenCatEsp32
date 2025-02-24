@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WebServer.h>
+#include <WiFiManager.h>
 
 // const char* ssid = "len-AP";
 // const char* password = "qwertyuiop";
@@ -54,29 +55,38 @@ void handleCommand() {
   //   Serial.print('.');
   //   delay(1);
   // }
-  // webServer.send(200, "text/plain", text);
-  // cmdFromWeb = false;
+  if (token == '?') {
+    webResponse = "bittle_X";  // 设备标识
+  }
+  webServer.send(200, "text/plain", webResponse);
+  cmdFromWeb = false;
+}
+
+// WiFi设置函数
+void setupWiFi() {
+  // 创建 WiFiManager 实例
+  WiFiManager wm;
+
+  // 设置配网页面的超时时间（可选，默认120秒）
+  wm.setConfigPortalTimeout(180);
+
+  // 设置热点名称并尝试连接WiFi
+  if (!wm.autoConnect("BittleWirelessCfg")) {
+    Serial.println("配网失败，重启设备");
+    delay(3000);
+    ESP.restart();  // 如果配网失败，重启设备
+  }
+  webServerConnected = true;
+
+  // 打印连接成功信息和IP地址
+  Serial.println("已成功连接到WiFi");
+  Serial.println(WiFi.localIP());
 }
 
 void setupWebServer() {
   // Connect to WiFi
-  WiFi.begin(ssid, password);
-  connectWebTime = millis();
-  while (millis() - connectWebTime < 5000) {
-
-    if (WiFi.status() == WL_CONNECTED) {
-      webServerConnected = true;
-      break;
-    }
-    delay(100);
-    Serial.print(".");
-  }
+  setupWiFi();
   if (webServerConnected) {
-    Serial.println("");
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
-
     // Enable CORS
     webServer.enableCORS(true);
     // Set up server routes

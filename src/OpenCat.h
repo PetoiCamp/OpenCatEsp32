@@ -76,15 +76,15 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250221"  // YYMMDD
+#define DATE "250224"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-// #define WEB_SERVER // toggle web server
-#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE      // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP      // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+// #define WEB_SERVER  // toggle web server
+#define GYRO_PIN    // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -152,7 +152,7 @@ String SoftwareVersion = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 // #define IMU_ICM42670
-#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
+// #define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -289,8 +289,8 @@ bool newBoard = false;
 #define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
 #define C_GYRO_BALANCE 'B'       // turn on the gyro balancing
 #define C_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
-#define C_PRINT 'P'         // always print gyro data
-#define C_PRINT_OFF 'p'     // print gyro data once then stop
+#define C_PRINT 'P'              // always print gyro data
+#define C_PRINT_OFF 'p'          // print gyro data once then stop
 
 #define T_HELP_INFO 'h'                 // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
@@ -655,6 +655,11 @@ void initRobot() {
   config.begin("config", false);  // false: read/write mode. true: read-only mode.
   soundState = config.getBool("bootSndState");
   buzzerVolume = config.getChar("buzzerVolume");
+  newBoard = newBoardQ();
+#ifdef WEB_SERVER
+  if (!newBoard)
+    setupWebServer();
+#endif
 #endif
   configSetup();
   PTF("Buzzer volume: ");
@@ -670,9 +675,6 @@ void initRobot() {
 #endif
 #ifdef BT_SSP
   blueSspSetup();
-#endif
-#ifdef WEB_SERVER
-  setupWebServer();
 #endif
   servoSetup();
   lastCmd[0] = '\0';

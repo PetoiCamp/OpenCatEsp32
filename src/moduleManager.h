@@ -306,7 +306,7 @@ void initModuleManager() {
       voiceStop();
     }
 #endif
-#ifdef ULTRASONIC && defined NYBBLE
+#if defined ULTRASONIC && defined NYBBLE
     else if (moduleList[i] == EXTENSION_ULTRASONIC) {
       rgbUltrasonicSetup();
     }
