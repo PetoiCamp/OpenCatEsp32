@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250224"  // YYMMDD
+#define DATE "250225"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -291,6 +291,7 @@ bool newBoard = false;
 #define C_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
 #define C_PRINT 'P'              // always print gyro data
 #define C_PRINT_OFF 'p'          // print gyro data once then stop
+#define C_GYRO_CALIBRATE 'c'     // calibrate the IMU. enter "gc"
 
 #define T_HELP_INFO 'h'                 // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \

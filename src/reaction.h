@@ -329,26 +329,57 @@ void reaction() {
               gyroBalanceQ = !gyroBalanceQ;
               token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
             } else {
-              byte i = 0;
-              while (newCmd[i] != '\0') {
-                if (toupper(newCmd[i]) == C_GYRO_FINENESS) {      // if newCmd[i] is 'f' or 'F'
-                  fineAdjustQ = (newCmd[i] == C_GYRO_FINENESS);   // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else newCmd[i] == C_GYRO_FINENESS_OFF, fineAdjustQ is false.
-                  token = fineAdjustQ ? 'G' : 'g';                // G for activated gyro
-                } else if (toupper(newCmd[i]) == C_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
-                  gyroBalanceQ = (newCmd[i] == C_GYRO_BALANCE);   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
-                else if (toupper(newCmd[i]) == C_PRINT) {         // if newCmd[i] is 'p' or 'P'
-                  printGyroQ = (newCmd[i] == C_PRINT);            // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
-                  print6Axis();
-                } else if (newCmd[i] == '?') {
-                  PTF("Gyro state:");
-                  PTT(" Balance-", gyroBalanceQ);
-                  PTT(" Print-", printGyroQ);
-                  PTTL(" Frequency-", fineAdjustQ);
+              if (newCmd[0] == C_GYRO_CALIBRATE) {
+                shutServos();
+                updateGyroQ = false;
+                PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
+                beep(8, 500, 500, 5);
+                beep(15, 500, 500, 1);
+#ifdef IMU_MPU6050
+                if (mpuQ)
+                  mpu.calibrateMPU();
+#endif
+#ifdef IMU_ICM42670
+                if (icmQ)
+                  calibrateICM();
+#endif
+                beep(18, 50, 50, 6);
+                // updateGyroQ = true;
+                // xTaskCreatePinnedToCore(
+                //   taskIMU,    // task function
+                //   "TaskIMU",  // name
+                //   9000,       // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
+                //   NULL,       // parameters
+                //   1,          // priority
+                //   &TASK_imu,  // handle
+                //   0);         // core
+                // delay(100);
+                // TASK_imu = xTaskGetHandle("TaskIMU");
+                PTLF("Calibration done. Rebooting the robot.\n");
+                ESP.restart();  // the imu task cannot restart after re-calibration.
+                                // restart the whole program
+              } else {
+                byte i = 0;
+                while (newCmd[i] != '\0') {
+                  if (toupper(newCmd[i]) == C_GYRO_FINENESS) {      // if newCmd[i] is 'f' or 'F'
+                    fineAdjustQ = (newCmd[i] == C_GYRO_FINENESS);   // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else newCmd[i] == C_GYRO_FINENESS_OFF, fineAdjustQ is false.
+                    token = fineAdjustQ ? 'G' : 'g';                // G for activated gyro
+                  } else if (toupper(newCmd[i]) == C_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
+                    gyroBalanceQ = (newCmd[i] == C_GYRO_BALANCE);   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
+                  else if (toupper(newCmd[i]) == C_PRINT) {         // if newCmd[i] is 'p' or 'P'
+                    printGyroQ = (newCmd[i] == C_PRINT);            // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
+                    print6Axis();
+                  } else if (newCmd[i] == '?') {
+                    PTF("Gyro state:");
+                    PTT(" Balance-", gyroBalanceQ);
+                    PTT(" Print-", printGyroQ);
+                    PTTL(" Frequency-", fineAdjustQ);
+                  }
+                  i++;
                 }
-                i++;
+                imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
+                runDelay = fineAdjustQ ? delayMid : delayShort;
               }
-              imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
-              runDelay = fineAdjustQ ? delayMid : delayShort;
             }
           }
 #endif

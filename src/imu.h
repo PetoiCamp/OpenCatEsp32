@@ -179,7 +179,27 @@ public:
   // The REALACCEL numbers are calculated with respect to the orientation of the sensor itself, so that if it is flat and you move it straight up, the "Z" accel will change, but if you flip it up on one side and move it in the new relative "up" direction (along the sensor's Z axis), it will still register acceleration on the Z axis. Essentially, it is sensor-oriented acceleration which removes the effects of gravity and any non-flat/level orientation.
 
   // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
-
+  void calibrateMPU() {
+    PTLF("Calibrate MPU6050...");
+    CalibrateAccel(20);
+    CalibrateGyro(20);
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_int16(EEPROM_MPU, getXAccelOffset());
+    i2c_eeprom_write_int16(EEPROM_MPU + 2, getYAccelOffset());
+    i2c_eeprom_write_int16(EEPROM_MPU + 4, getZAccelOffset());
+    i2c_eeprom_write_int16(EEPROM_MPU + 6, getXGyroOffset());
+    i2c_eeprom_write_int16(EEPROM_MPU + 8, getYGyroOffset());
+    i2c_eeprom_write_int16(EEPROM_MPU + 10, getZGyroOffset());
+#else
+    config.putShort("mpu0", getXAccelOffset());
+    config.putShort("mpu1", getYAccelOffset());
+    config.putShort("mpu2", getZAccelOffset());
+    config.putShort("mpu3", getXGyroOffset());
+    config.putShort("mpu4", getYGyroOffset());
+    config.putShort("mpu5", getZGyroOffset());
+#endif
+    PrintActiveOffsets();
+  }
   bool read_mpu6050() {
     if (!dmpReady)
       return false;
@@ -271,26 +291,7 @@ public:
     if (devStatus == 0) {
       // Calibration Time: generate offsets and calibrate our MPU6050
       if (calibrateQ) {
-        PTLF("Calibrate MPU6050...");
-        CalibrateAccel(20);
-        CalibrateGyro(20);
-#ifdef I2C_EEPROM_ADDRESS
-        i2c_eeprom_write_int16(EEPROM_MPU, getXAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 2, getYAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 4, getZAccelOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 6, getXGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 8, getYGyroOffset());
-        i2c_eeprom_write_int16(EEPROM_MPU + 10, getZGyroOffset());
-#else
-        config.putShort("mpu0", getXAccelOffset());
-        config.putShort("mpu1", getYAccelOffset());
-        config.putShort("mpu2", getZAccelOffset());
-        config.putShort("mpu3", getXGyroOffset());
-        config.putShort("mpu4", getYGyroOffset());
-        config.putShort("mpu5", getZGyroOffset());
-
-#endif
-        PrintActiveOffsets();
+        calibrateMPU();
       }
       // turn on the DMP, now that it's ready
       PTLF("- Enabling DMP...");
@@ -416,6 +417,40 @@ mpu6050p mpu;
 
 imu42670p icm(Wire, 1);
 
+void calibrateICM() {
+  PTLF("Calibrate ICM42670...");
+  for (byte i = 0; i < 3; i++) {
+    icm.offset_accel[i] = 0;
+    icm.offset_gyro[i] = 0;
+  }
+  icm.getOffset(200);
+  if (icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768) {
+    PT("Reading error: ");
+    PT(icm.offset_gyro[0]);
+    PT('\t');
+    PT(icm.offset_gyro[1]);
+    PT('\t');
+    PT(icm.offset_gyro[2]);
+    PTL('\t');
+    while (!Serial.available()) {
+      playMelody(imuBad2, sizeof(imuBad2) / 2);
+    }
+    while (Serial.available())
+      Serial.read();
+  }
+  config.putFloat("icm_accel0", icm.offset_accel[0]);
+  config.putFloat("icm_accel1", icm.offset_accel[1]);
+  config.putFloat("icm_accel2", icm.offset_accel[2]);
+  config.putFloat("icm_gyro0", icm.offset_gyro[0]);
+  config.putFloat("icm_gyro1", icm.offset_gyro[1]);
+  config.putFloat("icm_gyro2", icm.offset_gyro[2]);
+  PT("New ICM offsets: ");
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_accel[i], '\t');
+  for (byte i = 0; i < 3; i++)
+    PTT(icm.offset_gyro[i], '\t');
+  PTL();
+}
 void icm42670Setup(bool calibrateQ = true) {
   PTLF("\nInitializing ICM42670...");
   icm.begin();
@@ -439,38 +474,7 @@ void icm42670Setup(bool calibrateQ = true) {
     PTLF("Calibrate for the first time!");
   // Calibration Time: generate offsets and calibrate our MPU6050
   if (calibrateQ) {
-    for (byte i = 0; i < 3; i++) {
-      icm.offset_accel[i] = 0;
-      icm.offset_gyro[i] = 0;
-    }
-    PTLF("Calibrate ICM42670...");
-    icm.getOffset(200);
-    if (icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768) {
-      PT("Reading error: ");
-      PT(icm.offset_gyro[0]);
-      PT('\t');
-      PT(icm.offset_gyro[1]);
-      PT('\t');
-      PT(icm.offset_gyro[2]);
-      PTL('\t');
-      while (!Serial.available()) {
-        playMelody(imuBad2, sizeof(imuBad2) / 2);
-      }
-      while (Serial.available())
-        Serial.read();
-    }
-    config.putFloat("icm_accel0", icm.offset_accel[0]);
-    config.putFloat("icm_accel1", icm.offset_accel[1]);
-    config.putFloat("icm_accel2", icm.offset_accel[2]);
-    config.putFloat("icm_gyro0", icm.offset_gyro[0]);
-    config.putFloat("icm_gyro1", icm.offset_gyro[1]);
-    config.putFloat("icm_gyro2", icm.offset_gyro[2]);
-    PT("New ICM offsets: ");
-    for (byte i = 0; i < 3; i++)
-      PTT(icm.offset_accel[i], '\t');
-    for (byte i = 0; i < 3; i++)
-      PTT(icm.offset_gyro[i], '\t');
-    PTL();
+    calibrateICM();
   } else {
     Serial.println("calibration already done");
   }
@@ -631,6 +635,7 @@ void taskIMU(void *parameter) {
     } else
       delay(1);  // to avoid the task to be blocked the wdt
   }
+  vTaskDelete(NULL); 
 }
 
 void imuSetup() {
