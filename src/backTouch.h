@@ -31,8 +31,8 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,45,1,45,2,0");
 #else
-            tQueue->addTask('m', "0,70", 500);
-            tQueue->addTask('m', "0,0,1,40");
+            tQueue->addTask('m', "0,70,1,40", 500);
+            tQueue->addTask('m', "0,0,1,0");
 #endif
             break;
           }
@@ -41,8 +41,8 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,-45,1,45,2,0", 1000);
 #else
-            tQueue->addTask('m', "0,-70", 500);
-            tQueue->addTask('m', "0,0,1,40");
+            tQueue->addTask('m', "0,-70,1,40", 500);
+            tQueue->addTask('m', "0,0,1,0");
 #endif
             break;
           }
@@ -60,8 +60,7 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "1,60,2,120", 1000);
 #else
-            tQueue->addTask('k', "up", 0);
-            tQueue->addTask('k', "hg", 0);
+            tQueue->addTask('k', "scrh", 0);
 #endif
 
 #ifdef NYBBLE

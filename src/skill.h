@@ -299,8 +299,8 @@ public:
           } else if (Serial.available()) {
             serialPort = &Serial;
           }
-        if (serialPort || gyroBalanceQ && (imuException != -2 && !strcmp(skillName, "rc")        // recovered during recover
-                                           || imuException == -2 && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
+        if (serialPort || gyroBalanceQ && (imuException != IMU_EXCEPTION_FLIPPED && !strcmp(skillName, "rc")        // recovered during recover
+                                           || imuException == IMU_EXCEPTION_FLIPPED && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
           // PTLF("Behavior interrupted");
           interruptedDuringBehavior = true;
           return;
@@ -405,8 +405,10 @@ public:
         }
         duty =
 #ifdef GYRO_PIN
-          +gyroBalanceQ * (!imuException ? (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex]) : 0)
-          /(!fineAdjustQ&&!mpuQ?4:1) // reduce the adjust if not using mpu6050
+          +gyroBalanceQ * ((!imuException || imuException == IMU_EXCEPTION_LIFTED) ?  // not exception or the robot is lifted
+                             (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex])
+                                                                                   : 0)
+            / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
 #endif
           + duty;
         calibratedPWM(jointIndex, duty);

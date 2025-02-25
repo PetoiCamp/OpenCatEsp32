@@ -2,14 +2,26 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ) {
-    // if (imuException == -2 || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
+    // if (imuException == IMU_EXCEPTION_FLIPPED || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
     //   delay(50);
     // }
     if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
       switch (imuException) {
-        case -1:
+        case IMU_EXCEPTION_LIFTED:
           {
-            PTL("EXCEPTION 1");
+            if (prev_imuException != IMU_EXCEPTION_LIFTED) {
+              if (ypr[1] < -50)
+                strcpy(newCmd, "lifted");
+              else
+                strcpy(newCmd, "dropped");
+              loadBySkillName(newCmd);
+              token = 'k';
+            }
+            break;
+          }
+        case IMU_EXCEPTION_FREEFALL:
+          {
+            PTL("EXCEPTION free fall");
             strcpy(newCmd, "lnd");
             loadBySkillName(newCmd);
             shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
@@ -19,7 +31,7 @@ void dealWithExceptions() {
             newCmdIdx = -1;
             break;
           }
-        case -2:
+        case IMU_EXCEPTION_FLIPPED:
           {
             PTL("EXCEPTION: Fall over");
             soundFallOver();
@@ -32,7 +44,7 @@ void dealWithExceptions() {
             // tQueue->addTaskToFront('k', "rc");
             break;
           }
-        case -3:
+        case IMU_EXCEPTION_KNOCKED:
           {
             if (tQueue->cleared() && skill->period == 1) {
               PTL("EXCEPTION: Knocked");
@@ -49,7 +61,7 @@ void dealWithExceptions() {
             }
             break;
           }
-        case -4:
+        case IMU_EXCEPTION_PUSHED:
           {
             PTL("EXCEPTION: Pushed");
             // Acceleration Real
@@ -96,9 +108,9 @@ void dealWithExceptions() {
             }
             break;
           }
-        case -5:
+        case IMU_EXCEPTION_OFFDIRECTION:
           {
-            PTL("EXCEPTION: Turned");
+            PTL("EXCEPTION: off direction");
             char *currentGait = skill->skillName;  // it may not be gait
             char gaitDirection = currentGait[strlen(currentGait) - 1];
             float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
@@ -132,7 +144,8 @@ void dealWithExceptions() {
             break;
           }
       }
-      // if (imuException != -4)
+      // if (imuException != IMU_EXCEPTION_PUSHED)
+      prev_imuException = imuException;
       print6Axis();
       // readIMU();  // flush the IMU to avoid static readings and infinite loop
 
@@ -142,6 +155,16 @@ void dealWithExceptions() {
       //     tQueue->lastTask = new Task('k', lastCmd);
       //   }
       // }
+    } else {
+#ifndef ROBOT_ARM
+      if (prev_imuException == IMU_EXCEPTION_LIFTED) {
+        // strcpy(newCmd, "dropRec");
+        // loadBySkillName(newCmd);
+        // token = 'k';
+        tQueue->addTask('k', "dropRec");
+      }
+#endif
+      prev_imuException = imuException;
     }
   }
 // if (tQueue->cleared() && runDelay <= delayException)

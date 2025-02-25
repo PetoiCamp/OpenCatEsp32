@@ -601,26 +601,26 @@ void getImuException() {
   //        |
   //        | x-
   // if (AWZ < -8500 && AWZ > -8600)
-  //   imuException = -1;  //dropping
+  //   imuException = IMU_EXCEPTION_FREEFALL;  //free falling
   // else
-
   if (fabs(ypr[2]) > 90) {  //  imuException = aaReal.z < 0;
     if (mpuQ) {             //mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
-        imuException = -2;  // flipped
+        imuException = IMU_EXCEPTION_FLIPPED;  // flipped
     } else if (xyzReal[2] < -1)
-      imuException = -2;  // flipped
-  }
+      imuException = IMU_EXCEPTION_FLIPPED;  // flipped
+  } else if (fabs(ypr[1]) > 50)
+    imuException = IMU_EXCEPTION_LIFTED;
 #ifndef ROBOT_ARM
   else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
-    imuException = -3;
+    imuException = IMU_EXCEPTION_KNOCKED;
   else if (!moduleDemoQ && (abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[0]) > thresX * gFactor || abs(xyzReal[1] - previousXYZ[1]) > 5000 * gFactor && abs(xyzReal[1]) > thresY * gFactor)) {
-    imuException = -4;
+    imuException = IMU_EXCEPTION_PUSHED;
   }
 #endif
   // else if (  //keepDirectionQ &&
   //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
-  //   imuException = -5;
+  //   imuException = IMU_EXCEPTION_OFFDIRECTION;
   else
     imuException = 0;
 }
@@ -635,7 +635,7 @@ void taskIMU(void *parameter) {
     } else
       delay(1);  // to avoid the task to be blocked the wdt
   }
-  vTaskDelete(NULL); 
+  vTaskDelete(NULL);
 }
 
 void imuSetup() {

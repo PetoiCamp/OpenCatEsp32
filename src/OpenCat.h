@@ -81,10 +81,10 @@ String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE      // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP      // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 // #define WEB_SERVER  // toggle web server
-#define GYRO_PIN    // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -352,6 +352,13 @@ bool newBoard = false;
 #define T_CAMERA_REACTION 'R'
 #define T_CAMERA_REACTION_OFF 'r'
 
+#define IMU_EXCEPTION_FLIPPED -1
+#define IMU_EXCEPTION_LIFTED -2
+#define IMU_EXCEPTION_KNOCKED -3
+#define IMU_EXCEPTION_PUSHED -4
+#define IMU_EXCEPTION_OFFDIRECTION -5
+#define IMU_EXCEPTION_FREEFALL -6
+
 char defaultLan = 'a';
 char currentLan;
 // bool updated[10];
@@ -414,6 +421,7 @@ int targetHead[HEAD_GROUP_LEN];
 
 bool imuUpdated;
 int8_t imuException = 0;
+int8_t prev_imuException = 0;
 byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 

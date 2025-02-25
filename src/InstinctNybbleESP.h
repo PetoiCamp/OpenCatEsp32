@@ -1,5 +1,5 @@
 #define NYBBLE
-//number of skills: 54
+//number of skills: 55
 
 const int8_t bd[] PROGMEM = { 
 59, 0, 0, 1,
@@ -1013,11 +1013,11 @@ const int8_t calib[] PROGMEM = {
 1, 0, 0, 1,
     0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,};
 const int8_t dropped[] PROGMEM = { 
-1, 0, 75, 1,
+1, 0, 80, 1,
     0,  30,   0,   0,  -5,  -5,  15,  15, -75, -75, -60, -60,  60,  60,  30,  30,};
 const int8_t lifted[] PROGMEM = { 
-1, 0, -75, 1,
-    0, -70,   0,   0,   0,   0,   0,   0,  55,  55,  20,  20,  45,  45,   0,   0,};
+1, 0, -65, 1,
+    0, -70,   0,   0,   0,   0,   0,   0,  55,  55,  20,  20,  45,  45, -30, -30,};
 const int8_t lu[] PROGMEM = { 
 1, -30, 15, 1,
   -45,  40, -60,   0,   5,   5,   3,   3, -60,  70, -45, -35,  15, -60,  10, -65,};
@@ -1117,6 +1117,14 @@ const int8_t dg[] PROGMEM = {
     0, -45,   0,   0,   0,   0,   0,   0,  66,  41, -47, -47, -24, -28, -30, -30,	32, 0, 0, 0,
     0, -24,   0,   0,   0,   0,   0,   0,  62,  62, -47, -47, -20, -20, -30, -30,	16, 0, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30, -47, -47,  30,  30, -30, -30,	12, 0, 0, 0,
+};
+const int8_t dropRec[] PROGMEM = { 
+-4, 0, 0, 1,
+ 0, 0, 0, 
+    0,  10,   0,   0,   5,   5,   3,   3,  0,  0, -45, -45, -15, -15,  -5,  -5,	0, 0, 0, 0,
+    20,  40,   0,   0,   5,   5,   3,   3,  62,  16, -45, -34, -12, -12,  -5, -25,	16, 0, 0, 0,
+    0,  20,   0,   0,   5,   5,   3,   3,  53,  65, -56, -34,   9, -22,  12, -25,	16, 0, 0, 0,
+    0,   0,   0,   0,   0,   0,   0,   0,  30,  30, -30, -30,  30,  30, -30, -30,	16, 0, 0, 0,
 };
 const int8_t fiv[] PROGMEM = { 
 -8, 0, 0, 1,
@@ -1401,15 +1409,15 @@ const int8_t wsf[] PROGMEM = {
   -62, -24, -60,   0,  -5,  -5,  20,  20,  28,  13, -66, -66,  65, -19,  30,  56,	48,20, 0, 0,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30, -30, -30,  30,  30, -30, -30,	 8, 0, 0, 0,
 };
-  const char* skillNameWithType[]={"bdI","bkI","bkFI","bkLI","crFI","crLI","trFI","trLI","vtFI","vtLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","luI","restI","sitI","strI","upI","zeroN","angI","bxI","chrI","ckI","cmhI","dgI","fivI","gdbI","hdsI","headTossI","hgI","hiI","hskI","huI","huntI","kcI","knockI","lkPawsI","luckyI","ndI","pdI","peeI","puI","rcI","scrhI","snfI","standI","tblI","tsI","whI","wsfI",};
+  const char* skillNameWithType[]={"bdI","bkI","bkFI","bkLI","crFI","crLI","trFI","trLI","vtFI","vtLI","wkFI","wkLI","balanceI","buttUpI","calibI","droppedI","liftedI","luI","restI","sitI","strI","upI","zeroN","angI","bxI","chrI","ckI","cmhI","dgI","dropRecI","fivI","gdbI","hdsI","headTossI","hgI","hiI","hskI","huI","huntI","kcI","knockI","lkPawsI","luckyI","ndI","pdI","peeI","puI","rcI","scrhI","snfI","standI","tblI","tsI","whI","wsfI",};
 #if !defined(MAIN_SKETCH) || !defined(I2C_EEPROM)
 		//if it's not the main sketch to save data or there's no external EEPROM, 
 		//the list should always contain all information.
-  const int8_t* progmemPointer[] = {bd, bk, bkF, bkL, crF, crL, trF, trL, vtF, vtL, wkF, wkL, balance, buttUp, calib, dropped, lifted, lu, rest, sit, str, up, zero, ang, bx, chr, ck, cmh, dg, fiv, gdb, hds, headToss, hg, hi, hsk, hu, hunt, kc, knock, lkPaws, lucky, nd, pd, pee, pu, rc, scrh, snf, stand, tbl, ts, wh, wsf, };
+  const int8_t* progmemPointer[] = {bd, bk, bkF, bkL, crF, crL, trF, trL, vtF, vtL, wkF, wkL, balance, buttUp, calib, dropped, lifted, lu, rest, sit, str, up, zero, ang, bx, chr, ck, cmh, dg, dropRec, fiv, gdb, hds, headToss, hg, hi, hsk, hu, hunt, kc, knock, lkPaws, lucky, nd, pd, pee, pu, rc, scrh, snf, stand, tbl, ts, wh, wsf, };
 #else	//only need to know the pointers to newbilities, because the intuitions have been saved onto external EEPROM,
 	//while the newbilities on progmem are assigned to new addresses
   const int8_t* progmemPointer[] = {zero, };
 #endif
-//the total byte of instincts is 13005
+//the total byte of instincts is 13092
 //the maximal array size is 893 bytes of bkL. 
 //Make sure to leave enough memory for SRAM to work properly. Any single skill should be smaller than 400 bytes for safety.
