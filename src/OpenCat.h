@@ -93,33 +93,31 @@ String SoftwareVersion = "";
 #define HEAD
 #define TAIL
 #define X_LEG
-#define REGULAR P1S  // G41
-#define KNEE P1S     // G41
+#define REGULAR P1L  // G41
+#define KNEE P1L     // G41
 #include "InstinctNybbleESP.h"
 
 #elif defined BITTLE
 #ifdef ROBOT_ARM
 #define MODEL "Bittle R"
+#include "InstinctBittleESP_arm.h"
+#define REGULAR P1S
+#define KNEE P1S
 #else
 #define MODEL "Bittle X"
+#include "InstinctBittleESP.h"
+#define REGULAR P1L
+#define KNEE P1L
 #endif
 
 #define HEAD
 #define TAIL  // the robot arm's clip is assigned to the tail joint
 #define LL_LEG
 
-#ifndef MINI
-#define REGULAR P1S
-#define KNEE P1S
-#else
-#define REGULAR P50
-#define KNEE P50
-#endif
-#ifdef ROBOT_ARM
-#include "InstinctBittleESP_arm.h"
-#else
-#include "InstinctBittleESP.h"
-#endif
+// #ifdef MINI
+// #define REGULAR P50
+// #define KNEE P50
+// #endif
 
 #elif defined CUB
 #define MODEL "DoF16"
@@ -254,6 +252,7 @@ double rate = 1.0 * MAX_READING / BASE_RANGE;
 enum ServoModel_t {
   G41 = 0,
   P1S,
+  P1L,
   P2K,
   P50
 };
@@ -268,7 +267,7 @@ ServoModel_t servoModelList[] = {
 bool newBoard = false;
 
 #include <math.h>
-// token list
+// Token (T_) and Character (C_) command list
 #define T_ABORT 'a'              // abort the calibration values
 #define T_BEEP 'b'               //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
@@ -283,19 +282,27 @@ bool newBoard = false;
                          //"d index" can turn off a single servo
 #define T_SERVO_FEEDBACK 'f'     //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
+#define C_FOLLOW  'F'
+#define C_FOLLOW_OFF 'f'
+#define C_LEARN 'l'
+#define C_REPLAY 'r'
 #define T_SERVO_FOLLOW 'F'       // make the other legs follow the moved legs
+
 #define T_GYRO 'g'               // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
+  // These Character (C_) commands apply to the T_GYRO Token
 #define C_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
 #define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
 #define C_GYRO_BALANCE 'B'       // turn on the gyro balancing
 #define C_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
-#define C_PRINT 'P'              // always print gyro data
-#define C_PRINT_OFF 'p'          // print gyro data once then stop
 #define C_GYRO_CALIBRATE 'c'     // calibrate the IMU. enter "gc"
 
+// These Character (C_) commands apply to various tokens that have a print capability (e.g. T_GYRO, T_SERVO_FEEDBACK)
+#define C_PRINT 'P'              // Continuously print data
+#define C_PRINT_OFF 'p'          // Print data once then stop
+
 #define T_HELP_INFO 'h'                 // hold the loop to check printed information.
-#define T_INDEXED_SIMULTANEOUS_ASC 'i'  //i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
-                                        //a single 'i' will free the head joints if it were previously manually controlled.
+#define T_INDEXED_SIMULTANEOUS_ASC 'i'  // i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
+                                        // a single 'i' will free the head joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'  // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
 #define T_JOINTS 'j'                    // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_JOYSTICK 'J'
@@ -396,26 +403,31 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
-bool interruptedDuringBehavior = false;
-bool lowBatteryQ = false;
+/*  These "Q" booleans are conditions that are checked to activate or deactivate different states.  
+    A condition set to true activates (turns on) a state.
+*/
+bool lowBatteryQ = false;      // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
 bool autoLedQ = false;
 bool updateGyroQ = true;
 bool fineAdjustQ = true;
-bool gyroBalanceQ = true;
-bool printGyroQ = false;
-bool readFeedbackQ = false;
-bool followFeedbackQ = false;
-bool printFeedbackQ = false;
-bool autoSwitch = false;
+bool gyroBalanceQ = true;      // true = CONTINUOUSLY access recovery options in dealWithExceptions().
+bool printGyroQ = false;       // true = CONTINUOUSLY access print6Axis() which prints Gyro (IMU) data.
+bool readFeedbackQ = false;    // true = CONTINUOUSLY access servoFeedback() which prints servo angles.
+bool followFeedbackQ = false;  // true = CONTINUOUSLY access servoFollow() which follows servo angles as servos are manipulated and automatically calls servoFeedback() to show updated servo angles.
 bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
-bool workingStiffness = true;
 bool manualEyeColorQ = false;
+// bool keepDirectionQ = true;
+
+// Other booleans
+bool interruptedDuringBehavior = false;
+bool autoSwitch = false;
+bool workingStiffness = true;
 bool cameraLockI2c = false;
 bool imuLockI2c = false;
 bool gestureLockI2c = false;
-// bool keepDirectionQ = true;
+
 #define HEAD_GROUP_LEN 4  // used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];
 

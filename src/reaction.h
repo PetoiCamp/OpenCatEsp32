@@ -266,11 +266,11 @@ bool lowBattery() {
 }
 #endif
 
-void reaction() {
+void reaction() {   // Reminder:  reaction() is repeatedly called in the "forever" loop() of OpenCatEsp32.ino
   if (newCmdIdx) {
     // PTLF("-----");
     lowerToken = tolower(token);
-    if (initialBoot) {  //-1 for marking the bootup calibration state
+    if (initialBoot) {  //-1 for marking the boot-up calibration state
       fineAdjustQ = true;
       // updateGyroQ = true;
       gyroBalanceQ = true;
@@ -293,7 +293,7 @@ void reaction() {
     }
     if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
       // updateGyroQ = true;
-      gyroBalanceQ = true;
+      gyroBalanceQ = true;  // This is the default state for this "Q" boolean with all tokens except (T_CALIBRATE && when lastToken is one of the listed values)
       printToAllPorts('G');
     }
     if (token != T_PAUSE && !tStep) {
@@ -306,6 +306,8 @@ void reaction() {
         movedJoint[i] = 0;
       reAttachAllServos();
       measureServoPin = -1;
+      readFeedbackQ = false;    // This is the default value for this "Q" boolean condition with all tokens except (those in the conditional && measureServoPin != -1)
+      followFeedbackQ = false;  // This is the default state for this "Q" boolean condition with all tokens except (those in the conditional && measureServoPin != -1)
     }
 #endif
 
@@ -455,6 +457,7 @@ void reaction() {
             }
             shutServos();
             manualHeadQ = false;
+            readFeedbackQ = false;
           } else if (cmdLen == 1) {  // allow turning off a single joint
             shutServos(atoi(newCmd));
           }
@@ -604,10 +607,6 @@ void reaction() {
 #ifdef T_SERVO_MICROSECOND
       case T_SERVO_MICROSECOND:  // send pulse with unit of microsecond to a servo
 #endif
-#ifdef T_SERVO_FEEDBACK
-      case T_SERVO_FEEDBACK:
-      case T_SERVO_FOLLOW:
-#endif
       case T_TILT:  // tilt the robot, format: t axis angle. 0:yaw, 1:pitch, 2:roll
       case T_MEOW:  // meow
       case T_BEEP:  // beep(tone, duration): tone 0 is pause, duration range is 0~255
@@ -725,29 +724,6 @@ void reaction() {
 #else
                 pwm.writeMicroseconds(PWM_pin[target[0]], target[1]);
 #endif
-              }
-#endif
-#ifdef T_SERVO_FEEDBACK
-              else if (token == T_SERVO_FEEDBACK) {
-                setServoP(P_SOFT);
-                workingStiffness = false;
-                gyroBalanceQ = false;
-                // measureServoPin = (inLen == 1) ? target[0] : 16;
-                if (inLen == 0)
-                  measureServoPin = 16;
-                else if (inLen == 1 && target[0] > 2500 && target[0] < 4000) {
-                  feedbackSignal = target[0];
-                  PTF("Change feedback signal to ");
-                  PTL(feedbackSignal);
-                } else
-                  measureServoPin = target[0];
-              } else if (token == T_SERVO_FOLLOW) {
-                setServoP(P_SOFT);
-                shutServos();
-                delay(100);
-                workingStiffness = false;
-                gyroBalanceQ = false;
-                measureServoPin = 16;
               }
 #endif
 #ifdef GYRO_PIN
@@ -997,25 +973,78 @@ void reaction() {
           signalGenerator(resolution, speed, pars + 2, inLen, 1);
           break;
         }
-      case T_LEARN:
+#ifdef T_SERVO_FEEDBACK
+      case T_SERVO_FOLLOW:
         {
-          if (newCmd[0] == 'l') {  // learn
-            bool gyroLag = gyroBalanceQ;
+          followFeedbackQ = true;  // Set the condition value to true for access to servoFollow() at the end of reaction().
+          newCmd[0] = C_FOLLOW;
+          // no break here to keep compatible with previous 'F' function
+        }
+      case T_SERVO_FEEDBACK:  //f: print all angles
+                              //fIndex: print the servo angle at index
+                              //fp: print all angles once
+                              //fP: print all angles continuously
+                              //fl: learn skill by manually dragging the joints
+                              //fr: replay the learned skill
+        //
+        {
+          if (!readFeedbackQ) {
+            setServoP(P_SOFT);
+            workingStiffness = false;
             gyroBalanceQ = false;
-            loadBySkillName("up");
-            delay(500);
-            shutServos();
-            delay(100);
-            learnByDrag();
-            gyroBalanceQ = gyroLag;
-          } else if (newCmd[0] = 'p') {  // perform
-            loadBySkillName("up");
-            performLearn();
-            loadBySkillName("up");
-            shutServos(0);
+            readFeedbackQ = true;  // Set the condition value to true for access to servoFeedback() at the end of reaction()
+            // measureServoPin = (inLen == 1) ? target[0] : 16;
+            if (newCmd[0] == '\0')
+              measureServoPin = 16;
+          }
+          if (isDigit(newCmd[0])) {  // the index of servo to read feedback
+            followFeedbackQ = false;
+            int num = atoi(newCmd);
+            if (num > 2500 && num < 4000) {
+              feedbackSignal = num;
+              PTF("Change feedback signal to ");
+              PTL(feedbackSignal);
+            } else {
+              measureServoPin = num;
+              PTHL("read pin", num);
+            }
+          } else if (cmdLen > 0) {
+            if (toupper(newCmd[0]) == C_PRINT) {
+              readFeedbackQ = (newCmd[0] == C_PRINT);  // If the Character command is to "continuously print", set to true.  Otherwise set to false for "print only once".
+              servoFeedback(measureServoPin);          // Always print the servo angles at least once
+            } 
+            else if (toupper(newCmd[0]) == C_FOLLOW) {
+              followFeedbackQ = (newCmd[0] == C_FOLLOW);
+              if (followFeedbackQ) {
+                setServoP(P_SOFT);
+                shutServos();
+                delay(100);
+                workingStiffness = false;
+                gyroBalanceQ = false;
+                measureServoPin = 16;
+              }
+            } 
+            else if (newCmd[0] == C_LEARN) {
+              bool gyroLag = gyroBalanceQ;
+              gyroBalanceQ = false;
+              loadBySkillName("up");
+              delay(500);
+              shutServos();
+              delay(100);
+              learnByDrag();
+              gyroBalanceQ = gyroLag;
+            } 
+            else if (newCmd[0] = C_REPLAY) {  // perform
+              loadBySkillName("up");
+              performLearn();
+              loadBySkillName("up");
+              shutServos(0);
+              readFeedbackQ = false;
+            }
           }
           break;
         }
+#endif
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
@@ -1092,6 +1121,7 @@ void reaction() {
       if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
+
     resetCmd();
 #ifdef PWM_LED_PIN
     if (autoLedQ)
@@ -1153,16 +1183,21 @@ void reaction() {
     //   tQueue->lastTask = NULL;
     //   PTL(newCmd);
     // }
-  } else if (token == T_SERVO_FEEDBACK)
-    servoFeedback(measureServoPin);
-  else if (token == T_SERVO_FOLLOW) {
+  } 
+
+  // The code from here to the end of reaction() will conditionally run every time loop() in OpenCatEsp32.ino runs
+
+  else if (followFeedbackQ) {       // Conditionally follow servo feedback to gather servo angles
     if (servoFollow()) {  // don't move the joints if no manual movement is detected
       reAttachAllServos();
       setServoP(P_SOFT);
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
-  } else
+  } else if (readFeedbackQ)         // Conditionally read servo feedback and print servo angles
+    servoFeedback(measureServoPin);
+  // }
+  else
 #ifdef CAMERA
     if (!cameraTaskActiveQ)
 #endif

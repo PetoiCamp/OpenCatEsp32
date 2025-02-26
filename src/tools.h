@@ -1,32 +1,16 @@
-//abbreviations
-#define PT(s) Serial.print(s)  // abbreviate print commands
-#define PTD(s, format) Serial.print(s, format)
-#define PT_FMT(s, format) Serial.print(s, format)  // abbreviate print commands
-#define PTL(s) Serial.println(s)
-#define PTF(s) Serial.print(F(s))  //trade flash memory for dynamic memory with F() function
-#define PTLF(s) Serial.println(F(s))
-#define PTT(s, delimeter) \
-  { \
-    Serial.print(s); \
-    Serial.print(delimeter); \
-  }
-#define PTTL(s, delimeter) \
-  { \
-    Serial.print(s); \
-    Serial.println(delimeter); \
-  }
-#define PTH(head, value) \
-  { \
-    Serial.print(head); \
-    Serial.print('\t'); \
-    Serial.print(value); \
-  }
-#define PTHL(head, value) \
-  { \
-    Serial.print(head); \
-    Serial.print('\t'); \
-    Serial.println(value); \
-  }
+// Serial Print macro directive abbreviations
+  // Simple macro directives
+#define PT(s)             Serial.print(s)          // Serial print
+#define PTD(s, format)    Serial.print(s, format)  // Formatted serial print
+#define PTL(s)            Serial.println(s)        // Serial print plus newline
+#define PTF(s)            Serial.print(F(s))       // Serial print plus newline with trading flash memory for dynamic memory using F() function
+#define PTLF(s)           Serial.println(F(s))     // Serial print plus newline with trading flash memory for dynamic memory using F() function
+
+  // Composite macro directives
+#define PTT(s, delimeter)   {PT(s);    PT(delimeter);}               // Serial print with delimiter
+#define PTTL(s, delimeter)  {PT(s);    PTL(delimeter);}              // Serial print with delimiter plus newline
+#define PTH(head, value)    {PT(head); PT('\t');       PT(value);}   // Serial print with head, tab, value
+#define PTHL(head, value)   {PT(head); PT('\t');       PTL(value);}  // Serial print with head, tab, value plus newline
 
 char getUserInputChar(int waitTimeout = 0) {  //take only the first character, allow "no line ending", "newline", "carriage return", and "both NL & CR"
   long start = millis();
@@ -211,7 +195,9 @@ void resetCmd() {
   // printCmd();
   lastToken = token;
   newCmdIdx = 0;
-  if (token != T_SKILL && token != T_SKILL_DATA && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW)
+  if (token != T_SKILL && token != T_SKILL_DATA && token != T_CALIBRATE 
+  //&& token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW
+  )
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
