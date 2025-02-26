@@ -7,10 +7,10 @@
 #define PTLF(s)           Serial.println(F(s))     // Serial print plus newline with trading flash memory for dynamic memory using F() function
 
   // Composite macro directives
-#define PTT(s, delimeter)   PT(s);    PT(delimeter);               // Serial print with delimiter
-#define PTTL(s, delimeter)  PT(s);    PTL(delimeter);              // Serial print with delimiter plus newline
-#define PTH(head, value)    PT(head); PT('\t');       PT(value);   // Serial print with head, tab, value
-#define PTHL(head, value)   PT(head); PT('\t');       PTL(value);  // Serial print with head, tab, value plus newline
+#define PTT(s, delimeter)   {PT(s);    PT(delimeter);}               // Serial print with delimiter
+#define PTTL(s, delimeter)  {PT(s);    PTL(delimeter);}              // Serial print with delimiter plus newline
+#define PTH(head, value)    {PT(head); PT('\t');       PT(value);}   // Serial print with head, tab, value
+#define PTHL(head, value)   {PT(head); PT('\t');       PTL(value);}  // Serial print with head, tab, value plus newline
 
 char getUserInputChar(int waitTimeout = 0) {  //take only the first character, allow "no line ending", "newline", "carriage return", and "both NL & CR"
   long start = millis();
