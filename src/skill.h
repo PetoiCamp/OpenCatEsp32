@@ -456,9 +456,9 @@ void loadBySkillName(const char *skillName) {  // get lookup information from on
     strcpy(newCmd, skill->skillName);
 #ifdef GYRO_PIN
     // keepDirectionQ = (skill->period > 1) ? false : true;
-    thresX = (skill->period > 1) ? 12000 : 8000;
-    thresY = (skill->period > 1) ? 10000 : 6000;
-// thresZ = (skill->period > 1) ? -8000 : -10000;
+    thresX = (skill->period > 1) ? 12000 : 5000;
+    thresY = (skill->period > 1) ? 10000 : 4000;
+    thresZ = (skill->period > 1) ? 15000 : 12000;  
 #endif
     if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
       int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;

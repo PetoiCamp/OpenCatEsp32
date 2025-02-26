@@ -575,14 +575,6 @@ bool readIMU() {
     }
 #endif
     imuLockI2c = false;
-
-    // however, its change is very slow.
-    for (byte m = 0; m < 3; m++) {
-      previousXYZ[m] = xyzReal[m];
-      if (abs(ypr[0] - previous_ypr[0]) < 2 || abs(abs(ypr[0] - previous_ypr[0]) - 360) < 2) {
-        previous_ypr[m] = ypr[m];
-      }
-    }
     return updated;
   } else {
     delay(1);  // to avoid the task to be blocked the wdt
@@ -603,6 +595,15 @@ void getImuException() {
   // if (AWZ < -8500 && AWZ > -8600)
   //   imuException = IMU_EXCEPTION_FREEFALL;  //free falling
   // else
+  // int8_t shockDirections = 0;
+  // for (int8_t i = 0; i < 3; i++)
+  //   if (fabs(xyzReal[i] - previousXYZ[i]) > 6000 * gFactor)
+  //     shockDirections++;
+  // PTHL("shockDirections", shockDirections);
+  // PTT(fabs(xyzReal[0] - previousXYZ[0]), '\t');
+  // PTT(fabs(xyzReal[1] - previousXYZ[1]), '\t');
+  // PTT(fabs(xyzReal[2] - previousXYZ[2]), '\t');
+
   if (fabs(ypr[2]) > 90) {  //  imuException = aaReal.z < 0;
     if (mpuQ) {             //mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
@@ -612,17 +613,26 @@ void getImuException() {
   } else if (fabs(ypr[1]) > 50)
     imuException = IMU_EXCEPTION_LIFTED;
 #ifndef ROBOT_ARM
-  else if (!moduleDemoQ && abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && abs(xyzReal[2] - previousXYZ[2]) > 6000 * gFactor)
+  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  //z direction shock)
     imuException = IMU_EXCEPTION_KNOCKED;
-  else if (!moduleDemoQ && (abs(xyzReal[0] - previousXYZ[0]) > 6000 * gFactor && abs(xyzReal[0]) > thresX * gFactor || abs(xyzReal[1] - previousXYZ[1]) > 5000 * gFactor && abs(xyzReal[1]) > thresY * gFactor)) {
+  else if (!moduleDemoQ && (                                                                               //not in demo mode
+             fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor     //x direction shock
+             || fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor  //y direction shock
+             )) {
     imuException = IMU_EXCEPTION_PUSHED;
   }
 #endif
   // else if (  //keepDirectionQ &&
-  //   abs(previous_ypr[0] - ypr[0]) > 15 && abs(abs(ypr[0] - previous_ypr[0]) - 360) > 15)
+  //   fabs(previous_ypr[0] - ypr[0]) > 15 && fabs(fabs(ypr[0] - previous_ypr[0]) - 360) > 15)
   //   imuException = IMU_EXCEPTION_OFFDIRECTION;
   else
     imuException = 0;
+  for (byte m = 0; m < 3; m++) {
+    previousXYZ[m] = xyzReal[m];
+    if (fabs(ypr[0] - previous_ypr[0]) < 2 || fabs(fabs(ypr[0] - previous_ypr[0]) - 360) < 2) {
+      previous_ypr[m] = ypr[m];
+    }
+  }
 }
 
 long imuTime = 0;

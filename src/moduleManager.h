@@ -257,7 +257,15 @@ void showModuleStatus() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
   printListWithoutString((char *)moduleList, moduleCount);
   printListWithoutString(moduleActivatedQ, moduleCount);
-  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT) || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH) || moduleActivatedQfunction(EXTENSION_GESTURE) || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE) || moduleActivatedQfunction(EXTENSION_CAMERA) || moduleActivatedQfunction(EXTENSION_PIR) || moduleActivatedQfunction(EXTENSION_BACKTOUCH) || moduleActivatedQfunction(EXTENSION_ULTRASONIC) || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
+  moduleDemoQ = (moduleActivatedQfunction(EXTENSION_DOUBLE_LIGHT)
+                 || moduleActivatedQfunction(EXTENSION_DOUBLE_TOUCH)
+                 || moduleActivatedQfunction(EXTENSION_GESTURE)
+                 || moduleActivatedQfunction(EXTENSION_DOUBLE_IR_DISTANCE)
+                 || moduleActivatedQfunction(EXTENSION_CAMERA)
+                 || moduleActivatedQfunction(EXTENSION_PIR)
+                 // || moduleActivatedQfunction(EXTENSION_BACKTOUCH)
+                 || moduleActivatedQfunction(EXTENSION_ULTRASONIC)
+                 || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
 }
 
 void reconfigureTheActiveModule(char *moduleCode) {
@@ -296,7 +304,7 @@ void reconfigureTheActiveModule(char *moduleCode) {
 
 void initModuleManager() {
   byte moduleCount = sizeof(moduleList) / sizeof(char);
-  PTHL("Module count: ",moduleCount);
+  PTHL("Module count: ", moduleCount);
   for (byte i = 0; i < moduleCount; i++) {
     if (moduleActivatedQ[i]) {
       initModule(moduleList[i]);

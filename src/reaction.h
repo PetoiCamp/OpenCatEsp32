@@ -2,7 +2,7 @@
 void dealWithExceptions() {
 #ifdef GYRO_PIN
   if (gyroBalanceQ) {
-    // if (imuException == IMU_EXCEPTION_FLIPPED || (skill->period == 1 && abs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
+    // if (imuException == IMU_EXCEPTION_FLIPPED || (skill->period == 1 && fabs(xyzReal[2]) >= 15) || (skill->period > 1 && abs(xyzReal[2]) >= 20)) {
     //   delay(50);
     // }
     if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
@@ -50,7 +50,7 @@ void dealWithExceptions() {
               PTL("EXCEPTION: Knocked");
               tQueue->addTask('k', "knock");
 #if defined NYBBLE && defined ULTRASONIC
-              if (!moduleActivatedQ[0]) {  // serial2)
+              if (!moduleActivatedQ[0]) {  // serial2 may be used to connect serial2 rather than the RGB ultraconic sensor
                 int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
                 int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
                 tQueue->addTask('C', clrRed, 1);
@@ -76,13 +76,13 @@ void dealWithExceptions() {
               char ySymbol[] = { '<', '>' };
               char xDirection = xSymbol[sign(ARX) > 0];
               char yDirection = ySymbol[sign(ARY) > 0];
-              float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
-              PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
+              float forceAngle = atan(float(fabs(ARX)) / ARY) * degPerRad;
+              PT(fabs(ARX) > fabs(ARY) ? xDirection : yDirection);
               PTHL(" ForceAngle:", forceAngle);
               if (tQueue->cleared()) {
                 if (xDirection == '^') {
                   // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
-                  if (abs(forceAngle) < 75)
+                  if (fabs(forceAngle) < 60)
                     // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
                     tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
                   // tQueue->addTask('i', "");
@@ -93,7 +93,7 @@ void dealWithExceptions() {
                   }
                 } else {
                   // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
-                  if (abs(forceAngle) < 75)
+                  if (fabs(forceAngle) < 60)
                     tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
                   else {
                     tQueue->addTask('k', "bkF", 500);
@@ -116,7 +116,7 @@ void dealWithExceptions() {
             float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
             if (tQueue->cleared()) {
               if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  // not gait or stepping
-                tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
+                tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(fabs(yawDiff) * 15));
                 // tQueue->addTask('k', "up", 100);
                 delayPrevious = runDelay;
                 runDelay = 3;
@@ -130,7 +130,7 @@ void dealWithExceptions() {
               //   } else {
               //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
               //     PTL(currentGait);
-              //     tQueue->addTask('k', currentGait, round(abs(yawDiff) * 15));
+              //     tQueue->addTask('k', currentGait, round(fabs(yawDiff) * 15));
               //     currentGait[strlen(currentGait) - 1] = 'F';
               //     PTL(currentGait);
               //     tQueue->addTask('k', currentGait);
@@ -190,7 +190,7 @@ bool lowBattery() {
 #endif
     if (voltage < NO_BATTERY_VOLTAGE2 || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
                                           || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
-                                           && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
+                                           && fabs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
     ) {                                                                                              // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
@@ -1108,7 +1108,7 @@ void reaction() {
     if (skill->period > 1) {
       delay(delayShort + max(0, int(runDelay
 #ifdef GYRO_PIN
-                                    - gyroBalanceQ * (max(abs(ypr[1]) / 2, abs(ypr[2])) / 20)  // accelerate gait when tilted
+                                    - gyroBalanceQ * (max(fabs(ypr[1]) / 2, fabs(ypr[2])) / 20)  // accelerate gait when tilted
                                         / (!fineAdjustQ && !mpuQ ? 4 : 1)                      // reduce the adjust if not using mpu6050
 #endif
                                     )));
@@ -1134,8 +1134,8 @@ void reaction() {
         currentAdjust[i] = 0;
       printToAllPorts(token);  // behavior can confirm completion by sending the token back
 #ifdef GYRO_PIN
-      if (xyzReal[2] > 0 && (abs(ypr[1]) > 45 || abs(ypr[2]) > 45)) {  // wait for imu to update
-        while (abs(ypr[1]) > 10 || abs(ypr[2]) > 10) {
+      if (xyzReal[2] > 0 && (fabs(ypr[1]) > 45 || fabs(ypr[2]) > 45)) {  // wait for imu to update
+        while (fabs(ypr[1]) > 10 || fabs(ypr[2]) > 10) {
           // print6Axis();
           delay(IMU_PERIOD);
         }
