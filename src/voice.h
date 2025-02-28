@@ -26,9 +26,9 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-// "fl",
-// "fr",
-// "fF",
+"fl",
+"fr",
+"fF",
 #ifdef BITTLE
 #ifdef ROBOT_ARM
   "kpickF",                          // pick front 捡起来

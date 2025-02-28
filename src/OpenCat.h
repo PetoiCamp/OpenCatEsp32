@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250225"  // YYMMDD
+#define DATE "250228"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -268,28 +268,28 @@ bool newBoard = false;
 
 #include <math.h>
 // Token (T_) and Character (C_) command list
-#define T_ABORT 'a'              // abort the calibration values
-#define T_BEEP 'b'               //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
+#define T_ABORT 'a'           // abort the calibration values
+#define T_BEEP 'b'            //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'           //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
+#define T_BEEP_BIN 'B'        //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c'          //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_CALIBRATE 'c'       //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'              //change the eye colors of the RGB ultrasonic sensor \
+#define T_COLOR 'C'           //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
-#define T_REST 'd'               //set the robot to rest posture and shut down all the servos \
+#define T_REST 'd'            //set the robot to rest posture and shut down all the servos \
                          //"d index" can turn off a single servo
-#define T_SERVO_FEEDBACK 'f'     //return the servo's position info if the chip supports feedback. \
+#define T_SERVO_FEEDBACK 'f'  //return the servo's position info if the chip supports feedback. \
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
-#define C_FOLLOW  'F'
+#define C_FOLLOW 'F'
 #define C_FOLLOW_OFF 'f'
 #define C_LEARN 'l'
 #define C_REPLAY 'r'
-#define T_SERVO_FOLLOW 'F'       // make the other legs follow the moved legs
+#define T_SERVO_FOLLOW 'F'  // make the other legs follow the moved legs
 
-#define T_GYRO 'g'               // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
-  // These Character (C_) commands apply to the T_GYRO Token
+#define T_GYRO 'g'  // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
+// These Character (C_) commands apply to the T_GYRO Token
 #define C_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
 #define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
 #define C_GYRO_BALANCE 'B'       // turn on the gyro balancing
@@ -297,8 +297,8 @@ bool newBoard = false;
 #define C_GYRO_CALIBRATE 'c'     // calibrate the IMU. enter "gc"
 
 // These Character (C_) commands apply to various tokens that have a print capability (e.g. T_GYRO, T_SERVO_FEEDBACK)
-#define C_PRINT 'P'              // Continuously print data
-#define C_PRINT_OFF 'p'          // Print data once then stop
+#define C_PRINT 'P'      // Continuously print data
+#define C_PRINT_OFF 'p'  // Print data once then stop
 
 #define T_HELP_INFO 'h'                 // hold the loop to check printed information.
 #define T_INDEXED_SIMULTANEOUS_ASC 'i'  // i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20 \
@@ -373,7 +373,7 @@ float degPerRad = 180 / M_PI;
 float radPerDeg = M_PI / 180;
 
 // control related variables
-#define IDLE_TIME 3000
+#define IDLE_TIME 1000
 long idleTimer = 0;
 #define CHECK_BATTERY_PERIOD 1000  // every 1 seconds. 60 mins -> 3600 seconds
 #define BATTERY_WARNING_FREQ 10    // every 10 seconds
@@ -406,7 +406,7 @@ long lastSerialTime = 0;
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.  
     A condition set to true activates (turns on) a state.
 */
-bool lowBatteryQ = false;      // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
+bool lowBatteryQ = false;  // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
 bool autoLedQ = false;
 bool updateGyroQ = true;
 bool fineAdjustQ = true;
@@ -452,7 +452,11 @@ int8_t moduleList[] = {
 };
 
 String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
+#ifdef NYBBLE
+bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0 };
+#else
 bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
+#endif
 bool moduleDemoQ = false;
 byte moduleIndex;
 bool icmQ = false;

@@ -208,7 +208,7 @@ bool lowBattery() {
       if (!batteryWarningCounter) {
         PTF("Low power: ");
         PT(voltage);
-        PTL("V");
+        PTLF("V. The robot won't move.");
         PTLF("Long-press the battery's button to turn it on!");
 #ifdef I2C_EEPROM_ADDRESS
         if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))

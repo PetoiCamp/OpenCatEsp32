@@ -264,7 +264,7 @@ void showModuleStatus() {
                  || moduleActivatedQfunction(EXTENSION_CAMERA)
                  || moduleActivatedQfunction(EXTENSION_PIR)
                  // || moduleActivatedQfunction(EXTENSION_BACKTOUCH)
-                 || moduleActivatedQfunction(EXTENSION_ULTRASONIC)
+                 // || moduleActivatedQfunction(EXTENSION_ULTRASONIC)
                  || moduleActivatedQfunction(EXTENSION_QUICK_DEMO));
 }
 
@@ -275,9 +275,9 @@ void reconfigureTheActiveModule(char *moduleCode) {
   }
   bool statusChangedQ = false;
   // PTHL("mode", moduleCode);                                          // negative number will deactivate all the modules
-  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {     // disable unneeded modules
-    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {     // if the modules is active and different from the new module
-      if (moduleList[i] == EXTENSION_VOICE && moduleCode[0] != '~')  // it won't disable the voice
+  for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++) {                                               // disable unneeded modules
+    if (moduleActivatedQ[i] && moduleList[i] != moduleCode[0]) {                                               // if the modules is active and different from the new module
+      if ((moduleList[i] == EXTENSION_VOICE || moduleList[i] == EXTENSION_BACKTOUCH) && moduleCode[0] != '~')  // it won't disable the voice and backtouch
         continue;
       PTHL("- disable", moduleNames[i]);
       stopModule(moduleList[i]);

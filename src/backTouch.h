@@ -31,7 +31,7 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,45,1,45,2,0");
 #else
-            tQueue->addTask('m', "0,70,1,40", 500);
+            tQueue->addTask('i', "1,-30,0,120", 1000);
             tQueue->addTask('m', "0,0,1,0");
 #endif
             break;
@@ -41,7 +41,7 @@ void read_backTouch() {
 #ifdef ROBOT_ARM
             tQueue->addTask('m', "0,-45,1,45,2,0", 1000);
 #else
-            tQueue->addTask('m', "0,-70,1,40", 500);
+            tQueue->addTask('i', "1,-30,0,-120,", 1000);
             tQueue->addTask('m', "0,0,1,0");
 #endif
             break;
