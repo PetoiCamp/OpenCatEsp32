@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250228"  // YYMMDD
+#define DATE "250304"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -389,7 +389,7 @@ byte fps = 0;
 char token;
 char lastToken;
 char lowerToken;
-#define CMD_LEN 10
+#define CMD_LEN 20
 char *lastCmd = new char[CMD_LEN + 1];  // the last char must be '\0' for safe so CMD_LEN+1 elements are required
 int cmdLen = 0;
 byte newCmdIdx = 0;
