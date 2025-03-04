@@ -610,7 +610,7 @@ void getImuException() {
         imuException = IMU_EXCEPTION_FLIPPED;  // flipped
     } else if (xyzReal[2] < -1)
       imuException = IMU_EXCEPTION_FLIPPED;  // flipped
-  } else if (fabs(ypr[1]) > 50)
+  } else if (ypr[1] < -50 || ypr[1] > 75)
     imuException = IMU_EXCEPTION_LIFTED;
 #ifndef ROBOT_ARM
   else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  //z direction shock)

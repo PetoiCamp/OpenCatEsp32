@@ -9,7 +9,7 @@ void dealWithExceptions() {
       switch (imuException) {
         case IMU_EXCEPTION_LIFTED:
           {
-            if (prev_imuException != IMU_EXCEPTION_LIFTED) {
+            if (skill->period == 1 && prev_imuException != IMU_EXCEPTION_LIFTED) {
               if (ypr[1] < -50)
                 strcpy(newCmd, "lifted");
               else
@@ -71,7 +71,7 @@ void dealWithExceptions() {
             //  y+ <------ y-
             //        |
             //        | x-
-            if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
+            if (skill->period == 1 && strncmp(lastCmd, "vtF", 2)) {
               char xSymbol[] = { '^', 'v' };
               char ySymbol[] = { '<', '>' };
               char xDirection = xSymbol[sign(ARX) > 0];
@@ -103,7 +103,7 @@ void dealWithExceptions() {
               }
               tQueue->addTask('k', "up");
               delayPrevious = runDelay;
-              runDelay = 3;
+              runDelay = delayException;
               PTL();
             }
             break;
@@ -119,7 +119,7 @@ void dealWithExceptions() {
                 tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(fabs(yawDiff) * 15));
                 // tQueue->addTask('k', "up", 100);
                 delayPrevious = runDelay;
-                runDelay = 3;
+                runDelay = delayException;
               } else {
                 // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
                 previous_ypr[0] = ypr[0];
@@ -157,18 +157,18 @@ void dealWithExceptions() {
       // }
     } else {
 #ifndef ROBOT_ARM
-      if (prev_imuException == IMU_EXCEPTION_LIFTED) {
+      if (tQueue->cleared() && prev_imuException == IMU_EXCEPTION_LIFTED) {
         // strcpy(newCmd, "dropRec");
         // loadBySkillName(newCmd);
         // token = 'k';
-        tQueue->addTask('k', "dropRec");
+        tQueue->addTask('k', "dropRec", 500);
       }
 #endif
       prev_imuException = imuException;
     }
   }
-// if (tQueue->cleared() && runDelay <= delayException)
-//   runDelay = delayPrevious;
+  if (tQueue->cleared() && runDelay <= delayException)
+    runDelay = delayPrevious;
 #endif
 }
 
@@ -190,7 +190,7 @@ bool lowBattery() {
 #endif
     if (voltage < NO_BATTERY_VOLTAGE2 || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
                                           || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
-                                           && fabs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
+                                           && fabs(voltage - lastVoltage) < 0.2                      // not caused by power fluctuation during movements
     ) {                                                                                              // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
@@ -266,7 +266,7 @@ bool lowBattery() {
 }
 #endif
 
-void reaction() {   // Reminder:  reaction() is repeatedly called in the "forever" loop() of OpenCatEsp32.ino
+void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever" loop() of OpenCatEsp32.ino
   if (newCmdIdx) {
     // PTLF("-----");
     lowerToken = tolower(token);
@@ -1012,8 +1012,7 @@ void reaction() {   // Reminder:  reaction() is repeatedly called in the "foreve
             if (toupper(newCmd[0]) == C_PRINT) {
               readFeedbackQ = (newCmd[0] == C_PRINT);  // If the Character command is to "continuously print", set to true.  Otherwise set to false for "print only once".
               servoFeedback(measureServoPin);          // Always print the servo angles at least once
-            } 
-            else if (toupper(newCmd[0]) == C_FOLLOW) {
+            } else if (toupper(newCmd[0]) == C_FOLLOW) {
               followFeedbackQ = (newCmd[0] == C_FOLLOW);
               if (followFeedbackQ) {
                 setServoP(P_SOFT);
@@ -1023,8 +1022,7 @@ void reaction() {   // Reminder:  reaction() is repeatedly called in the "foreve
                 gyroBalanceQ = false;
                 measureServoPin = 16;
               }
-            } 
-            else if (newCmd[0] == C_LEARN) {
+            } else if (newCmd[0] == C_LEARN) {
               bool gyroLag = gyroBalanceQ;
               gyroBalanceQ = false;
               loadBySkillName("up");
@@ -1033,8 +1031,7 @@ void reaction() {   // Reminder:  reaction() is repeatedly called in the "foreve
               delay(100);
               learnByDrag();
               gyroBalanceQ = gyroLag;
-            } 
-            else if (newCmd[0] = C_REPLAY) {  // perform
+            } else if (newCmd[0] = C_REPLAY) {  // perform
               loadBySkillName("up");
               performLearn();
               loadBySkillName("up");
@@ -1139,7 +1136,7 @@ void reaction() {   // Reminder:  reaction() is repeatedly called in the "foreve
       delay(delayShort + max(0, int(runDelay
 #ifdef GYRO_PIN
                                     - gyroBalanceQ * (max(fabs(ypr[1]) / 2, fabs(ypr[2])) / 20)  // accelerate gait when tilted
-                                        / (!fineAdjustQ && !mpuQ ? 4 : 1)                      // reduce the adjust if not using mpu6050
+                                        / (!fineAdjustQ && !mpuQ ? 4 : 1)                        // reduce the adjust if not using mpu6050
 #endif
                                     )));
     }
@@ -1183,18 +1180,18 @@ void reaction() {   // Reminder:  reaction() is repeatedly called in the "foreve
     //   tQueue->lastTask = NULL;
     //   PTL(newCmd);
     // }
-  } 
+  }
 
   // The code from here to the end of reaction() will conditionally run every time loop() in OpenCatEsp32.ino runs
 
-  else if (followFeedbackQ) {       // Conditionally follow servo feedback to gather servo angles
-    if (servoFollow()) {  // don't move the joints if no manual movement is detected
+  else if (followFeedbackQ) {  // Conditionally follow servo feedback to gather servo angles
+    if (servoFollow()) {       // don't move the joints if no manual movement is detected
       reAttachAllServos();
       setServoP(P_SOFT);
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
-  } else if (readFeedbackQ)         // Conditionally read servo feedback and print servo angles
+  } else if (readFeedbackQ)  // Conditionally read servo feedback and print servo angles
     servoFeedback(measureServoPin);
   // }
   else

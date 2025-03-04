@@ -73,13 +73,13 @@ void initModule(char moduleCode) {
   switch (moduleCode) {
     case EXTENSION_GROVE_SERIAL:
       {
+        PTLF("Start Serial2");
 #ifdef BiBoard_V1_0
         Serial2.begin(115200, SERIAL_8N1, 9, 10);
 #else
         Serial2.begin(115200, SERIAL_8N1, UART_RX2, UART_TX2);
 #endif
         Serial2.setTimeout(SERIAL_TIMEOUT);
-        PTL("Start Serial 2");
         break;
       }
 #ifdef VOICE

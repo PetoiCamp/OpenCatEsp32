@@ -406,7 +406,7 @@ public:
         duty =
 #ifdef GYRO_PIN
           +gyroBalanceQ * ((!imuException || imuException == IMU_EXCEPTION_LIFTED) ?  // not exception or the robot is lifted
-                             (!(frame % imuSkip) ? adjust(jointIndex) : currentAdjust[jointIndex])
+                             (!(frame % imuSkip) ? adjust(jointIndex,(period==1)) : currentAdjust[jointIndex])
                                                                                    : 0)
             / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
 #endif
@@ -458,7 +458,7 @@ void loadBySkillName(const char *skillName) {  // get lookup information from on
     // keepDirectionQ = (skill->period > 1) ? false : true;
     thresX = (skill->period > 1) ? 12000 : 5000;
     thresY = (skill->period > 1) ? 10000 : 4000;
-    thresZ = (skill->period > 1) ? 15000 : 12000;  
+    thresZ = (skill->period > 1) ? 15000 : 12000;
 #endif
     if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
       int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;

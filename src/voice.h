@@ -26,9 +26,9 @@
 
 // #define VOICE_MODULE_SAMPLE
 String customizedCmdList[] = {
-"fl",
-"fr",
-"fF",
+  "fl",  // learn skill with feedback servos
+  "fr",  // replay skill learned with feedback servos
+  "fF",  // movement follower demo with feedback servos
 #ifdef BITTLE
 #ifdef ROBOT_ARM
   "kpickF",                          // pick front 捡起来
