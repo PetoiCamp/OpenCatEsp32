@@ -168,7 +168,7 @@ void dealWithExceptions() {
     }
   }
   if (tQueue->cleared() && runDelay <= delayException)
-    runDelay = delayPrevious;
+    runDelay = delayMid;
 #endif
 }
 
