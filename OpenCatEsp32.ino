@@ -6,8 +6,8 @@
 
 
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
-#define BiBoard_V0_2
-// #define BiBoard_V1_0
+// #define BiBoard_V0_2
+#define BiBoard_V1_0
 // #define BiBoard2  //ESP32 Board with 16 channels of PCA9685 PWM for joints
 //***********************
 
@@ -39,7 +39,7 @@ void setup() {
 
 void loop() {
 #ifdef VOLTAGE
-  lowBattery();
+  // lowBattery();
 #endif
   //  //—self-initiative
   //  if (autoSwitch) { //the switch can be toggled on/off by the 'z' token

@@ -4,8 +4,10 @@
 
 // const char* ssid = "len-AP";
 // const char* password = "qwertyuiop";
-const char *ssid = "U5-5303";
-const char *password = "y53035303";
+// const char *ssid = "U5-5303";
+// const char *password = "y53035303";
+String ssid = "";
+String password = "";
 WebServer webServer(80);
 long connectWebTime;
 bool webServerConnected = false;
@@ -62,26 +64,83 @@ void handleCommand() {
   cmdFromWeb = false;
 }
 
-// WiFi设置函数
-void setupWiFi() {
-  // 创建 WiFiManager 实例
-  WiFiManager wm;
-
-  // 设置配网页面的超时时间（可选，默认120秒）
-  wm.setConfigPortalTimeout(180);
-
-  // 设置热点名称并尝试连接WiFi
-  if (!wm.autoConnect("BittleWirelessCfg")) {
-    Serial.println("配网失败，重启设备");
-    delay(3000);
-    ESP.restart();  // 如果配网失败，重启设备
+// 通过串口配置WiFi的函数
+bool connectWifi(String ssid, String password) {
+  WiFi.begin(ssid.c_str(), password.c_str());
+  // 等待WiFi连接，最多等待10秒
+  int timeout = 0;
+  while (WiFi.status() != WL_CONNECTED && timeout < 100) {
+    delay(50);
+    PT('.');
+    timeout++;
   }
-  webServerConnected = true;
-
-  // 打印连接成功信息和IP地址
-  Serial.println("已成功连接到WiFi");
-  Serial.println(WiFi.localIP());
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+    return true;
+  } else {
+    Serial.println("connection failed");
+    return false;
+  }
 }
+bool configureWiFiViaSerial() {
+  if (Serial.available()) {
+    String input = Serial.readStringUntil('\n');
+    if (input.startsWith("wifi%")) {
+      // 解析WiFi配置字符串
+      int firstDelimiter = input.indexOf('%', 5);                    // 找到第二个%的位置
+      int secondDelimiter = input.indexOf('%', firstDelimiter + 1);  // 找到第三个%的位置
+
+      if (firstDelimiter != -1 && secondDelimiter != -1) {
+        ssid = input.substring(5, firstDelimiter);
+        password = input.substring(firstDelimiter + 1, secondDelimiter);
+
+        // 尝试连接WiFi
+        WiFi.begin(ssid.c_str(), password.c_str());
+
+        // 等待WiFi连接，最多等待10秒
+        int timeout = 0;
+        while (WiFi.status() != WL_CONNECTED && timeout < 100) {
+          delay(100);
+          timeout++;
+        }
+
+        if (WiFi.status() == WL_CONNECTED) {
+          Serial.print("IP Address: ");
+          Serial.println(WiFi.localIP());
+          return true;
+        } else {
+          Serial.println("connection failed");
+          return false;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// 修改WiFi设置函数
+void setupWiFi() {
+  // 等待串口配置
+  unsigned long startTime = millis();
+  // while (millis() - startTime < 200) {  // 等待5秒钟接收串口配置
+  //     if (configureWiFiViaSerial()) {
+  //         return;  // 如果通过串口配置成功，直接返回
+  //     }
+  // }
+
+  // 如果没有收到串口配置，则使用WiFiManager
+  // WiFiManager wm;
+  // wm.setConfigPortalTimeout(180);
+
+  // if(!wm.autoConnect("BittleWirelessCfg")) {
+  //     Serial.println("配网失败，重启设备");
+  //     delay(3000);
+  //     ESP.restart();
+  // }
+
+}
+
 
 void setupWebServer() {
   // Connect to WiFi

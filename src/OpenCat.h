@@ -81,10 +81,10 @@ String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE  // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP  // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-// #define WEB_SERVER  // toggle web server
-#define GYRO_PIN  // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE      // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP      // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define WEB_SERVER  // toggle web server
+#define GYRO_PIN    // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -326,7 +326,8 @@ bool newBoard = false;
 #define T_TILT 't'
 #define T_TEMP 'T'  // call the last skill data received from the serial port
 #define T_MEOW 'u'
-#define T_SERVO_MICROSECOND 'w'  // PWM width modulation
+// #define T_SERVO_MICROSECOND 'w' // PWM width modulation
+#define T_WIFI_INFO 'w'
 // #define T_XLEG 'x'
 #define T_LEARN 'x'
 #define T_RANDOM_MIND 'z'  // toggle random behaviors
@@ -403,7 +404,7 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
-/*  These "Q" booleans are conditions that are checked to activate or deactivate different states.  
+/*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
     A condition set to true activates (turns on) a state.
 */
 bool lowBatteryQ = false;  // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
@@ -681,10 +682,10 @@ void initRobot() {
   soundState = config.getBool("bootSndState");
   buzzerVolume = config.getChar("buzzerVolume");
   newBoard = newBoardQ();
-#ifdef WEB_SERVER
-  if (!newBoard)
-    setupWebServer();
-#endif
+// #ifdef WEB_SERVER
+//   if (!newBoard)
+//     setupWebServer();
+// #endif
 #endif
   configSetup();
   PTF("Buzzer volume: ");

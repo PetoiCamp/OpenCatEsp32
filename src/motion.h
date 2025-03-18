@@ -296,7 +296,7 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 
 float adjust(byte i, bool postureQ = false) {
   float rollAdj, pitchAdj, adj;
-  float cutOff = postureQ ? 45 : 15; // reduce angle deviation for non-posture skills to filter noise
+  float cutOff = postureQ ? 45 : 15;  // reduce angle deviation for non-posture skills to filter noise
   pitchAdj = adaptiveParameterArray[i][1] * max(float(-cutOff), min(float(cutOff), RollPitchDeviation[1]));
   if (i == 1 || i > 3) {  // check idx = 1
     bool leftQ = (i - 1) % 4 > 1 ? true : false;

@@ -341,6 +341,36 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           );
           break;
         }
+      case T_WIFI_INFO:
+        {
+          PTLF("The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. w%user%passwd");
+          String wifiInfo = newCmd;
+          PTL(wifiInfo);
+          int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置
+          PTL(delimiter);
+          if (delimiter != -1) {
+            ssid = wifiInfo.substring(1, delimiter);
+            password = wifiInfo.substring(delimiter + 1);
+            PTHL("WifiSSID: ", ssid);
+            PTHL("Password: ", password);
+            if (!webServerConnected) {
+              webServerConnected = connectWifi(ssid, password);
+              if (webServerConnected) {
+                // Enable CORS
+                webServer.enableCORS(true);
+                // Set up server routes
+                webServer.on("/", HTTP_GET, handleCommand);
+                // Start server
+                webServer.begin();
+                PTLF("HTTP server started. Successfully connected to Wifi:");
+                PTL(WiFi.localIP());
+              } else {
+                Serial.println("Timeout: Fail to connect web server!");
+              }
+            } else
+              PTHL("Wifi already connected to ", WiFi.localIP());
+          }
+        }
       case T_GYRO:
       case T_RANDOM_MIND:
         {
