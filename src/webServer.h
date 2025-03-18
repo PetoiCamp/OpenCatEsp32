@@ -70,13 +70,12 @@ bool connectWifi(String ssid, String password) {
   // 等待WiFi连接，最多等待10秒
   int timeout = 0;
   while (WiFi.status() != WL_CONNECTED && timeout < 100) {
-    delay(50);
+    delay(100);
     PT('.');
     timeout++;
   }
+  PTL();
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.print("IP Address: ");
-    Serial.println(WiFi.localIP());
     return true;
   } else {
     Serial.println("connection failed");
@@ -130,21 +129,26 @@ void setupWiFi() {
   // }
 
   // 如果没有收到串口配置，则使用WiFiManager
-  // WiFiManager wm;
-  // wm.setConfigPortalTimeout(180);
-
-  // if(!wm.autoConnect("BittleWirelessCfg")) {
-  //     Serial.println("配网失败，重启设备");
-  //     delay(3000);
-  //     ESP.restart();
-  // }
-
 }
 
 
-void setupWebServer() {
+void startWifiManager() {
+  //if the wifi manager is not connected this time, it won't enter wifi manager next time
+#ifdef I2C_EEPROM_ADDRESS
+  i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, false);
+#else
+  config.putBool("WifiManager", false);
+#endif
   // Connect to WiFi
-  setupWiFi();
+  WiFiManager wm;
+  wm.setConfigPortalTimeout(60);  // timeout after 60 seconds
+  //if it fails to connect, it won't open wifi manager during next bootup
+  if (!wm.autoConnect((uniqueName + " WifiConfig").c_str())) {
+    PTLF("Failt to connect Wifi. Rebooting.");
+    delay(3000);
+    ESP.restart();
+  } else
+    webServerConnected = true;
   if (webServerConnected) {
     // Enable CORS
     webServer.enableCORS(true);
@@ -152,9 +156,26 @@ void setupWebServer() {
     webServer.on("/", HTTP_GET, handleCommand);
     // Start server
     webServer.begin();
-    Serial.println("HTTP server started");
+    PTLF("HTTP server started");
   } else
-    Serial.println("Timeout: Fail to connect web server!");
+    PTLF("Timeout: Fail to connect web server!");
+#ifdef I2C_EEPROM_ADDRESS
+  i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, webServerConnected);
+#else
+  config.putBool("WifiManager", webServerConnected);
+#endif
+}
+void resetWifiManager() {
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();  //load the flash-saved configs
+  esp_wifi_init(&cfg);                                  //initiate and allocate wifi resources (does not matter if connection fails)
+  delay(2000);                                          //wait a bit
+  if (esp_wifi_restore() != ESP_OK) {
+    PTLF("\nWiFi is not initialized by esp_wifi_init ");
+  } else {
+    PTLF("\nWiFi Configurations Cleared!");
+  }
+  delay(2000);
+  ESP.restart();
 }
 
 void WebServerLoop() {

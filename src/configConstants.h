@@ -50,7 +50,8 @@ bool EEPROMOverflow = false;
 #define EEPROM_VERSION_DATE 70         // 11 bytes
 #define EEPROM_DEFAULT_LAN 82          // 1 byte. 0: English, 1: Chinese
 #define EEPROM_CURRENT_LAN 83          // 1 byte. 0: English, 1: Chinese
-#define EEPROM_RESERVED 84             // reserved for future use
+#define EEPROM_WIFI_MANAGER 84         // 1 byte. 0: don't launch, 1: launch wifi manager
+#define EEPROM_RESERVED 85             // reserved for future use
 #define SERIAL_BUFF 100
 
 int dataLen(int8_t p) {
@@ -71,7 +72,7 @@ void i2cDetect(TwoWire &wirePort) {
   int8_t i2cAddress[] = {
     0x39, 0x50, 0x54, 0x60, 0x62, 0x68, 0x69
   };
-  String i2cAddressName[] = { "APDS9960 Gesture","Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
+  String i2cAddressName[] = { "APDS9960 Gesture", "Mu3 CameraP", "EEPROM", "Mu3 Camera", "AI Vision", "MPU6050", "ICM42670" };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -377,6 +378,7 @@ void genBleID(int suffixDigits = 2) {
 #else
   config.putString("ID", id);
 #endif
+  uniqueName = id;
   Serial.println(id);
 }
 
@@ -416,6 +418,10 @@ void configSetup() {
 
     int bufferLen = dataLen(rest[0]);  // save a preset skill to the temp skill
     arrayNCPY(newCmd, rest, bufferLen);
+    PTF("- Name the new robot as: ");
+#ifdef BT_BLE
+    genBleID();
+#endif
 
 #ifdef I2C_EEPROM_ADDRESS
     PTL("Using constants from I2C EEPROM");
@@ -430,6 +436,7 @@ void configSetup() {
     unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
     i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
     copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
+    i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, rebootForWifiManagerQ);
 
 #else
     PTL("Using constants from on-board Flash");
@@ -442,16 +449,13 @@ void configSetup() {
     // save a preset skill to the temp skill in case its called before assignment
     config.putInt("tmpLen", bufferLen);
     config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
+    config.putBool("WifiManager", rebootForWifiManagerQ);  //default is false
 #endif
 #ifndef AUTO_INIT
 #ifdef VOLTAGE
     if (!lowBatteryQ)  // won't play sound if only powered by USB. It avoid noise when developing codes
 #endif
       playMelody(melodyInit, sizeof(melodyInit) / 2);
-#endif
-    PTF("- Name the new robot as: ");
-#ifdef BT_BLE
-    genBleID();
 #endif
 #ifndef AUTO_INIT
     PTL("- Reset the joints' calibration offsets? (Y/n): ");
@@ -481,10 +485,15 @@ void configSetup() {
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
     defaultLan = (char)i2c_eeprom_read_byte(EEPROM_DEFAULT_LAN);
     currentLan = (char)i2c_eeprom_read_byte(EEPROM_CURRENT_LAN);
+    uniqueName = readLongByBytes(EEPROM_BLE_NAME);
+    rebootForWifiManagerQ = i2c_eeprom_read_byte(EEPROM_WIFI_MANAGER);
+
 #else
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
     defaultLan = config.getChar("defaultLan");
     currentLan = config.getChar("currentLan");
+    uniqueName = config.getString("ID", "P");
+    rebootForWifiManagerQ = config.getBool("WifiManager");
     PT(config.freeEntries());                                 // show remaining entries of the preferences.
     PTL(" entries are available in the namespace table.\n");  // this method works regardless of the mode in which the namespace is opened.
 #endif

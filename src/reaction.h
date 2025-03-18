@@ -170,6 +170,29 @@ void dealWithExceptions() {
   if (tQueue->cleared() && runDelay <= delayException)
     runDelay = delayMid;
 #endif
+
+#ifdef WEB_SERVER  // check if to reset the wifi manager and reboot
+  if (digitalRead(0) == LOW) {
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, true);
+#else
+    config.putBool("WifiManager", true);  //default is false
+#endif
+    PTLF("The robot will reboot and use Wifi manager.");
+    PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
+    int wifiCountdown = 10;
+    while (digitalRead(0) == LOW && wifiCountdown) {
+      delay(200);
+      PT(wifiCountdown--);
+      PT("..");
+    }
+    if (wifiCountdown == 0) {
+      resetWifiManager();
+    }
+    delay(2000);
+    ESP.restart();
+  }
+#endif
 }
 
 // V_read / 4096 * 3.3 = V_real / ratio
@@ -343,17 +366,17 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
         }
       case T_WIFI_INFO:
         {
-          PTLF("The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. w%user%passwd");
-          String wifiInfo = newCmd;
-          PTL(wifiInfo);
-          int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置
-          PTL(delimiter);
-          if (delimiter != -1) {
-            ssid = wifiInfo.substring(1, delimiter);
-            password = wifiInfo.substring(delimiter + 1);
-            PTHL("WifiSSID: ", ssid);
-            PTHL("Password: ", password);
-            if (!webServerConnected) {
+          if (!webServerConnected) {
+            PTLF("The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. w%user%passwd");
+            String wifiInfo = newCmd;
+            PTL(wifiInfo);
+            int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置
+            PTL(delimiter);
+            if (delimiter != -1) {
+              ssid = wifiInfo.substring(1, delimiter);
+              password = wifiInfo.substring(delimiter + 1);
+              PTHL("WifiSSID: ", ssid);
+              PTHL("Password: ", password);
               webServerConnected = connectWifi(ssid, password);
               if (webServerConnected) {
                 // Enable CORS
@@ -364,11 +387,19 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                 webServer.begin();
                 PTLF("HTTP server started. Successfully connected to Wifi:");
                 PTL(WiFi.localIP());
+#ifdef I2C_EEPROM_ADDRESS
+                i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, true);
+#else
+                config.putBool("WifiManager", true);
+#endif
               } else {
                 Serial.println("Timeout: Fail to connect web server!");
               }
-            } else
-              PTHL("Wifi already connected to ", WiFi.localIP());
+            }
+          } else {
+            PTHL("Wifi already connected to ", WiFi.localIP());
+            PTLF("Press the BOOT key to reboot and use Wifi manager.");
+            PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
           }
         }
       case T_GYRO:

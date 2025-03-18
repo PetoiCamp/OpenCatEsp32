@@ -78,6 +78,7 @@
 #endif
 #define DATE "250306"  // YYMMDD
 String SoftwareVersion = "";
+String uniqueName = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
@@ -157,7 +158,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef BITTLE
   19, 2, 4, 27,  // head or shoulder roll
 #elif defined NYBBLE
-  19, 4, 2, 27,  // head or shoulder roll
+  19, 4, 2, 27,                            // head or shoulder roll
 #endif
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
@@ -419,6 +420,7 @@ bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool manualEyeColorQ = false;
+bool rebootForWifiManagerQ = false;
 // bool keepDirectionQ = true;
 
 // Other booleans
@@ -682,16 +684,21 @@ void initRobot() {
   soundState = config.getBool("bootSndState");
   buzzerVolume = config.getChar("buzzerVolume");
   newBoard = newBoardQ();
-// #ifdef WEB_SERVER
-//   if (!newBoard)
-//     setupWebServer();
-// #endif
 #endif
   configSetup();
   PTF("Buzzer volume: ");
   PT(buzzerVolume);
   PTL("/10");
-
+#ifdef WEB_SERVER
+  if (rebootForWifiManagerQ) {
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, false);
+#else
+    config.putBool("WifiManager", false); 
+#endif
+    startWifiManager();
+  }
+#endif
 #ifdef GYRO_PIN
   if (updateGyroQ)
     imuSetup();
