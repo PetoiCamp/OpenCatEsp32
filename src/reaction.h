@@ -926,6 +926,18 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   else if (*option == 'r')
                     cameraReactionQ = false;
                 }
+
+                if (cameraPrintQ) {
+                  printToAllPorts('=');
+                  showRecognitionResult(xCoord, yCoord, width, height);
+                  PTL();
+                  // printToAllPorts(token); 
+                  if (cameraPrintQ == 1)
+                    cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
+                  else
+                    FPS();
+                }
+
                 break;
               }
 #endif
@@ -1196,7 +1208,12 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   // }
   else
 #ifdef CAMERA
-    if (!cameraTaskActiveQ)
+  if (cameraPrintQ == 2) {
+    showRecognitionResult(xCoord, yCoord, width, height);
+    PTL();
+    FPS();
+  }
+  else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1);  // avoid triggering WDT

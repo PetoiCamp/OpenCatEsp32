@@ -403,6 +403,15 @@ char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
 
+#ifdef CAMERA
+#define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
+bool detectedObjectQ = false;
+int8_t cameraPrintQ = 0;
+int xCoord, yCoord, width, height;  // the x y returned by the sensor
+int imgRangeX = 100;                      // the frame size 0~100 on X and Y direction
+int imgRangeY = 100;
+#endif
+
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.  
     A condition set to true activates (turns on) a state.
 */
@@ -462,7 +471,8 @@ byte moduleIndex;
 bool icmQ = false;
 bool mpuQ = false;
 bool MuQ = false;
-bool SentryQ = false;
+bool Sentry1Q = false;
+bool Sentry2Q = false;
 bool GroveVisionQ = false;
 bool eepromQ = false;
 bool initialBoot = true;
