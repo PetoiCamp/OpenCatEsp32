@@ -21,9 +21,7 @@
 
 #ifdef SERIAL_MODE
 #include <SoftwareSerial.h>
-#define TX_PIN 6
-#define RX_PIN 7
-SoftwareSerial mySerial(RX_PIN, TX_PIN);
+SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #endif
 #endif
 
@@ -70,9 +68,7 @@ bool updateCoordinateLock = false;
 #endif
 #ifdef SERIAL_MODE
 #include <SoftwareSerial.h>
-#define TX_PIN 6
-#define RX_PIN 7
-SoftwareSerial mySerial(RX_PIN, TX_PIN);
+SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #endif
 #endif
 
