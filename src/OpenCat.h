@@ -404,7 +404,7 @@ char terminator;
 long lastSerialTime = 0;
 
 #ifdef CAMERA
-#define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
+// #define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
 bool detectedObjectQ = false;
 int8_t cameraPrintQ = 0;
 int xCoord, yCoord, width, height;  // the x y returned by the sensor
