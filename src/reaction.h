@@ -392,6 +392,15 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #else
                 config.putBool("WifiManager", true);
 #endif
+                xTaskCreatePinnedToCore(
+                  webServerTask,    // Task function
+                  "WebServerTask",  // Task name
+                  4096,             // Stack size
+                  NULL,             // Task parameters
+                  1,                // Task priority
+                  NULL,             // Task handle
+                  0                 // Core ID (0 for core 0)
+                );
               } else {
                 Serial.println("Timeout: Fail to connect web server!");
               }

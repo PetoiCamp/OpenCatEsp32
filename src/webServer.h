@@ -12,16 +12,13 @@ WebServer webServer(80);
 long connectWebTime;
 bool webServerConnected = false;
 String webResponse = "";
-bool cmdFromWeb = false;
 void handleCommand() {
   // Get the cmd parameter
   String webCmd = webServer.arg("cmd");
-
   if (webCmd == "") {
     webServer.send(400, "text/plain", "Missing cmd parameter");
     return;
   }
-
   // Print the received command to Serial
   Serial.print("Received web command: ");
   Serial.println(webCmd);
@@ -31,7 +28,6 @@ void handleCommand() {
   Serial.print("Main program get: ");
   Serial.println(newCmd);
   newCmdIdx = 4;
-  cmdFromWeb = true;
   // Process the command and prepare response
   // if (webCmd == "kwk" || webCmd == "ksit"){
   //     response = webCmd;
@@ -178,6 +174,12 @@ void resetWifiManager() {
   ESP.restart();
 }
 
+void webServerTask(void *pvParameters) {
+  while (true) {
+    webServer.handleClient();
+    vTaskDelay(1); // Small delay to prevent watchdog issues
+  }
+}
 void WebServerLoop() {
   if (webServerConnected)
     webServer.handleClient();

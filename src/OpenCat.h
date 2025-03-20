@@ -158,7 +158,7 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef BITTLE
   19, 2, 4, 27,  // head or shoulder roll
 #elif defined NYBBLE
-  19, 4, 2, 27,                            // head or shoulder roll
+  19, 4, 2, 27,  // head or shoulder roll
 #endif
   33, 5, 15, 14,  // shoulder pitch
   32, 18, 13, 12  // knee
@@ -421,6 +421,7 @@ bool manualHeadQ = false;
 bool nonHeadJointQ = false;
 bool manualEyeColorQ = false;
 bool rebootForWifiManagerQ = false;
+bool cmdFromWeb = false;
 // bool keepDirectionQ = true;
 
 // Other booleans
@@ -694,9 +695,21 @@ void initRobot() {
 #ifdef I2C_EEPROM_ADDRESS
     i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, false);
 #else
-    config.putBool("WifiManager", false); 
+    config.putBool("WifiManager", false);
 #endif
     startWifiManager();
+    // Create a task to run webServer.handleClient() on core 1
+    if (webServerConnected) {
+      xTaskCreatePinnedToCore(
+        webServerTask,    // Task function
+        "WebServerTask",  // Task name
+        4096,             // Stack size
+        NULL,             // Task parameters
+        1,                // Task priority
+        NULL,             // Task handle
+        0                 // Core ID (0 for core 0)
+      );
+    }
   }
 #endif
 #ifdef GYRO_PIN

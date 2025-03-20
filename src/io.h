@@ -86,6 +86,7 @@ void blueSspSetup() {
 
 template<typename T>
 void printToAllPorts(T text, bool newLine = true) {
+  PTHL("cmdFromWeb", cmdFromWeb);
 #ifdef BT_BLE
   if (deviceConnected)
     bleWrite(String(text));
@@ -97,7 +98,6 @@ void printToAllPorts(T text, bool newLine = true) {
 #ifdef WEB_SERVER
   if (cmdFromWeb) {
     webServer.send(200, "text/plain", String(text));
-    cmdFromWeb = false;
   }
 #endif
   if (moduleActivatedQ[0])  // serial2
