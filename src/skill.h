@@ -362,7 +362,6 @@ public:
         imuUpdated = false;
       }
 #endif
-
       for (int jointIndex = 0; jointIndex < DOF; jointIndex++) {
         //          PT(jointIndex); PT('\t');
 // #ifdef ROBOT_ARM
@@ -406,14 +405,13 @@ public:
         duty =
 #ifdef GYRO_PIN
           +gyroBalanceQ * ((!imuException || imuException == IMU_EXCEPTION_LIFTED) ?  // not exception or the robot is lifted
-                             (!(frame % imuSkip) ? adjust(jointIndex,(period==1)) : currentAdjust[jointIndex])
+                             (!(frame % imuSkip) ? adjust(jointIndex, (period == 1)) : currentAdjust[jointIndex])
                                                                                    : 0)
             / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
 #endif
           + duty;
         calibratedPWM(jointIndex, duty);
       }
-      //        PTL();
       frame += tStep;
       if (frame >= abs(period))
         frame = 0;

@@ -11,7 +11,6 @@ String password = "";
 WebServer webServer(80);
 long connectWebTime;
 bool webServerConnected = false;
-String webResponse = "";
 void handleCommand() {
   // Get the cmd parameter
   String webCmd = webServer.arg("cmd");
@@ -20,44 +19,17 @@ void handleCommand() {
     return;
   }
   // Print the received command to Serial
-  Serial.print("Received web command: ");
-  Serial.println(webCmd);
+  PTHL("web command: ", webCmd);
+  cmdFromWeb = true;
   token = webCmd[0];
   strcpy(newCmd, webCmd.c_str() + 1);
-
-  Serial.print("Main program get: ");
-  Serial.println(newCmd);
+  cmdLen = strlen(newCmd);
+  newCmd[cmdLen + 1] = '\0';
   newCmdIdx = 4;
-  // Process the command and prepare response
-  // if (webCmd == "kwk" || webCmd == "ksit"){
-  //     response = webCmd;
-  // }
-  // else if (webCmd == "A1") {
-  //     response = "101";
-  // }
-  // else if (webCmd == "D1") {
-  //     response = "1";
-  // }
-  // else if (webCmd == "Ultrasonic") {
-  //     response = "30cm";
-  // }
-  // else if (webCmd == "?") {
-  //     response = "bittle_X";
-  // }
-  // else {
-  //     response = "unused cmd";
-  // }
-
-  // Print the response to Serial
-  // while (response == "") {
-  //   Serial.print('.');
-  //   delay(1);
-  // }
-  if (token == '?') {
-    webResponse = "bittle_X";  // 设备标识
-  }
+  while (cmdFromWeb)
+    delay(1);
   webServer.send(200, "text/plain", webResponse);
-  cmdFromWeb = false;
+  webResponse = "";
 }
 
 // 通过串口配置WiFi的函数
@@ -177,7 +149,7 @@ void resetWifiManager() {
 void webServerTask(void *pvParameters) {
   while (true) {
     webServer.handleClient();
-    vTaskDelay(1); // Small delay to prevent watchdog issues
+    vTaskDelay(1);  // Small delay to prevent watchdog issues
   }
 }
 void WebServerLoop() {

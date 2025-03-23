@@ -1182,7 +1182,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       // else
       //   strcpy(lastCmd, "up");
     }
-
+    cmdFromWeb = false;
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
@@ -1195,7 +1195,6 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       digitalWrite(PWM_LED_PIN, LOW);
 #endif
   }
-
   if (tolower(token) == T_SKILL) {
 #ifdef PWM_LED_PIN
     if (autoLedQ)

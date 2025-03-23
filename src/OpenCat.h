@@ -404,6 +404,7 @@ int serialTimeout;
 char terminator;
 // int serialTimeout;
 long lastSerialTime = 0;
+String webResponse = "";
 
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
     A condition set to true activates (turns on) a state.
