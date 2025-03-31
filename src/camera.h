@@ -5,10 +5,29 @@
 #define GROVE_VISION_AI_V2
 // #define TALL_TARGET
 
-int8_t cameraPrintQ = 0;
+#ifdef SENTRY2_CAMERA
+#undef MU_CAMERA
+#undef SENTRY1_CAMERA
+#include <Arduino.h>
+#include <Sentry.h>
+
+#define I2C_MODE
+// #define SERIAL_MODE
+
+#ifdef I2C_MODE
+#include <Wire.h>
+#define SENTRY2_ADDRESS 0x60
+#endif
+
+#ifdef SERIAL_MODE
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(UART_RX2, UART_TX2);
+#endif
+#endif
+
+// int8_t cameraPrintQ = 0;
 bool cameraReactionQ = true;
 bool updateCoordinateLock = false;
-bool detectedObjectQ = false;
 
 #ifdef BiBoard_V1_0
 #define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
@@ -49,9 +68,7 @@ bool detectedObjectQ = false;
 #endif
 #ifdef SERIAL_MODE
 #include <SoftwareSerial.h>
-#define TX_PIN 6
-#define RX_PIN 7
-SoftwareSerial mySerial(RX_PIN, TX_PIN);
+SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #endif
 #endif
 
@@ -63,11 +80,9 @@ SoftwareSerial mySerial(RX_PIN, TX_PIN);
 
 #define T_TUNER '>'
 bool cameraSetupSuccessful = false;
-int xCoord, yCoord, width, widthCounter;  // the x y returned by the sensor
+int widthCounter;
 int xDiff, yDiff;                         // the scaled distance from the center of the frame
 int currentX = 0, currentY = 0;           // the current x y of the camera's direction in the world coordinate
-int imgRangeX = 100;                      // the frame size 0~100 on X and Y direction
-int imgRangeY = 100;
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 int8_t sizePars;
@@ -118,6 +133,11 @@ void sentry1CameraSetup();
 void read_Sentry1Camera();
 #endif
 
+#ifdef SENTRY2_CAMERA
+void sentry2CameraSetup();
+void read_Sentry2Camera();
+#endif
+
 #ifdef GROVE_VISION_AI_V2
 void groveVisionSetup();
 void read_GroveVision();
@@ -125,7 +145,7 @@ void read_GroveVision();
 
 int8_t *initPars;
 bool cameraSetup() {
-  if (!MuQ && !GroveVisionQ && !SentryQ) {
+  if (!MuQ && !GroveVisionQ && !Sentry2Q) {
     return false;
   }
 #ifdef NYBBLE
@@ -140,9 +160,9 @@ bool cameraSetup() {
     imgRangeY = 100;
   }
 #endif
-#ifdef GROVE_VISION_AI_V2
+#if defined GROVE_VISION_AI_V2  || defined SENTRY2_CAMERA
   sizePars = sizeof(bittleGroveVisionPars) / sizeof(int8_t);
-  if (GroveVisionQ) {
+  if (GroveVisionQ || Sentry2Q) {
     initPars = bittleGroveVisionPars;
     imgRangeX = 240;  // the frame size 0~240 on X and Y direction
     imgRangeY = 240;
@@ -162,7 +182,7 @@ bool cameraSetup() {
     muCameraSetup();
 #endif
 #ifdef SENTRY1_CAMERA
-  if (SentryQ) {
+  if (Sentry1Q) {
     lensFactor = 10;
     proportion = 20;
     sentry1CameraSetup();
@@ -173,10 +193,18 @@ bool cameraSetup() {
     groveVisionSetup();
   }
 #endif
+#ifdef SENTRY2_CAMERA
+  if (Sentry2Q) {
+    lensFactor = 10;
+    proportion = 20;
+    sentry2CameraSetup();
+  }
+#endif
   fps = 0;
   loopTimer = millis();
   return cameraSetupSuccessful;
 }
+
 void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
   PT(xCoord - imgRangeX / 2.0);  // get vision result: x axes value
   PT('\t');
@@ -307,12 +335,16 @@ void taskReadCamera(void *par) {
       read_MuCamera();
 #endif
 #ifdef SENTRY1_CAMERA
-    if (SentryQ)
+    if (Sentry1Q)
       read_Sentry1Camera();
 #endif
 #ifdef GROVE_VISION_AI_V2
     if (GroveVisionQ)
       read_GroveVision();
+#endif
+#ifdef SENTRY2_CAMERA
+    if (Sentry2Q)
+      read_Sentry2Camera();
 #endif
     cameraLockI2c = false;
     // vTaskDelay(1);
@@ -339,14 +371,6 @@ void read_camera() {
   //   delay(1); // wait for the camera to detect an object in another core
   if (detectedObjectQ) {
     cameraBehavior(xCoord, yCoord, width);
-    if (cameraPrintQ) {
-      showRecognitionResult(xCoord, yCoord, width);
-      PTL();
-      if (cameraPrintQ == 1)
-        cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
-      else
-        FPS();
-    }
     detectedObjectQ = false;
   }
 }
@@ -408,7 +432,7 @@ void read_MuCamera() {
       xCoord = (int)(*Mu).GetValue(object[objectIdx], kXValue);
       yCoord = (int)(*Mu).GetValue(object[objectIdx], kYValue);
       width = (int)(*Mu).GetValue(object[objectIdx], kWidthValue);
-      // height = (int)(*Mu).GetValue(VISION_BODY_DETECT, kHeightValue);
+      height = (int)(*Mu).GetValue(object[objectIdx], kHeightValue);
       updateCoordinateLock = false;
       // vvvvvvvvvvvv ball vvvvvvvvvvvvv
       if (objectIdx == 1) {
@@ -505,7 +529,7 @@ void read_Sentry1Camera() {
       xCoord = readRegData(0x81);  // read x value Low Byte, 0~100, (LB is enought for sentry 1)
       yCoord = readRegData(0x83);  // read y value Low Byte, 0~100
       width = readRegData(0x85);   // read width value Low Byte, 0~100
-                                   //  char height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
+      height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
                                    // do something ......
       updateCoordinateLock = false;
       detectedObjectQ = true;
@@ -516,9 +540,80 @@ void read_Sentry1Camera() {
 }
 #endif
 
+#ifdef SENTRY2_CAMERA
+/* Define the Sentry model. Here use Sentry2 */
+typedef Sentry2 Sentry;
+
+/* Instantiate Sentry, create a Sentry variable, and specify the Sentry address */
+#define VISION_TYPE Sentry::kVisionFace
+Sentry sentry(SENTRY2_ADDRESS);
+void sentry2CameraSetup() {
+  sentry_err_t err = SENTRY_OK;
+  PTL("Waiting for sentry initialize...");
+#ifdef I2C_MODE
+  // CAMERA_WIRE.begin();  // join i2c bus (address optional for master)
+  /* Use I2C to initialize Sentry. If err returns 0, the initialization is normal, otherwise the corresponding error code is returned. */
+  while (SENTRY_OK != sentry.begin(&CAMERA_WIRE)) { 
+    yield(); 
+  }
+#endif  // I2C_MODE
+#ifdef SERIAL_MODE
+  mySerial.begin(9600);
+  while (SENTRY_OK != sentry.begin(&mySerial)) { yield(); }
+#endif  // SERIAL_MODE
+  PTL("Sentry begin Success.");
+  err = sentry.VisionBegin(VISION_TYPE);
+  PT("sentry.VisionBegin(kVisionFace) ");
+  if (err) {
+    PT("Error: 0x");
+  } else {
+    PT("Success: 0x");
+    cameraSetupSuccessful = true;
+  }
+  PTD(err, HEX);
+  PTL();
+}
+
+void read_Sentry2Camera() {
+  int obj_num = sentry.GetValue(VISION_TYPE, kStatus);
+  if (obj_num >= 1) {
+    // Serial.print("Totally ");
+    // Serial.print(obj_num);
+    // Serial.println(" objects");
+    updateCoordinateLock = true;
+    xCoord = sentry.GetValue(VISION_TYPE, kXValue, 1);  // read x value
+    yCoord = sentry.GetValue(VISION_TYPE, kYValue, 1);  // read y value
+    width = sentry.GetValue(VISION_TYPE, kWidthValue, 1);   // read width value
+    height = sentry.GetValue(VISION_TYPE, kHeightValue, 1);  // read height value
+    updateCoordinateLock = false;
+    detectedObjectQ = true;
+    // for (int i = 1; i <= obj_num; ++i) {
+    //   int x = sentry.GetValue(VISION_TYPE, kXValue, i);
+    //   int y = sentry.GetValue(VISION_TYPE, kYValue, i);
+    //   int w = sentry.GetValue(VISION_TYPE, kWidthValue, i);
+    //   int h = sentry.GetValue(VISION_TYPE, kHeightValue, i);
+    //   int l = sentry.GetValue(VISION_TYPE, kLabel, i);
+    //   Serial.print("  obj");
+    //   Serial.print(i);
+    //   Serial.print(": ");
+    //   Serial.print("x=");
+    //   Serial.print(x);
+    //   Serial.print(",y=");
+    //   Serial.print(y);
+    //   Serial.print(",w=");
+    //   Serial.print(w);
+    //   Serial.print(",h=");
+    //   Serial.print(h);
+    //   Serial.print(",label=");
+    //   Serial.println(l);
+    // }
+  }
+}
+#endif
+
 #ifdef GROVE_VISION_AI_V2
 SSCMA AI;
-int height;
+
 // OPT_ANGLE values
 enum OptAngle : uint16_t {
   OPT_ANGLE_0 = 0,

@@ -344,8 +344,17 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
         }
       case T_QUERY:
         {
-          printToAllPorts(MODEL);
-          printToAllPorts(SoftwareVersion);
+          if (cmdLen == 0) {
+            printToAllPorts(MODEL);
+            printToAllPorts(SoftwareVersion);
+          } else {
+            byte i = 0;
+            while (newCmd[i] != '\0') {
+              if (newCmd[i] == C_QUERY_PARTITION)
+                displayNsvPartition();
+              i++;
+            }
+          }
           break;
         }
       case T_NAME:
@@ -996,6 +1005,18 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   else if (*option == 'r')
                     cameraReactionQ = false;
                 }
+
+                if (cameraPrintQ) {
+                  printToAllPorts('=');
+                  showRecognitionResult(xCoord, yCoord, width, height);
+                  PTL();
+                  // printToAllPorts(token); 
+                  if (cameraPrintQ == 1)
+                    cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
+                  else
+                    FPS();
+                }
+
                 break;
               }
 #endif
@@ -1265,7 +1286,12 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   // }
   else
 #ifdef CAMERA
-    if (!cameraTaskActiveQ)
+  if (cameraPrintQ == 2) {
+    showRecognitionResult(xCoord, yCoord, width, height);
+    PTL();
+    FPS();
+  }
+  else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1);  // avoid triggering WDT

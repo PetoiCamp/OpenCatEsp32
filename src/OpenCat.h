@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250306"  // YYMMDD
+#define DATE "250330"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
@@ -340,6 +340,7 @@ bool newBoard = false;
 
 #define T_RESET '!'
 #define T_QUERY '?'
+#define C_QUERY_PARTITION 'p'  
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 
@@ -406,7 +407,16 @@ char terminator;
 long lastSerialTime = 0;
 String webResponse = "";
 
-/*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
+#ifdef CAMERA
+// #define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
+bool detectedObjectQ = false;
+int8_t cameraPrintQ = 0;
+int xCoord, yCoord, width, height;  // the x y returned by the sensor
+int imgRangeX = 100;                      // the frame size 0~100 on X and Y direction
+int imgRangeY = 100;
+#endif
+
+/*  These "Q" booleans are conditions that are checked to activate or deactivate different states.  
     A condition set to true activates (turns on) a state.
 */
 bool lowBatteryQ = false;  // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
@@ -467,7 +477,8 @@ byte moduleIndex;
 bool icmQ = false;
 bool mpuQ = false;
 bool MuQ = false;
-bool SentryQ = false;
+bool Sentry1Q = false;
+bool Sentry2Q = false;
 bool GroveVisionQ = false;
 bool eepromQ = false;
 bool initialBoot = true;
@@ -626,6 +637,16 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #include "QList/QList.h"
 #include "taskQueue.h"
 
+/* Dependencies for displayNsvPartition() */
+// To check ESP32 partitions
+#include "esp_partition.h"
+#include "esp_log.h"
+// To check namespaces in the nvs partition of the ESP32
+#include "nvs_flash.h"
+#include "nvs.h"
+// To manage unique namespaces
+#include <set>
+
 #include "sound.h"
 #include <Wire.h>
 #include "configConstants.h"
@@ -656,6 +677,7 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #endif
 #include "reaction.h"
 #include "qualityAssurance.h"
+
 
 void initRobot() {
   beep(20);
