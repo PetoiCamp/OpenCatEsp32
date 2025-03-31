@@ -631,6 +631,16 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #include "QList/QList.h"
 #include "taskQueue.h"
 
+/* Dependencies for displayNsvPartition() */
+// To check ESP32 partitions
+#include "esp_partition.h"
+#include "esp_log.h"
+// To check namespaces in the nvs partition of the ESP32
+#include "nvs_flash.h"
+#include "nvs.h"
+// To manage unique namespaces
+#include <set>
+
 #include "sound.h"
 #include <Wire.h>
 #include "configConstants.h"
@@ -661,6 +671,7 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #endif
 #include "reaction.h"
 #include "qualityAssurance.h"
+
 
 void initRobot() {
   beep(20);
