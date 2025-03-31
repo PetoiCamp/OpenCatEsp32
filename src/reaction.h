@@ -327,7 +327,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           } else {
             byte i = 0;
             while (newCmd[i] != '\0') {
-              if (newCmd[i] == 'p')
+              if (newCmd[i] == C_QUERY_PARTITION)
                 displayNsvPartition();
               i++;
             }

@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250319"  // YYMMDD
+#define DATE "250330"  // YYMMDD
 String SoftwareVersion = "";
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
@@ -338,6 +338,7 @@ bool newBoard = false;
 
 #define T_RESET '!'
 #define T_QUERY '?'
+#define C_QUERY_PARTITION 'p'  
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 
