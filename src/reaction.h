@@ -321,8 +321,17 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
         }
       case T_QUERY:
         {
-          printToAllPorts(MODEL);
-          printToAllPorts(SoftwareVersion);
+          if (cmdLen == 0) {
+            printToAllPorts(MODEL);
+            printToAllPorts(SoftwareVersion);
+          } else {
+            byte i = 0;
+            while (newCmd[i] != '\0') {
+              if (newCmd[i] == 'p')
+                displayNsvPartition();
+              i++;
+            }
+          }
           break;
         }
       case T_NAME:
