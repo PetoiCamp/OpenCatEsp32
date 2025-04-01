@@ -1,3 +1,4 @@
+
 bool calibrateQ = false;
 float ypr[3];
 float previous_ypr[3];
@@ -535,7 +536,10 @@ void print6Axis() {
   // #endif
   //   PTL();
 }
+
 TaskHandle_t TASK_imu = NULL;
+TaskHandle_t taskCalibrateImuUsingCore0_handle = NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
+
 bool readIMU() {
   bool updated = false;
   if (updateGyroQ && !(frame % imuSkip)) {
@@ -548,10 +552,11 @@ bool readIMU() {
     imuLockI2c = true;
     // Get the stack high water mark
     // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(TASK_imu);
+    // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(taskCalibrateImuUsingCore0_handle);
 
-    // Serial.print("IMU task stack : ");
-    // Serial.print(stackHighWaterMark);
-    // Serial.println(" bytes");
+     // Serial.print("IMU task stack : ");
+     // Serial.print(stackHighWaterMark);
+     // Serial.println(" bytes");
 #ifdef IMU_ICM42670
     if (icmQ) {
       updated = true;
@@ -648,6 +653,8 @@ void taskIMU(void *parameter) {
   vTaskDelete(NULL);
 }
 
+void taskCalibrateImuUsingCore0(void *parameter);  // Forward declaration -ee-
+
 void imuSetup() {
   if (newBoard) {
 #ifndef AUTO_INIT
@@ -689,5 +696,72 @@ void imuSetup() {
   delay(100);
   TASK_imu = xTaskGetHandle("TaskIMU");
 
+  // Create task to be run on Core 0
+  xTaskCreatePinnedToCore(
+    taskCalibrateImuUsingCore0,         // Task function
+    "taskCalibrateImuUsingCore0",       // Task name
+    1800,                               // Task stack size: 1560 bytes determined by uxTaskGetStackHighWaterMark() in bool readIMU()
+    NULL,                               // Task parameters
+    1,                                  // Task priority
+    &taskCalibrateImuUsingCore0_handle, // Task handle
+    0                                   // Task core number to run on
+  );
+
   // imuException = xyzReal[3] < 0;
+}
+
+void taskCalibrateImuUsingCore0(void *parameter)
+{
+  /*  This perpetual task runs will run on Core 0 and will always wait for a notification from Core 1 before calibrating the IMU.
+      Created by este este
+  */
+  while ( true )
+    {
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for notification from Core 1
+      // Received notification so do task work
+#if defined IMU_MPU6050
+      printToAllPorts("\n\t*** Current IMU Offsets ***");  // Show current offsets before doing the calibration
+      mpu.PrintActiveOffsets();
+      printToAllPorts("\n\t*** Calibrating Now ***\n");
+      mpu.calibrateMPU();
+#else if defined IMU_ICM42670
+      // IMU_ICM42670 lacks PrintActiveOffsets() method so need to do this piecemeal
+      icm.getOffset(200);   
+
+      if ( icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768 )
+        {
+          PT("Reading error: ");
+          PT(icm.offset_gyro[0]);
+          PT('\t');
+          PT(icm.offset_gyro[1]);
+          PT('\t');
+          PT(icm.offset_gyro[2]);
+          PTL('\t');
+          while ( !Serial.available() )
+            {
+              playMelody(imuBad2, sizeof(imuBad2) / 2);
+            }
+          while ( Serial.available() )
+            {
+              Serial.read();
+            }
+        }
+
+      PT("Current IMU Offsets:");  // Show current offsets before doing the calibration
+      for ( byte i = 0; i < 3; i++ )
+        {
+          PTT(icm.offset_accel[i], '\t');
+        }
+      for ( byte i = 0; i < 3; i++ )
+        {
+          PTT(icm.offset_gyro[i], '\t');
+        }
+      PTL();
+
+      printToAllPorts("\nCalibrating...\n");
+      calibrateICM();
+#endif
+      // Loop to resume waiting
+    }
+  vTaskDelete(NULL);  // Terminate this task if an error occurs in the loop
 }

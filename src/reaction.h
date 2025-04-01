@@ -291,9 +291,9 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       workingStiffness = true;
 #endif
     }
-    if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
+    if ((lastToken == T_SERVO_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_SERVO_CALIBRATE) {
       // updateGyroQ = true;
-      gyroBalanceQ = true;  // This is the default state for this "Q" boolean with all tokens except (T_CALIBRATE && when lastToken is one of the listed values)
+      gyroBalanceQ = true;  // This is the default state for this "Q" boolean with all tokens except (T_SERVO_CALIBRATE && when lastToken is one of the listed values)
       printToAllPorts('G');
     }
     if (token != T_PAUSE && !tStep) {
@@ -364,34 +364,22 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
             } else {
               if (newCmd[0] == C_GYRO_CALIBRATE) {
-                shutServos();
-                updateGyroQ = false;
-                PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
-                beep(8, 500, 500, 5);
-                beep(15, 500, 500, 1);
-#ifdef IMU_MPU6050
-                if (mpuQ)
-                  mpu.calibrateMPU();
-#endif
-#ifdef IMU_ICM42670
-                if (icmQ)
-                  calibrateICM();
-#endif
-                beep(18, 50, 50, 6);
-                // updateGyroQ = true;
-                // xTaskCreatePinnedToCore(
-                //   taskIMU,    // task function
-                //   "TaskIMU",  // name
-                //   9000,       // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
-                //   NULL,       // parameters
-                //   1,          // priority
-                //   &TASK_imu,  // handle
-                //   0);         // core
-                // delay(100);
-                // TASK_imu = xTaskGetHandle("TaskIMU");
-                PTLF("Calibration done. Rebooting the robot.\n");
-                ESP.restart();  // the imu task cannot restart after re-calibration.
-                                // restart the whole program
+                if (newCmd[1] == C1_GYRO_CALIBRATE_IMMEDIATELY)
+                  {
+                    // Calibrate IMU using core 0 (reboot is no longer required)
+                    xTaskNotifyGive(taskCalibrateImuUsingCore0_handle); // Send notification to this task on Core 0
+                  }
+                else
+                  {
+                  shutServos();
+                  updateGyroQ = false;
+                  PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
+                  beep(8, 500, 500, 5);
+                  beep(15, 500, 500, 1);
+                  // Calibrate IMU using core 0 (reboot is no longer required)
+                  xTaskNotifyGive(taskCalibrateImuUsingCore0_handle); // Send notification to this task on Core 0
+                  beep(18, 50, 50, 6);
+                  }
               } else {
                 byte i = 0;
                 while (newCmd[i] != '\0') {
@@ -610,7 +598,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           if (buttonCmd[0] == '\0')
             break;
         }
-      case T_CALIBRATE:                 // calibration
+      case T_SERVO_CALIBRATE:                 // calibration
       case T_INDEXED_SEQUENTIAL_ASC:    // move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
       case T_INDEXED_SIMULTANEOUS_ASC:  // move multiple indexed joints to angles simultaneously (ASCII format entered in the serial monitor)
 #ifdef T_SERVO_MICROSECOND
@@ -655,7 +643,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                 } else
                   nonHeadJointQ = true;
               }
-              if (token == T_CALIBRATE) {
+              if (token == T_SERVO_CALIBRATE) {
                 gyroBalanceQ = false;
                 if (target[0] == DOF) {  // auto calibrate all body joints using servos' angle feedback
                   strcpy(newCmd, "rest");
@@ -664,7 +652,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   autoCalibrate();
                   break;
                 }
-                if (lastToken != T_CALIBRATE) {
+                if (lastToken != T_SERVO_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
                   workingStiffness = false;

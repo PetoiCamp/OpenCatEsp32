@@ -148,7 +148,7 @@ String SoftwareVersion = "";
 #define UART_RX2 16
 #define UART_TX2 17
 #define SERIAL_VOICE Serial2
-#define IMU_MPU6050
+ #define IMU_MPU6050
 // #define IMU_ICM42670
 // #define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
@@ -265,16 +265,36 @@ ServoModel_t servoModelList[] = {
 };
 
 bool newBoard = false;
-
 #include <math.h>
-// Token (T_) and Character (C_) command list
+/*  Token (T_) and Character (C_) Command list.
+      Character Commands modify the behavior of the Token that they are associated with in reaction().
+      Tokens are stored in the global "token" char variable and Character Commands are stored in the global char array newCmd[0].
+
+      Directive macros that #define Character Commands have the following NAME format (all uppercase letters):
+        C{char-array-position}_{association-name}_{character-command-name}
+            where:
+              {char-array-position} = 0, 1, 2, ...  indicates the location of the Character Command in the char array newCmd[0],
+                                                    and therefore indicates where the Character Command must be placed after the token.
+                                                    Note:  "C_" is the same as "C0_".
+              {association-name} =  the Token name or the Token behavior name that the Character Command is associated with.
+                                    This allows some Character Commands to be associated with multiple tokens
+                                      Examples include:  C_PRINT, C_FOLLOW series.
+              {character-command-name} = unique name for the character command.
+
+      This adds a Character Command sequencing paradigm to the token system where the ability to append multiple Character Commands 
+      after a Token provides additional flexibility.
+
+    Change Log:
+      Renamed T_CALIBRATE to T_SERVO_CALIBRATE        to make its behavior more obvious now that we are calibrating the IMU.
+
+*/
 #define T_ABORT 'a'           // abort the calibration values
 #define T_BEEP 'b'            //b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4 \
                          //bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. \
                          //a single 'b' will toggle all sound on/off
 #define T_BEEP_BIN 'B'        //B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4 \
                          //a single 'B' will toggle all sound on/off
-#define T_CALIBRATE 'c'       //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
+#define T_SERVO_CALIBRATE 'c'       //send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. \
                          //c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
 #define T_COLOR 'C'           //change the eye colors of the RGB ultrasonic sensor \
                          //a single 'C' will cancel the manual eye colors
@@ -284,17 +304,18 @@ bool newBoard = false;
                                         //e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
 #define C_FOLLOW 'F'
 #define C_FOLLOW_OFF 'f'
-#define C_LEARN 'l'
-#define C_REPLAY 'r'
+#define C_LEARN 'l'         // Should be named C_SERVO_FEEDBACK_LEARN since it is only associated with T_SERVO_FEEDBACK?
+#define C_REPLAY 'r'        // Should be named C_SERVO_FEEDBACK_REPLAY since it is only associated with T_SERVO_FEEDBACK?
 #define T_SERVO_FOLLOW 'F'  // make the other legs follow the moved legs
 
 #define T_GYRO 'g'  // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
 // These Character (C_) commands apply to the T_GYRO Token
-#define C_GYRO_FINENESS 'F'      // increase the frequency of gyroscope sampling
-#define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
-#define C_GYRO_BALANCE 'B'       // turn on the gyro balancing
-#define C_GYRO_BALANCE_OFF 'b'   // turn off the gyro balancing
-#define C_GYRO_CALIBRATE 'c'     // calibrate the IMU. enter "gc"
+#define C_GYRO_FINENESS 'F'                // increase the frequency of gyroscope sampling
+#define C_GYRO_FINENESS_OFF 'f'            // reduce the frequency of gyroscope sampling to accelerate motion
+#define C_GYRO_BALANCE 'B'                 // turn on the gyro balancing
+#define C_GYRO_BALANCE_OFF 'b'             // turn off the gyro balancing
+#define C_GYRO_CALIBRATE 'c'               // calibrate the IMU. enter "gc"
+#define C1_GYRO_CALIBRATE_IMMEDIATELY 'i'  // calibrate the IMU immediately. enter "gci"
 
 // These Character (C_) commands apply to various tokens that have a print capability (e.g. T_GYRO, T_SERVO_FEEDBACK)
 #define C_PRINT 'P'      // Continuously print data
@@ -338,7 +359,7 @@ bool newBoard = false;
 
 #define T_RESET '!'
 #define T_QUERY '?'
-#define C_QUERY_PARTITION 'p'  
+#define C_QUERY_PARTITION 'p'
 #define T_ACCELERATE '.'
 #define T_DECELERATE ','
 
@@ -633,14 +654,11 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 #include "taskQueue.h"
 
 /* Dependencies for displayNsvPartition() */
-// To check ESP32 partitions
-#include "esp_partition.h"
-#include "esp_log.h"
-// To check namespaces in the nvs partition of the ESP32
-#include "nvs_flash.h"
-#include "nvs.h"
-// To manage unique namespaces
-#include <set>
+#include "esp_partition.h"  // To check ESP32 partitions
+#include "esp_log.h"        // To check ESP32 partitions
+#include "nvs_flash.h"      // To check namespaces in the nvs partition of the ESP32
+#include "nvs.h"            // To check namespaces in the nvs partition of the ESP32
+#include <set>              // To manage unique namespaces
 
 #include "sound.h"
 #include <Wire.h>
@@ -764,7 +782,7 @@ void initRobot() {
 #ifdef GYRO_PIN
   // readIMU(); // ypr is slow when starting up. leave enough time between IMU initialization and this reading
   if (!moduleDemoQ && updateGyroQ)
-    tQueue->addTask((imuException) ? T_CALIBRATE : T_REST, "");
+    tQueue->addTask((imuException) ? T_SERVO_CALIBRATE : T_REST, "");
 #endif
   PTL("Ready!");
   beep(24, 50);

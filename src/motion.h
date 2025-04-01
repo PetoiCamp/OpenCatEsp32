@@ -414,7 +414,7 @@ void autoCalibrate() {
   }
   saveCalib(servoCalib);
   tQueue->addTask(T_REST, "");
-  tQueue->addTask(T_CALIBRATE, "");
+  tQueue->addTask(T_SERVO_CALIBRATE, "");
   measureServoPin = 16;  // reattach the servos in the next reaction loop
 }
 
