@@ -179,7 +179,7 @@ void dealWithExceptions() {
     config.putBool("WifiManager", true);  //default is false
 #endif
     PTLF("The robot will reboot and use Wifi manager.");
-    PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
+    PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.\n**********\n\n");
     int wifiCountdown = 10;
     while (digitalRead(0) == LOW && wifiCountdown) {
       delay(200);
@@ -189,7 +189,7 @@ void dealWithExceptions() {
     if (wifiCountdown == 0) {
       resetWifiManager();
     }
-    delay(2000);
+    delay(200);
     ESP.restart();
   }
 #endif
@@ -376,7 +376,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       case T_WIFI_INFO:
         {
           if (!webServerConnected) {
-            PTLF("The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. w%user%passwd");
+            PTLF("The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. w%WifiName%password");
             String wifiInfo = newCmd;
             PTL(wifiInfo);
             int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置

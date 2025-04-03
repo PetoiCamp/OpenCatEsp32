@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250330"  // YYMMDD
+#define DATE "250403"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
@@ -100,7 +100,7 @@ String uniqueName = "";
 
 #elif defined BITTLE
 #ifdef ROBOT_ARM
-#define MODEL "Bittle R"
+#define MODEL "Bittle X+Arm"
 #include "InstinctBittleESP_arm.h"
 #define REGULAR P1S
 #define KNEE P1S

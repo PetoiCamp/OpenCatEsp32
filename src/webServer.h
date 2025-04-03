@@ -112,7 +112,7 @@ void startWifiManager() {
   wm.setConfigPortalTimeout(60);  // timeout after 60 seconds
   //if it fails to connect, it won't open wifi manager during next bootup
   if (!wm.autoConnect((uniqueName + " WifiConfig").c_str())) {
-    PTLF("Failt to connect Wifi. Rebooting.");
+    PTLF("Fail to connect Wifi. Rebooting.");
     delay(3000);
     ESP.restart();
   } else
