@@ -1,3 +1,4 @@
+#include "esp32-hal.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WiFiManager.h>
@@ -27,8 +28,9 @@ void handleCommand() {
   newCmd[cmdLen + 1] = '\0';
   newCmdIdx = 4;
   while (cmdFromWeb)
-    delay(1);
-  webServer.send(200, "text/plain", webResponse);
+    delayMicroseconds(100);
+  webServer.send(200, "text/plain", webResponse+"\n");
+  // PTHL("res: ",webResponse+"\n"+token+"\n")
   webResponse = "";
 }
 

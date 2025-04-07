@@ -186,6 +186,7 @@ void dealWithExceptions() {
       PT(wifiCountdown--);
       PT("..");
     }
+    PTL();
     if (wifiCountdown == 0) {
       resetWifiManager();
     }
@@ -415,7 +416,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               }
             }
           } else {
-            PTHL("Wifi already connected to ", WiFi.localIP());
+            PTHL("Wifi already connected to IP Address: ", WiFi.localIP());
             PTLF("Press the BOOT key to reboot and use Wifi manager.");
             PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
           }
@@ -1010,7 +1011,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   printToAllPorts('=');
                   showRecognitionResult(xCoord, yCoord, width, height);
                   PTL();
-                  // printToAllPorts(token); 
+                  // printToAllPorts(token);
                   if (cameraPrintQ == 1)
                     cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
                   else
@@ -1203,13 +1204,13 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       // else
       //   strcpy(lastCmd, "up");
     }
-    cmdFromWeb = false;
+
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
       if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
-
+    cmdFromWeb = false;
     resetCmd();
 #ifdef PWM_LED_PIN
     if (autoLedQ)
@@ -1286,12 +1287,11 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   // }
   else
 #ifdef CAMERA
-  if (cameraPrintQ == 2) {
+    if (cameraPrintQ == 2) {
     showRecognitionResult(xCoord, yCoord, width, height);
     PTL();
     FPS();
-  }
-  else if (!cameraTaskActiveQ)
+  } else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1);  // avoid triggering WDT
