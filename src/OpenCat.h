@@ -99,7 +99,7 @@ String SoftwareVersion = "";
 
 #elif defined BITTLE
 #ifdef ROBOT_ARM
-#define MODEL "Bittle R"
+#define MODEL "Bittle X+Arm"
 #include "InstinctBittleESP_arm.h"
 #define REGULAR P1S
 #define KNEE P1S
