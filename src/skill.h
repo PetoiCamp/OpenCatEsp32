@@ -238,11 +238,14 @@ public:
       offset = 0;
     for (int k = 0; k < abs(period); k++) {
       // printList(dutyAngles + k * frameSize, frameSize); //compare the angle change
+      float rate = 1.2;
+      if (angle < 0)
+        rate = 0.6;
       for (byte col = 0; col < 2; col++) {
         dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] + angle;
       }
       for (byte col = 4; col < 6; col++) {
-        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * 1.2;
+        dutyAngles[k * frameSize + offset + col] = dutyAngles[k * frameSize + offset + col] - angle * rate;
       }
       // printList(dutyAngles + k * frameSize, frameSize);
     }
@@ -281,27 +284,32 @@ public:
       gyroBalanceQ = strcmp(skillName, "bf") && strcmp(skillName, "ff") && strcmp(skillName, "flipF") && strcmp(skillName, "flipD") && strcmp(skillName, "flipL") && strcmp(skillName, "flipR") && strcmp(skillName, "pd") && strcmp(skillName, "hds") && strcmp(skillName, "bx") && strstr(skillName, "rl") == NULL;  // won't read gyro for fast motion
       for (byte c = 0; c < abs(period); c++) {                                                                                                                                                                                                                                                                         // the last two in the row are transition speed and delay
         Stream *serialPort = NULL;
-// String source;
+        String source;
 #ifdef BT_SSP
         if (SerialBT.available()) {  // give BT a higher priority over wired serial
           serialPort = &SerialBT;
-          // source = "BT";
+          source = "BT";
         } else
 #endif
 #ifdef VOICE
-          if (SERIAL_VOICE.available())
+          if (SERIAL_VOICE.available()) {
           serialPort = &SERIAL_VOICE;
-        else
+          source = "Voice";
+        } else
 #endif
           // the BT_BLE is unhandled here
           if (moduleActivatedQ[0] && Serial2.available()) {
             serialPort = &Serial2;
+            source = "Serial2";
           } else if (Serial.available()) {
             serialPort = &Serial;
+            source = "Serial";
           }
         if (serialPort || gyroBalanceQ && (imuException != IMU_EXCEPTION_FLIPPED && !strcmp(skillName, "rc")        // recovered during recover
-                                           || imuException == IMU_EXCEPTION_FLIPPED && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
-          // PTLF("Behavior interrupted");
+                                                        || imuException == IMU_EXCEPTION_FLIPPED && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
+          print6Axis();
+          PTHL("imuException: ", imuException);
+          PTLF("Behavior interrupted");
           interruptedDuringBehavior = true;
           return;
         }
@@ -406,7 +414,7 @@ public:
         duty =
 #ifdef GYRO_PIN
           +gyroBalanceQ * ((!imuException || imuException == IMU_EXCEPTION_LIFTED) ?  // not exception or the robot is lifted
-                             (!(frame % imuSkip) ? adjust(jointIndex,(period==1)) : currentAdjust[jointIndex])
+                             (!(frame % imuSkip) ? adjust(jointIndex, (period == 1)) : currentAdjust[jointIndex])
                                                                                    : 0)
             / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
 #endif
@@ -460,8 +468,8 @@ void loadBySkillName(const char *skillName) {  // get lookup information from on
     thresY = (skill->period > 1) ? 10000 : 4000;
     thresZ = (skill->period > 1) ? 15000 : 12000;
 #endif
-    if (strcmp(newCmd, "calib") && skill->period == 1) {  // for static postures
-      int8_t protectiveShift = esp_random() % 100 / 10.0 - 5;
+    if (strcmp(newCmd, "calib") && skill->period == 1) {      // for static postures
+      int8_t protectiveShift = esp_random() % 60 / 10.0 - 3;  // +- 3.0 degrees
       for (byte i = 0; i < DOF; i++)
 #ifdef ROBOT_ARM
         if (i != 2)

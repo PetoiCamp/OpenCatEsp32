@@ -692,6 +692,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
+                  servoCalib[2] = -30;
+                  calibratedPWM(2, 0);
                   calibratedPWM(1, 90);
                   delay(500);
                   int criticalAngle = calibratePincerByVibration(-25, 25, 4);
