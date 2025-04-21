@@ -364,22 +364,30 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
             } else {
               if (newCmd[0] == C_GYRO_CALIBRATE) {
-                if (newCmd[1] == C1_GYRO_CALIBRATE_IMMEDIATELY)
-                  {
-                    // Calibrate IMU using core 0 (reboot is no longer required)
-                    xTaskNotifyGive(taskCalibrateImuUsingCore0_handle); // Send notification to this task on Core 0
-                  }
-                else
-                  {
-                  shutServos();
-                  updateGyroQ = false;
+                shutServos();
+                updateGyroQ = false;
+                if (newCmd[1] != C1_GYRO_CALIBRATE_IMMEDIATELY) {
                   PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
                   beep(8, 500, 500, 5);
                   beep(15, 500, 500, 1);
                   // Calibrate IMU using core 0 (reboot is no longer required)
-                  xTaskNotifyGive(taskCalibrateImuUsingCore0_handle); // Send notification to this task on Core 0
-                  beep(18, 50, 50, 6);
-                  }
+                  // xTaskNotifyGive(taskCalibrateImuUsingCore0_handle);  // Send notification to this task on Core 0
+                }
+                // Create calibration task to be run on Core 0
+                xTaskCreatePinnedToCore(
+                  taskCalibrateImuUsingCore0,          // Task function
+                  "taskCalibrateImuUsingCore0",        // Task name
+                  1800,                                // Task stack size: 1560 bytes determined by uxTaskGetStackHighWaterMark() in bool readIMU()
+                  NULL,                                // Task parameters
+                  1,                                   // Task priority
+                  &taskCalibrateImuUsingCore0_handle,  // Task handle
+                  0                                    // Task core number to run on
+                );
+                // Calibrate IMU using core 0 (reboot is no longer required)
+                // xTaskNotifyGive(taskCalibrateImuUsingCore0_handle);  // Send notification to this task on Core 0
+                while (!updateGyroQ) delay(1);
+                delay(3000);  // allow the imu to stablize after calibration
+                beep(18, 50, 50, 6);
               } else {
                 byte i = 0;
                 while (newCmd[i] != '\0') {
@@ -598,7 +606,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           if (buttonCmd[0] == '\0')
             break;
         }
-      case T_SERVO_CALIBRATE:                 // calibration
+      case T_SERVO_CALIBRATE:           // calibration
       case T_INDEXED_SEQUENTIAL_ASC:    // move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
       case T_INDEXED_SIMULTANEOUS_ASC:  // move multiple indexed joints to angles simultaneously (ASCII format entered in the serial monitor)
 #ifdef T_SERVO_MICROSECOND
@@ -928,7 +936,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   printToAllPorts('=');
                   showRecognitionResult(xCoord, yCoord, width, height);
                   PTL();
-                  // printToAllPorts(token); 
+                  // printToAllPorts(token);
                   if (cameraPrintQ == 1)
                     cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
                   else
@@ -1205,12 +1213,11 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   // }
   else
 #ifdef CAMERA
-  if (cameraPrintQ == 2) {
+    if (cameraPrintQ == 2) {
     showRecognitionResult(xCoord, yCoord, width, height);
     PTL();
     FPS();
-  }
-  else if (!cameraTaskActiveQ)
+  } else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1);  // avoid triggering WDT

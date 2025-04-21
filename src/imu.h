@@ -554,9 +554,9 @@ bool readIMU() {
     // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(TASK_imu);
     // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(taskCalibrateImuUsingCore0_handle);
 
-     // Serial.print("IMU task stack : ");
-     // Serial.print(stackHighWaterMark);
-     // Serial.println(" bytes");
+    // Serial.print("IMU task stack : ");
+    // Serial.print(stackHighWaterMark);
+    // Serial.println(" bytes");
 #ifdef IMU_ICM42670
     if (icmQ) {
       updated = true;
@@ -610,7 +610,7 @@ void getImuException() {
   // PTT(fabs(xyzReal[2] - previousXYZ[2]), '\t');
 
   if (fabs(ypr[2]) > 90) {  //  imuException = aaReal.z < 0;
-    if (mpuQ) {             //mpu is faster in detecting instant acceleration which may lead to false positive
+    if (mpuQ) {             // mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
         imuException = IMU_EXCEPTION_FLIPPED;  // flipped
     } else if (xyzReal[2] < -1)
@@ -618,11 +618,11 @@ void getImuException() {
   } else if (ypr[1] < -50 || ypr[1] > 75)
     imuException = IMU_EXCEPTION_LIFTED;
 #ifndef ROBOT_ARM
-  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  //z direction shock)
+  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  // z direction shock)
     imuException = IMU_EXCEPTION_KNOCKED;
-  else if (!moduleDemoQ && (                                                                               //not in demo mode
-             fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor     //x direction shock
-             || fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor  //y direction shock
+  else if (!moduleDemoQ && (                                                                               // not in demo mode
+             fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor     // x direction shock
+             || fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor  // y direction shock
              )) {
     imuException = IMU_EXCEPTION_PUSHED;
   }
@@ -696,72 +696,60 @@ void imuSetup() {
   delay(100);
   TASK_imu = xTaskGetHandle("TaskIMU");
 
-  // Create task to be run on Core 0
-  xTaskCreatePinnedToCore(
-    taskCalibrateImuUsingCore0,         // Task function
-    "taskCalibrateImuUsingCore0",       // Task name
-    1800,                               // Task stack size: 1560 bytes determined by uxTaskGetStackHighWaterMark() in bool readIMU()
-    NULL,                               // Task parameters
-    1,                                  // Task priority
-    &taskCalibrateImuUsingCore0_handle, // Task handle
-    0                                   // Task core number to run on
-  );
-
   // imuException = xyzReal[3] < 0;
 }
 
-void taskCalibrateImuUsingCore0(void *parameter)
-{
+void taskCalibrateImuUsingCore0(void *parameter) {
   /*  This perpetual task runs will run on Core 0 and will always wait for a notification from Core 1 before calibrating the IMU.
       Created by este este
   */
-  while ( true )
-    {
-      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for notification from Core 1
-      // Received notification so do task work
-#if defined IMU_MPU6050
-      printToAllPorts("\n\t*** Current IMU Offsets ***");  // Show current offsets before doing the calibration
-      mpu.PrintActiveOffsets();
-      printToAllPorts("\n\t*** Calibrating Now ***\n");
-      mpu.calibrateMPU();
-#else if defined IMU_ICM42670
-      // IMU_ICM42670 lacks PrintActiveOffsets() method so need to do this piecemeal
-      icm.getOffset(200);   
-
-      if ( icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768 )
-        {
-          PT("Reading error: ");
-          PT(icm.offset_gyro[0]);
-          PT('\t');
-          PT(icm.offset_gyro[1]);
-          PT('\t');
-          PT(icm.offset_gyro[2]);
-          PTL('\t');
-          while ( !Serial.available() )
-            {
-              playMelody(imuBad2, sizeof(imuBad2) / 2);
-            }
-          while ( Serial.available() )
-            {
-              Serial.read();
-            }
-        }
-
-      PT("Current IMU Offsets:");  // Show current offsets before doing the calibration
-      for ( byte i = 0; i < 3; i++ )
-        {
-          PTT(icm.offset_accel[i], '\t');
-        }
-      for ( byte i = 0; i < 3; i++ )
-        {
-          PTT(icm.offset_gyro[i], '\t');
-        }
-      PTL();
-
-      printToAllPorts("\nCalibrating...\n");
-      calibrateICM();
+  // while (true) {
+  // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for notification from Core 1
+  //                                           // Received notification so do task work
+#ifdef IMU_MPU6050
+  if (mpuQ) {
+    printToAllPorts("\n\t*** Current IMU Offsets ***");  // Show current offsets before doing the calibration
+    mpu.PrintActiveOffsets();
+    printToAllPorts("\n\t*** Calibrating Now ***\n");
+    mpu.calibrateMPU();
+  }
 #endif
-      // Loop to resume waiting
+#ifdef IMU_ICM42670
+  // IMU_ICM42670 lacks PrintActiveOffsets() method so need to do this piecemeal
+  if (icmQ) {
+    icm.getOffset(200);
+
+    if (icm.offset_gyro[0] == -32768 || icm.offset_gyro[1] == -32768 || icm.offset_gyro[2] == -32768) {
+      PT("Reading error: ");
+      PT(icm.offset_gyro[0]);
+      PT('\t');
+      PT(icm.offset_gyro[1]);
+      PT('\t');
+      PT(icm.offset_gyro[2]);
+      PTL('\t');
+      while (!Serial.available()) {
+        playMelody(imuBad2, sizeof(imuBad2) / 2);
+      }
+      while (Serial.available()) {
+        Serial.read();
+      }
     }
+
+    PT("Current IMU Offsets:");  // Show current offsets before doing the calibration
+    for (byte i = 0; i < 3; i++) {
+      PTT(icm.offset_accel[i], '\t');
+    }
+    for (byte i = 0; i < 3; i++) {
+      PTT(icm.offset_gyro[i], '\t');
+    }
+    PTL();
+
+    printToAllPorts("\nCalibrating...\n");
+    calibrateICM();
+  }
+#endif
+  // Loop to resume waiting
+  // }
+  updateGyroQ = true;
   vTaskDelete(NULL);  // Terminate this task if an error occurs in the loop
 }
