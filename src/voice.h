@@ -172,6 +172,12 @@ void voiceStop() {
 void read_voice() {
   if (SERIAL_VOICE.available()) {
     String raw = SERIAL_VOICE.readStringUntil('\n');
+#ifdef BT_CLIENT
+    if (btConnected) {
+      PTLF("Ignore voice for remote controllor");
+      return;
+    }
+#endif
     PTL(raw);
     byte index = (byte)raw[2];  // interpret the 3rd byte as integer
     int shift = -1;

@@ -50,7 +50,7 @@ void allRandom() {
 }
 String forbiddenSkills[] = { "ff", "bf", "rc", "rl", "jmp", "bk", "pd", "hlw", "calib", "dropped", "lifted", "ts", "ang", "zero", "zz", "lnd", "lpov" };
 void randomMind() {
-  if (token != T_CALIBRATE && token != T_REST && idleTimer && (millis() - idleTimer) > idleThreshold * 1000) {  //in idle state
+  if (token != T_SERVO_CALIBRATE && token != T_REST && idleTimer && (millis() - idleTimer) > idleThreshold * 1000) {  //in idle state
     if (millis() - randTimer > randomInterval) {                                                                //every randomInterval(ms) throw a dice
       randTimer = millis();
       int randomNum = esp_random() % randomBase;
