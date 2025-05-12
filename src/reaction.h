@@ -374,6 +374,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
           );
           break;
         }
+#ifdef WEB_SERVER
       case T_WIFI_INFO:
         {
           if (!webServerConnected) {
@@ -421,6 +422,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
             PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
           }
         }
+#endif
       case T_GYRO:
       case T_RANDOM_MIND:
         {

@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250421"  // YYMMDD
+#define DATE "250512"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
@@ -84,7 +84,7 @@ String uniqueName = "";
 
 #define BT_BLE      // toggle Bluetooth Low Energy (BLE）
 #define BT_SSP      // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define WEB_SERVER  // toggle web server
+// #define WEB_SERVER  // toggle web server
 #define GYRO_PIN    // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
