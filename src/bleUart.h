@@ -49,11 +49,12 @@ class MyServerCallbacks : public BLEServerCallbacks {
   }
 };
 byte bleMessageShift = 1;
+int buffLen = 0;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
     std::string rxValue = pCharacteristic->getValue();
     // String rxValue = String(pCharacteristic->getValue().c_str());//it will cause unkown bug when sending 'K'-token skill data via mobile app and break the main program.
-    int buffLen = rxValue.length();
+    buffLen = rxValue.length();
     if (buffLen > 0) {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
@@ -72,6 +73,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
       bleMessageShift = 0;
       lastSerialTime = millis();
     }
+    buffLen = 0;
   }
 };
 

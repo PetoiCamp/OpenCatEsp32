@@ -397,7 +397,7 @@ void autoCalibrate() {
   // PTLF("Auto calibration reference:");
   // printList(calibrationReference);
   PTLF("Push the robot tightly to the ground. Enter any character when ready.");
-  while (!Serial.available())  // wait for user input
+  while (!Serial.available() && !buffLen)  // wait for user input
     ;
   while (Serial.available())
     Serial.read();
