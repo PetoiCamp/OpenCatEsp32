@@ -39,7 +39,6 @@ bool oldDeviceConnected = false;
 #define CHARACTERISTIC_UUID_RX_APP "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
 #define CHARACTERISTIC_UUID_TX_APP "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
 
-
 class MyServerCallbacks : public BLEServerCallbacks {
   void onConnect(BLEServer *pServer) {
     deviceConnected = true;
@@ -52,23 +51,24 @@ byte bleMessageShift = 1;
 int buffLen = 0;
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    std::string rxValue = pCharacteristic->getValue();
+    // Use C-style string handling to avoid std::string compatibility issues
+    const char *rxValueCStr = pCharacteristic->getValue().c_str();
+    buffLen = pCharacteristic->getValue().length();
     // String rxValue = String(pCharacteristic->getValue().c_str());//it will cause unkown bug when sending 'K'-token skill data via mobile app and break the main program.
-    buffLen = rxValue.length();
     if (buffLen > 0) {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
       // Serial.print("From BLE:");
-      // Serial.println(rxValue.c_str());
+      // Serial.println(rxValueCStr);
       if (bleMessageShift) {
         cmdLen = 0;
-        token = rxValue[0];
+        token = rxValueCStr[0];
         lowerToken = tolower(token);
         terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';
         serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP || token == T_TASK_QUEUE) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
       }
       for (int i = bleMessageShift; i < buffLen; i++) {
-        newCmd[cmdLen++] = rxValue[i];
+        newCmd[cmdLen++] = rxValueCStr[i];
       }
       bleMessageShift = 0;
       lastSerialTime = millis();
@@ -79,7 +79,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 
 void readBle() {
   if (deviceConnected && !bleMessageShift) {
-    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout) {  //wait until the long message is completed
+    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout) {  // wait until the long message is completed
       delay(SERIAL_TIMEOUT);
     }
     // PTH("* BLE", millis() - lastSerialTime);
@@ -88,7 +88,7 @@ void readBle() {
     newCmd[cmdLen + 1] = '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
-    if (token == 'g' && cmdLen == 0) {  //adapt for the mobile app where 'g' toggles acceleration
+    if (token == 'g' && cmdLen == 0) {  // adapt for the mobile app where 'g' toggles acceleration
       cmdLen = 1;
       newCmd[0] = fineAdjustQ ? 'f' : 'F';
       newCmd[1] = '\0';
@@ -102,11 +102,11 @@ void bleSetup() {
   // Create the BLE Device
 #ifdef I2C_EEPROM_ADDRESS
   PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
-  BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  //read BLE device name from EEPROM so it's static
+  BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  // read BLE device name from EEPROM so it's static
 #else
   String blueID = "" + config.getString("ID", "P") + "_BLE";
   PTHL("BLE:\t", blueID);
-  BLEDevice::init(blueID.c_str());  //read BLE device name from EEPROM so it's static
+  BLEDevice::init(blueID.c_str());  // read BLE device name from EEPROM so it's static
 #endif
   // Create the BLE Server
   pServer = BLEDevice::createServer();
@@ -137,7 +137,6 @@ void bleSetup() {
   pServer->getAdvertising()->start();
   Serial.println("Waiting for a BLE client connection to notify...");
 }
-
 
 void bleWrite(String buff) {
   if (deviceConnected) {

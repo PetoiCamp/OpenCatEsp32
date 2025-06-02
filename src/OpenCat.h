@@ -76,7 +76,7 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250517"  // YYMMDD
+#define DATE "250602"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
