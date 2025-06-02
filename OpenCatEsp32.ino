@@ -74,6 +74,10 @@ void loop()
   playLight();
 #endif
   reaction();
+
+#ifdef WEB_SERVER
+  WebServerLoop(); // 处理异步Web请求
+#endif
 }
 
 #ifdef QUICK_DEMO // enter XQ in the serial monitor to activate the following section

@@ -82,10 +82,10 @@ String uniqueName = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP // toggle Bluetooth Secure Simple Pairing (BT_SSP)
-#define WEB_SERVER  // toggle web server
-#define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define BT_BLE     // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP     // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define WEB_SERVER // toggle web server
+#define GYRO_PIN   // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills
@@ -733,15 +733,16 @@ void initRobot()
     // Create a task to run webServer.handleClient() on core 1
     if (webServerConnected)
     {
-      xTaskCreatePinnedToCore(
-          webServerTask,   // Task function
-          "WebServerTask", // Task name
-          4096,            // Stack size
-          NULL,            // Task parameters
-          1,               // Task priority
-          NULL,            // Task handle
-          0                // Core ID (0 for core 0)
-      );
+      // 注释掉webServerTask，因为异步版本不需要独立任务
+      // xTaskCreatePinnedToCore(
+      //     webServerTask,   // Task function
+      //     "WebServerTask", // Task name
+      //     4096,            // Stack size
+      //     NULL,            // Task parameters
+      //     1,               // Task priority
+      //     NULL,            // Task handle
+      //     0                // Core ID (0 for core 0)
+      // );
     }
   }
 #endif

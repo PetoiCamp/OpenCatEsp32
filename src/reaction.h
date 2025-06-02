@@ -1,4 +1,13 @@
 #include "esp32-hal.h"
+
+// 异步web服务器函数声明
+#ifdef WEB_SERVER
+void completeWebTask();
+void errorWebTask(String errorMessage);
+void finishWebCommand();
+void finishWebCommandWithError(String errorMsg);
+#endif
+
 void dealWithExceptions()
 {
 #ifdef GYRO_PIN
@@ -435,28 +444,14 @@ void reaction()
           webServerConnected = connectWifi(ssid, password);
           if (webServerConnected)
           {
-            // Enable CORS
-            webServer.enableCORS(true);
-            // Set up server routes
-            webServer.on("/", HTTP_GET, handleCommand);
-            // Start server
-            webServer.begin();
-            PTLF("HTTP server started. Successfully connected to Wifi:");
+            PTLF("Successfully connected to Wifi:");
             PTL(WiFi.localIP());
+            PTLF("Web server will be started via startWifiManager");
 #ifdef I2C_EEPROM_ADDRESS
             i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, true);
 #else
             config.putBool("WifiManager", true);
 #endif
-            xTaskCreatePinnedToCore(
-                webServerTask,   // Task function
-                "WebServerTask", // Task name
-                4096,            // Stack size
-                NULL,            // Task parameters
-                1,               // Task priority
-                NULL,            // Task handle
-                0                // Core ID (0 for core 0)
-            );
           }
           else
           {
@@ -467,6 +462,7 @@ void reaction()
       else
       {
         PTHL("Wifi already connected to IP Address: ", WiFi.localIP());
+        PTLF("Web server should already be running");
         PTLF("Press the BOOT key to reboot and use Wifi manager.");
         PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
       }
@@ -1372,7 +1368,7 @@ void reaction()
       if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
-    cmdFromWeb = false;
+    finishWebCommand();
     resetCmd();
 #ifdef PWM_LED_PIN
     if (autoLedQ)
@@ -1473,4 +1469,33 @@ void reaction()
   {
     delay(1); // avoid triggering WDT
   }
+}
+
+// 异步Web处理函数
+void finishWebCommand()
+{
+#ifdef WEB_SERVER
+  if (cmdFromWeb)
+  {
+    completeWebTask(); // 调用异步完成函数
+    // cmdFromWeb 将在 completeWebTask() 中设为 false
+  }
+#endif
+}
+
+void finishWebCommandWithError(String errorMsg)
+{
+#ifdef WEB_SERVER
+  if (cmdFromWeb)
+  {
+    errorWebTask(errorMsg); // 调用异步错误处理
+    // cmdFromWeb 将在 errorWebTask() 中设为 false
+  }
+  else
+  {
+    cmdFromWeb = false; // 兼容性处理
+  }
+#else
+  cmdFromWeb = false;
+#endif
 }
