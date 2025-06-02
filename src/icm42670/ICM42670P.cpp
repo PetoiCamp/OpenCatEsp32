@@ -375,7 +375,6 @@ int ICM42670::getPedometer(uint32_t &step_count, float &step_cadence, const char
 int ICM42670::startWakeOnMotion(uint8_t intpin, ICM42670_irq_handler handler)
 {
   int rc = 0;
-  inv_imu_apex_parameters_t apex_inputs;
 
   /* Configure interrupts sources */
   int1_config.INV_WOM_X = INV_IMU_ENABLE;

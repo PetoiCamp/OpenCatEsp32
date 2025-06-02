@@ -295,7 +295,7 @@ float adaptiveParameterArray[][NUM_ADAPT_PARAM] = {
 #endif
 
 float adjust(byte i, bool postureQ = false) {
-  float rollAdj, pitchAdj, adj;
+  float rollAdj, pitchAdj;
   float cutOff = postureQ ? 45 : 15;  // reduce angle deviation for non-posture skills to filter noise
   pitchAdj = adaptiveParameterArray[i][1] * max(float(-cutOff), min(float(cutOff), RollPitchDeviation[1]));
   if (i == 1 || i > 3) {  // check idx = 1
@@ -332,7 +332,7 @@ int calibratePincerByVibration(int start, int end, int step, int threshold = 100
   PTT(" ~ ", end);
   PTTL(" by ", step);
   float angLag0 = xyzReal[0];
-  float angLag1 = xyzReal[1];
+  // float angLag1 = xyzReal[1]; // no need for detecting additional rotation
   calibratedPWM(2, 20);
   delay(300);
   for (int a = start; a < end; a += step) {
@@ -437,8 +437,8 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
       // PTHL("freq", freq);
       // PTHL("phase", phase);
       // PTHL("midpoint", midpoint);
-      int angle;
-      if (curveMethod == 't')
+      int angle = 0;
+      if (curveMethod == 't') // currently we set sin function as the default and only option
         // angle = round(amp * sin(M_PI * 2.0 * freq * (t + phase*3/freq) / 360.0)) + midpoint;//phase: 120 => 1 full period
         // else if(curveMethod == 'c')
         angle = midpoint + round(amp * sin(2.0 * M_PI * ((t + phase * 3 / freq) / (360.0 / freq))));
@@ -459,7 +459,6 @@ int8_t learnData[11 * MAX_FRAME];
 int8_t learnDataPrev[11];
 void learnByDrag() {
   totalFrame = 0;
-  bool skip = false;
   int getReady = 0;
 
   while (getReady < READY_COUNTDOWN) {

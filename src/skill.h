@@ -55,7 +55,7 @@ public:
       if (s == randSkillIdx          // random skill
           || !strcmp(readName, key)  // exact match: gait type + F or L, behavior
           // || readName[nameLen - 1] == 'L' && !strncmp(readName, key, nameLen - 1)
-          || readName[nameLen - 1] != 'F' && strcmp(readName, "bk") && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X')  // L, R or X
+          || (readName[nameLen - 1] != 'F' && strcmp(readName, "bk") && !strncmp(readName, key, keyLen - 1) && (lr == 'L' || lr == 'R' || lr == 'X'))  // L, R or X
       ) {
         printToAllPorts(readName);
         return s;
@@ -79,7 +79,7 @@ public:
   byte frameSize;
   int expectedRollPitch[2];  // expected body orientation (roll, pitch)
   byte angleDataRatio;       // divide large angles by 1 or 2. if the max angle of a skill is >128, all the angls will be divided by 2
-  byte loopCycle[3];         // the looping section of a behavior (starting row, ending row, repeating cycles)
+  int8_t loopCycle[3];       // the looping section of a behavior (starting row, ending row, repeating cycles)
   byte firstMotionJoint;
   int8_t *dutyAngles;  // the data array for skill angles and parameters
 
@@ -126,9 +126,9 @@ public:
   }
 
   void inplaceShift() {
-    int angleLen = abs(period) * frameSize;                 // need one extra byte for terminator '~'
-    int shiftRequiredByNewCmd = CMD_LEN - skillHeader + 1;  // required shift to store CMD_LEN + 1 chars. it can hold a command with CMD_LEN chars. the additioanl byte is required by '\0'.
-    spaceAfterStoringData = BUFF_LEN - angleLen - 1;        // the bytes before the dutyAngles. The allowed command's bytes needs to -1
+    int angleLen = abs(period) * frameSize;  // need one extra byte for terminator '~'
+    // int shiftRequiredByNewCmd = CMD_LEN - skillHeader + 1;  // required shift to store CMD_LEN + 1 chars. it can hold a command with CMD_LEN chars. the additioanl byte is required by '\0'.
+    spaceAfterStoringData = BUFF_LEN - angleLen - 1;  // the bytes before the dutyAngles. The allowed command's bytes needs to -1
     // PTH("request", shiftRequiredByNewCmd);
     // PTH("aloShft", BUFF_LEN - (skillHeader + angleLen));
     if (CMD_LEN > spaceAfterStoringData) {
@@ -305,8 +305,11 @@ public:
             serialPort = &Serial;
             source = "Serial";
           }
-        if (serialPort || gyroBalanceQ && (imuException != IMU_EXCEPTION_FLIPPED && !strcmp(skillName, "rc")        // recovered during recover
-                                                        || imuException == IMU_EXCEPTION_FLIPPED && strcmp(skillName, "rc"))) {  // the IMU is updated in transform
+        if (serialPort                                                                     // user input
+            || (gyroBalanceQ                                                               // the IMU should be used for balancing
+                && ((imuException != IMU_EXCEPTION_FLIPPED && !strcmp(skillName, "rc"))    // recovered during recover
+                    || (imuException == IMU_EXCEPTION_FLIPPED && strcmp(skillName, "rc"))  // flipped during other skills
+                    ))) {
           print6Axis();
           PTHL("imuException: ", imuException);
           PTLF("Behavior interrupted");
@@ -390,9 +393,9 @@ public:
 #endif
         //          PT(jointIndex); PT('\t');
         float duty;
-        if (abs(period) > 1 && jointIndex < firstMotionJoint       // gait and non-walking joints
-            || abs(period) == 1 && jointIndex < 4 && manualHeadQ)  // posture and head group and manually controlled head
-        {
+        if ((abs(period) > 1 && jointIndex < firstMotionJoint)      // gait and non-walking joints
+            || (abs(period) == 1 && jointIndex < 4 && manualHeadQ)  // posture and head group and manually controlled head
+        ) {
           if (!manualHeadQ && jointIndex < 4) {
 #ifndef ROBOT_ARM
             duty =
@@ -475,10 +478,11 @@ void loadBySkillName(const char *skillName) {  // get lookup information from on
           skill->dutyAngles[i] += protectiveShift;  // add protective shift to reduce wearing at the same spot
     }
     // skill->info();
-    if (lr == 'R'                                                // 'R' must mirror
-        || (lr == 'X' || lr != 'L')                              // 'L' should not mirror
-             && (random(10) > 7 && random(10) > 5 || coinFace))  // 1/5 chance to random otherwise flip everytime
-      skill->mirror();                                           // mirror the direction of a behavior
+    if (lr == 'R'                                                 // 'R' must mirror
+        || ((lr == 'X' || lr != 'L')                              // 'L' should not mirror
+            && ((random(10) > 7 && random(10) > 5) || coinFace))  // 1/5 chance to random otherwise flip everytime
+    )
+      skill->mirror();  // mirror the direction of a behavior
     coinFace = !coinFace;
 #ifdef ROBOT_ARM
     if (skill->period == 1 && strcmp(newCmd, "calib")  // postures

@@ -72,13 +72,13 @@ void i2cDetect(TwoWire &wirePort) {
   int8_t i2cAddress[] = {
     0x39, 0x50, 0x54, 0x60, 0x62, 0x68, 0x69
   };
-  String i2cAddressName[] = { "APDS9960 Gesture","Mu3 CameraP", "EEPROM", 
-    #ifdef SENTRY2_CAMERA
-    "Sentry2 Camera",
-    #else
-    "Mu3 Camera",
-    #endif
-     "AI Vision", "MPU6050", "ICM42670" };
+  String i2cAddressName[] = { "APDS9960 Gesture", "Mu3 CameraP", "EEPROM",
+#ifdef SENTRY2_CAMERA
+                              "Sentry2 Camera",
+#else
+                              "Mu3 Camera",
+#endif
+                              "AI Vision", "MPU6050", "ICM42670" };
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -101,11 +101,11 @@ void i2cDetect(TwoWire &wirePort) {
           else if (i == 2)
             eepromQ = true;
           else if (i == 3)
-          #ifdef SENTRY2_CAMERA
+#ifdef SENTRY2_CAMERA
             Sentry2Q = true;
-          #else
+#else
             MuQ = true;  // The older Mu3 Camera and Sentry1 share the same address. Sentry is not supported yet.
-          #endif
+#endif
           else if (i == 4)
             GroveVisionQ = true;
 #ifdef IMU_MPU6050
@@ -463,7 +463,7 @@ void configSetup() {
     // save a preset skill to the temp skill in case its called before assignment
     config.putInt("tmpLen", bufferLen);
     config.putBytes("tmp", (int8_t *)newCmd, bufferLen);
-    config.putBool("WifiManager", rebootForWifiManagerQ);  //default is false
+    config.putBool("WifiManager", rebootForWifiManagerQ);  // default is false
 #endif
 #ifndef AUTO_INIT
 #ifdef VOLTAGE
@@ -527,7 +527,6 @@ void saveCalib(int8_t *var) {
   }
 }
 
-
 // clang-format off
 // Forward Declarations
 bool listEspPartitions();
@@ -582,7 +581,7 @@ bool listEspPartitions()
   bool defaultNvsPartitionFoundQ = false;
 
   // Tag for logging
-  const char *TAG = "PARTITIONS";
+  const char *TAG __attribute__((unused)) = "PARTITIONS";
 
   // Iterator to find all partitions
   esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_ANY, ESP_PARTITION_SUBTYPE_ANY, NULL);
@@ -621,7 +620,7 @@ bool listEspPartitions()
       Serial.printf("\tSize: %d bytes\n", partition->size);
       Serial.printf("\tType: %d\n", partition->type);
       Serial.printf("\tSubtype: %d\n", partition->subtype);
-      Serial.printf("");
+      Serial.println(); // Add a blank line for readability
 
       // Move to the next partition
       it = esp_partition_next(it);

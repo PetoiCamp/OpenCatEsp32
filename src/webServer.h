@@ -29,7 +29,7 @@ void handleCommand() {
   newCmdIdx = 4;
   while (cmdFromWeb)
     delayMicroseconds(100);
-  webServer.send(200, "text/plain", webResponse+"\n");
+  webServer.send(200, "text/plain", webResponse + "\n");
   // PTHL("res: ",webResponse+"\n"+token+"\n")
   webResponse = "";
 }
@@ -91,7 +91,7 @@ bool configureWiFiViaSerial() {
 // 修改WiFi设置函数
 void setupWiFi() {
   // 等待串口配置
-  unsigned long startTime = millis();
+  // unsigned long startTime = millis();
   // while (millis() - startTime < 200) {  // 等待5秒钟接收串口配置
   //     if (configureWiFiViaSerial()) {
   //         return;  // 如果通过串口配置成功，直接返回
@@ -101,9 +101,8 @@ void setupWiFi() {
   // 如果没有收到串口配置，则使用WiFiManager
 }
 
-
 void startWifiManager() {
-  //if the wifi manager is not connected this time, it won't enter wifi manager next time
+  // if the wifi manager is not connected this time, it won't enter wifi manager next time
 #ifdef I2C_EEPROM_ADDRESS
   i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, false);
 #else
@@ -112,7 +111,7 @@ void startWifiManager() {
   // Connect to WiFi
   WiFiManager wm;
   wm.setConfigPortalTimeout(60);  // timeout after 60 seconds
-  //if it fails to connect, it won't open wifi manager during next bootup
+  // if it fails to connect, it won't open wifi manager during next bootup
   if (!wm.autoConnect((uniqueName + " WifiConfig").c_str())) {
     PTLF("Fail to connect Wifi. Rebooting.");
     delay(3000);
@@ -136,9 +135,9 @@ void startWifiManager() {
 #endif
 }
 void resetWifiManager() {
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();  //load the flash-saved configs
-  esp_wifi_init(&cfg);                                  //initiate and allocate wifi resources (does not matter if connection fails)
-  delay(2000);                                          //wait a bit
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();  // load the flash-saved configs
+  esp_wifi_init(&cfg);                                  // initiate and allocate wifi resources (does not matter if connection fails)
+  delay(2000);                                          // wait a bit
   if (esp_wifi_restore() != ESP_OK) {
     PTLF("\nWiFi is not initialized by esp_wifi_init ");
   } else {

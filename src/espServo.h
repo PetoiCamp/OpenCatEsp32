@@ -122,7 +122,7 @@ void servoSetup() {
 }
 
 void shutServos(byte id = PWM_NUM) {
-  ServoModel *model;
+  // ServoModel *model;
   if (id == PWM_NUM) {
     for (byte s = 0; s < PWM_NUM; s++) {  // PWM_NUM
 #ifdef ESP_PWM
@@ -180,13 +180,12 @@ int measurePulseWidth(uint8_t pwmReadPin) {
     if (micros() - start > waitTimeForResponse)
       return -1;
   }
-  long t1 = micros();
-  long t2 = micros();
+  long t = micros();
   while (digitalRead(pwmReadPin)) {
-    if (micros() - t1 > maxPulseWidth)
+    if (micros() - t > maxPulseWidth)
       return -2;
   }
-  return (micros() - t1);
+  return (micros() - t);
 }
 
 float readFeedback(byte s)  // returns the pulse width in microseconds

@@ -610,7 +610,7 @@ void getImuException() {
   // PTT(fabs(xyzReal[2] - previousXYZ[2]), '\t');
 
   if (fabs(ypr[2]) > 85) {  //  imuException = aaReal.z < 0;
-    if (mpuQ) {             //mpu is faster in detecting instant acceleration which may lead to false positive
+    if (mpuQ) {             // mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
         imuException = IMU_EXCEPTION_FLIPPED;  // flipped
     } else if (xyzReal[2] < -1)
@@ -619,11 +619,11 @@ void getImuException() {
 #ifndef ROBOT_ARM
   else if (ypr[1] < -50 || ypr[1] > 75)
     imuException = IMU_EXCEPTION_LIFTED;
-  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  //z direction shock)
+  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  // z direction shock)
     imuException = IMU_EXCEPTION_KNOCKED;
-  else if (!moduleDemoQ && (                                                                               // not in demo mode
-             fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor     // x direction shock
-             || fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor  // y direction shock
+  else if (!moduleDemoQ && (                                                                                 // not in demo mode
+             (fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor)     // x direction shock
+             || (fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor)  // y direction shock
              )) {
     imuException = IMU_EXCEPTION_PUSHED;
   }

@@ -208,7 +208,7 @@ void read_voice() {
         tQueue->addTask(token, shift > 0 ? cmd : "", 2500);
         if (strlen(cmd) > 0) {
           char end = cmd[strlen(cmd) - 1];
-          if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || end >= 'A' && end <= 'Z') {
+          if (!strcmp(cmd, "bk") || !strcmp(cmd, "x") || (end >= 'A' && end <= 'Z')) {
             tQueue->addTask('k', "up");
           }
         }

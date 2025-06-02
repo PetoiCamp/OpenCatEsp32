@@ -81,8 +81,8 @@ SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #define T_TUNER '>'
 bool cameraSetupSuccessful = false;
 int widthCounter;
-int xDiff, yDiff;                         // the scaled distance from the center of the frame
-int currentX = 0, currentY = 0;           // the current x y of the camera's direction in the world coordinate
+int xDiff, yDiff;                // the scaled distance from the center of the frame
+int currentX = 0, currentY = 0;  // the current x y of the camera's direction in the world coordinate
 
 int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 int8_t sizePars;
@@ -160,7 +160,7 @@ bool cameraSetup() {
     imgRangeY = 100;
   }
 #endif
-#if defined GROVE_VISION_AI_V2  || defined SENTRY2_CAMERA
+#if defined GROVE_VISION_AI_V2 || defined SENTRY2_CAMERA
   sizePars = sizeof(bittleGroveVisionPars) / sizeof(int8_t);
   if (GroveVisionQ || Sentry2Q) {
     initPars = bittleGroveVisionPars;
@@ -219,8 +219,8 @@ void showRecognitionResult(int xCoord, int yCoord, int width, int height = -1) {
   PT('\t');
 }
 
-// #define WALK  //let the robot move its body to follow people rather than sitting at the original position \
-              // it works the best on the table so the robot doesn't need to loop upward.
+// #define WALK  //let the robot move its body to follow people rather than sitting at the original position
+// it works the best on the table so the robot doesn't need to loop upward.
 // #define ROTATE
 
 TaskHandle_t TASK_HandleCamera = NULL;
@@ -324,7 +324,7 @@ void taskReadCamera(void *par) {
 #ifndef USE_WIRE1
     while (
 #ifdef GYRO_PIN
-      imuLockI2c ||//wait for the imu to release lock. potentially to cause dead lock with camera
+      imuLockI2c ||  //wait for the imu to release lock. potentially to cause dead lock with camera
 #endif
       gestureLockI2c)
       delay(1);  //wait for the gesture to release lock. potentially to cause dead lock with camera
@@ -553,8 +553,8 @@ void sentry2CameraSetup() {
 #ifdef I2C_MODE
   // CAMERA_WIRE.begin();  // join i2c bus (address optional for master)
   /* Use I2C to initialize Sentry. If err returns 0, the initialization is normal, otherwise the corresponding error code is returned. */
-  while (SENTRY_OK != sentry.begin(&CAMERA_WIRE)) { 
-    yield(); 
+  while (SENTRY_OK != sentry.begin(&CAMERA_WIRE)) {
+    yield();
   }
 #endif  // I2C_MODE
 #ifdef SERIAL_MODE
@@ -581,9 +581,9 @@ void read_Sentry2Camera() {
     // Serial.print(obj_num);
     // Serial.println(" objects");
     updateCoordinateLock = true;
-    xCoord = sentry.GetValue(VISION_TYPE, kXValue, 1);  // read x value
-    yCoord = sentry.GetValue(VISION_TYPE, kYValue, 1);  // read y value
-    width = sentry.GetValue(VISION_TYPE, kWidthValue, 1);   // read width value
+    xCoord = sentry.GetValue(VISION_TYPE, kXValue, 1);       // read x value
+    yCoord = sentry.GetValue(VISION_TYPE, kYValue, 1);       // read y value
+    width = sentry.GetValue(VISION_TYPE, kWidthValue, 1);    // read width value
     height = sentry.GetValue(VISION_TYPE, kHeightValue, 1);  // read height value
     updateCoordinateLock = false;
     detectedObjectQ = true;
