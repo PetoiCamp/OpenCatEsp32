@@ -1,0 +1,26 @@
+{
+    "name": "petoi-web-block",
+    "version": "1.0.0",
+    "description": "Petoi Web Coding Blocks - 基于Blockly的Petoi机器人可视化编程工具",
+    "main": "programblockly.html",
+    "scripts": {
+        "start": "http-server -p 8080 -c-1",
+        "dev": "http-server -p 8080 -c-1 -o"
+    },
+    "dependencies": {
+        "blockly": "^11.0.0",
+        "esptool-js": "^0.5.4"
+    },
+    "devDependencies": {
+        "http-server": "^14.1.1"
+    },
+    "keywords": [
+        "blockly",
+        "petoi",
+        "robotics",
+        "visual-programming",
+        "esp32"
+    ],
+    "author": "Petoi",
+    "license": "MIT"
+}

@@ -1,0 +1,3400 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>Petoi Web Coding Blocks</title>
+  <!-- 1. 首先加载 Blockly 核心文件 -->
+  <script src="./node_modules/blockly/blockly_compressed.js"></script>
+  <script src="./node_modules/blockly/blocks_compressed.js"></script>
+  <script src="./node_modules/blockly/javascript_compressed.js"></script>
+  <!-- 2. 语言文件改为动态加载 -->
+  <!-- <script src="./node_modules/blockly/msg/zh-hans.js"></script> -->
+  <!-- <script src="./node_modules/blockly/msg/en.js"></script> -->
+  <!-- 3. 加载自定义翻译 -->
+  <script src="./lang/translations.js"></script>
+  <!-- 4. 然后加载自定义积木块文件 -->
+  <script src="./blocks/communication.js"></script>
+  <script src="./blocks/control.js"></script>
+  <script src="./blocks/sensor.js"></script>
+  <script src="./blocks/motion.js"></script>
+  <script src="./blocks/generators.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .language-switch {
+      display: flex;
+      gap: 10px;
+    }
+
+    .lang-btn {
+      padding: 5px 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .lang-btn.active {
+      background-color: #007bff;
+      color: #fff;
+      border-color: #007bff;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    .button-group {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .button-group button {
+      padding: 8px 15px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .right-aligned-container {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+    }
+
+    .button-group button:hover {
+      background-color: #0056b3;
+    }
+
+    /* 连接成功状态下的Quick Connect按钮样式 */
+    #quickConnectBtn[data-connected="true"] {
+      background-color: #4CAF50 !important;
+      /* 绿色背景 */
+      color: white;
+      font-weight: bold;
+    }
+
+    #quickConnectBtn[data-connected="true"]:hover {
+      background-color: #45a049 !important;
+      /* 深绿色 */
+    }
+
+    .workspace-container {
+      display: flex;
+      gap: 0;
+      /* 移除间隙，由分隔线控制 */
+      height: calc(100vh - 150px);
+      /* 使用视口高度计算容器高度 */
+      width: 100%;
+      position: relative;
+    }
+
+    #blocklyDiv {
+      flex: 7;
+      /* 默认占据70%空间 */
+      height: 100%;
+      /* 使用100%高度填充父容器 */
+      border: 1px solid #ccc;
+      min-width: 0;
+    }
+
+    /* 窗口容器整体样式 */
+    .windows-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f5f5f5;
+      min-width: 0;
+      width: 100%;
+      padding: 10px;
+      flex: 3;
+      /* 保持固定比例 */
+      gap: 8px;
+      /* 减小容器之间的间距 */
+    }
+
+    /* 控制台区域 */
+    #consoleWindow {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      width: 100%;
+      overflow: hidden;
+      flex: 1;
+      background-color: #1e1e1e;
+      padding: 0;
+      font-family: 'Consolas', monospace;
+    }
+
+    /* 控制台内容项样式 */
+    .console-item {
+      padding: 3px 0;
+      margin-bottom: 3px;
+      font-size: 13px;
+      white-space: nowrap;
+      /* 不自动换行 */
+      line-height: 1.3;
+      color: #ffffff;
+    }
+
+    /* 串口输出区域 */
+    .serial-output {
+      flex: 1;
+      min-height: 0;
+      margin: 0;
+      padding: 10px;
+      overflow-y: auto;
+      overflow-x: auto;
+      /* 启用水平滚动条 */
+      background-color: #1e1e1e;
+      color: #fff;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      white-space: nowrap;
+      /* 不自动换行 */
+      line-height: 1.4;
+      max-width: 100%;
+      user-select: text;
+      /* 允许文本选择 */
+      outline: none;
+      /* 移除默认outline */
+    }
+
+    .serial-output:focus {
+      outline: 1px solid #007bff;
+      /* 获得焦点时显示蓝色outline */
+    }
+
+    .serial-output br {
+      line-height: 1;
+      margin: 0;
+      padding: 0;
+    }
+
+    .serial-input-container {
+      display: flex;
+      gap: 5px;
+      padding: 10px;
+      background-color: #1e1e1e;
+      border-top: 1px solid #333;
+    }
+
+    .serial-input-container input {
+      flex: 1;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* 串口按钮区域 */
+    .serial-buttons {
+      display: flex;
+      gap: 10px;
+      padding: 5px;
+      background-color: #f5f5f5;
+      /* 灰色背景，与页面背景一致 */
+      border: none;
+      margin-bottom: 5px;
+      justify-content: flex-end;
+      /* 使按钮靠右对齐 */
+    }
+
+    .serial-button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .wifi-dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      z-index: 1201;
+    }
+
+    .wifi-dialog input {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .wifi-dialog .button-container {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .wifi-dialog button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .wifi-dialog button.confirm {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .wifi-dialog button.cancel {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1200;
+    }
+
+    .blocklyZoom>image,
+    .blocklyZoom>svg>image {
+      opacity: 0.4;
+    }
+
+    .blocklyZoom>image:hover,
+    .blocklyZoom>svg>image:hover {
+      opacity: 0.6;
+    }
+
+    .blocklyZoom>image:active,
+    .blocklyZoom>svg>image:active {
+      opacity: 0.8;
+    }
+
+    /* 撤销重做按钮样式 */
+    .undoRedoControls {
+      position: fixed;
+      z-index: 1000;
+      overflow: visible;
+      display: flex;
+      flex-direction: column;
+      border-radius: 4px;
+    }
+
+    .undoRedoButton {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      width: 31px;
+      height: 31px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .undoRedoButton img,
+    .undoRedoButton svg {
+      width: 18px;
+      height: 18px;
+      opacity: 0.4;
+    }
+
+    .undoRedoButton:hover {
+      background-color: #f1f1f1;
+    }
+
+    .undoRedoButton:hover img,
+    .undoRedoButton:hover svg {
+      opacity: 0.6;
+    }
+
+    .undoRedoButton:active {
+      background-color: #e0e0e0;
+    }
+
+    .undoRedoButton:active img,
+    .undoRedoButton:active svg {
+      opacity: 0.8;
+    }
+
+    .undoRedoButton[disabled] {
+      cursor: default;
+      background-color: #f8f8f8;
+    }
+
+    .undoRedoButton[disabled] img,
+    .undoRedoButton[disabled] svg {
+      opacity: 0.2;
+    }
+
+    /* 可拖动分隔线样式 */
+    .resizer {
+      width: 4px;
+      height: 100%;
+      background-color: #f0f0f0;
+      cursor: col-resize;
+      transition: background-color 0.2s;
+      user-select: none;
+      z-index: 10;
+      /* 添加z-index确保分隔线不被覆盖 */
+      position: relative;
+      /* 需要设置position才能使z-index生效 */
+    }
+
+    .resizer:hover,
+    .resizer.active {
+      background-color: #007bff;
+      /* 蓝色 */
+    }
+
+    /* 拖动时应用的样式 */
+    .workspace-container.resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    /* 串口容器样式 */
+    #serialContainer {
+      background-color: #f5f5f5;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: auto;
+      /* 未连接时高度自适应内容 */
+      max-height: none;
+      /* 移除高度限制 */
+      overflow: hidden;
+    }
+
+    /* 串口连接后应用此样式 */
+    #serialContainer.connected {
+      flex: 4;
+      /* 连接后占据适当比例 */
+      min-height: 180px;
+      /* 连接后确保有足够高度 */
+    }
+
+    /* 串口输出容器 */
+    #serialInterface {
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      max-width: 100%;
+      background-color: #1e1e1e;
+      /* 黑色背景 */
+    }
+
+    /* 修复积木块文字偏移问题 */
+    .blocklyText {
+      fill: #fff;
+      font-family: sans-serif;
+      font-size: 11pt;
+      font-weight: normal;
+    }
+
+    .blocklyNonEditableText>text,
+    .blocklyEditableText>text {
+      fill: #000;
+    }
+
+    .blocklyDropdownText {
+      fill: #000 !important;
+    }
+
+    #loadInput {
+      display: none;
+    }
+
+    /* 控制台区域 */
+    #consoleLog {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+      /* 启用水平滚动条 */
+      padding: 10px;
+      background-color: #1e1e1e;
+      color: #fff;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      max-height: 100%;
+      white-space: nowrap;
+      /* 不自动换行 */
+      user-select: text;
+      /* 允许文本选择 */
+      outline: none;
+      /* 移除默认outline */
+    }
+
+    #consoleLog:focus {
+      outline: 1px solid #007bff;
+      /* 获得焦点时显示蓝色outline */
+    }
+
+    /* 区域标题栏样式 */
+    .area-header {
+      margin: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* 改为center对齐确保垂直居中 */
+      background-color: #2d2d2d;
+      padding: 8px 10px;
+      border-radius: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      min-height: 36px;
+      /* 确保高度一致 */
+    }
+
+    .area-title {
+      font-weight: 600;
+      color: #fff;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      line-height: 1.5;
+      /* 保持与按钮文字一致的行高 */
+      margin: 0;
+      padding: 4px 0;
+      /* 添加垂直内边距，使高度与按钮一致 */
+      white-space: nowrap;
+      /* 防止文字换行 */
+      font-family: Arial, sans-serif;
+      /* 确保字体一致 */
+    }
+
+    /* 控制台按钮组 */
+    .area-header .button-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      /* 改为居中对齐 */
+      margin-left: auto;
+      /* 添加margin-left:auto使按钮组靠右对齐 */
+    }
+
+    /* 清除按钮和切换按钮的通用样式 */
+    .clear-button,
+    .toggle-button {
+      padding: 4px 8px;
+      cursor: pointer;
+      background-color: #fff;
+      border: none;
+      border-radius: 3px;
+      transition: all 0.2s;
+      font-size: 14px;
+      line-height: 1.5;
+      display: inline-flex;
+      /* 改为inline-flex统一显示 */
+      align-items: center;
+      /* 垂直居中 */
+      justify-content: center;
+      /* 水平居中 */
+      text-align: center;
+      min-height: 28px;
+      /* 设置最小高度确保一致性 */
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+      /* 确保padding不影响整体尺寸 */
+      white-space: normal;
+      /* 允许文本自然换行 */
+      max-width: none;
+      /* 移除最大宽度限制 */
+      width: auto;
+      /* 宽度自适应内容 */
+    }
+
+    .clear-button:hover,
+    .toggle-button:hover {
+      background-color: #e9e9e9;
+    }
+
+    .clear-button:active,
+    .toggle-button:active {
+      background-color: #d9d9d9;
+      transform: translateY(1px);
+    }
+
+    /* 切换按钮激活状态 */
+    .toggle-button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .toggle-button.active:hover {
+      background-color: #45a049;
+    }
+
+    /* 串口通信相关样式 */
+    #serialContainer {
+      background-color: #f5f5f5;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-height: auto;
+      /* 未连接时高度自适应内容 */
+      max-height: none;
+      /* 移除高度限制 */
+      overflow: hidden;
+    }
+
+    /* 串口连接后应用此样式 */
+    #serialContainer.connected {
+      flex: 4;
+      /* 连接后占据适当比例 */
+      min-height: 180px;
+      /* 连接后确保有足够高度 */
+    }
+
+    /* 串口按钮样式保留 */
+    .serial-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 15px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      margin: 2px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: Arial, sans-serif;
+      white-space: normal;
+      /* 允许文本自然换行 */
+      max-width: none;
+      /* 移除最大宽度限制 */
+      width: auto;
+      /* 宽度自适应内容 */
+    }
+
+    /* 水平分隔线样式 */
+    .horizontal-resizer {
+      width: 100%;
+      height: 4px;
+      background-color: #f0f0f0;
+      cursor: row-resize;
+      transition: background-color 0.2s;
+      user-select: none;
+      margin: 0;
+      display: none;
+      /* 初始隐藏 */
+    }
+
+    .horizontal-resizer:hover,
+    .horizontal-resizer.active {
+      background-color: #007bff;
+      /* 蓝色 */
+    }
+
+    /* 强制按钮右对齐 */
+    #consoleWindow .area-header .button-group,
+    #serialContainer .area-header .button-group {
+      display: flex;
+      justify-content: flex-end;
+      margin-left: auto;
+      align-items: center;
+      /* 确保按钮在同一行中垂直对齐 */
+      flex-wrap: nowrap;
+      /* 防止按钮换行，保持并排 */
+      max-width: 70%;
+      /* 适当增加宽度，容纳多个按钮 */
+    }
+
+    /* 按钮标题栏通用设置 */
+    .area-header .button-group button {
+      margin: 2px;
+      /* 统一间距 */
+      max-width: none;
+      /* 不限制最大宽度 */
+      white-space: normal;
+      /* 允许文本换行 */
+      word-wrap: break-word;
+      /* 允许长单词换行 */
+      line-height: 1.2;
+      /* 紧凑的行高 */
+      font-size: 13px;
+      /* 稍微小一点的字体 */
+      padding: 4px 6px;
+      /* 紧凑的内边距 */
+      text-align: center;
+      /* 文本居中 */
+      height: auto;
+      /* 自适应高度 */
+      min-height: 40px;
+      /* 确保足够高度容纳两行文字 */
+      width: auto;
+      /* 宽度自适应内容 */
+    }
+
+    /* 超小屏幕时进一步调整 */
+    @media screen and (max-width: 576px) {
+
+      .clear-button,
+      .toggle-button {
+        padding: 2px 5px;
+        font-size: 12px;
+        max-width: none;
+        /* 移除最大宽度限制 */
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="title" data-i18n="appTitle">Petoi Web Coding Blocks</div>
+    <div class="language-switch">
+      <button id="zhBtn" class="lang-btn" onclick="setLanguage('zh')">中文</button>
+      <button id="enBtn" class="lang-btn active" onclick="setLanguage('en')">English</button>
+      <button id="jaBtn" class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="button-group">
+      <button onclick="showCode()" data-i18n="showCode">Show Code</button>
+      <button onclick="runCode()" data-i18n="runCode">Run Code</button>
+      <button onclick="saveWorkspace()" data-i18n="saveProgram">Save Program</button>
+      <button onclick="document.getElementById('loadInput').click()" data-i18n="loadProgram">Load Program</button>
+      <button onclick="clearWorkspace()" data-i18n="clearAll">Clear All</button>
+      <input type="file" id="loadInput" accept=".json" onchange="loadWorkspace(this.files[0])">
+      <span id="currentFileLabel" data-i18n="currentFileLabel" style="margin-left: 10px; color: #555;"></span>
+      <span id="currentFileName" style="color: #555; font-style: italic;"></span>
+      <div class="right-aligned-container">
+        <button onclick="quickConnect()" id="quickConnectBtn" disabled data-i18n="quickConnect">Quick Connect</button>
+      </div>
+    </div>
+
+    <div class="workspace-container">
+      <div id="blocklyDiv"></div>
+      <div class="resizer" id="divider"></div>
+      <div class="windows-container">
+        <div id="consoleWindow">
+          <div class="area-header">
+            <span class="area-title" data-i18n="consoleLog">Console Log</span>
+            <div class="button-group">
+              <button id="showSentCommandsBtn" onclick="toggleShowSentCommands()" class="toggle-button"
+                data-i18n="showSentCommands">Show Sent Commands</button>
+              <button onclick="clearConsole()" class="clear-button" data-i18n="clearConsole">Clear Log</button>
+            </div>
+          </div>
+          <div id="consoleLog" class="dark-scrollbar"></div>
+        </div>
+        <!-- 添加水平分隔线，用于调整控制台和串口区域的高度比例 -->
+        <div class="horizontal-resizer" id="console-serial-divider"></div>
+        <!-- 添加串口通信相关的HTML结构 -->
+        <div id="serialContainer">
+          <div class="area-header">
+            <span class="area-title" id="serialOutputTitle" data-i18n="serialOutput">Serial Monitor</span>
+            <div class="button-group">
+              <button onclick="openSerialPort()" class="serial-button" id="openSerialBtn"
+                data-i18n="serialConnect">Connect Serial Port</button>
+              <button onclick="clearSerialOutput()" class="clear-button" id="clearSerialBtn" style="display: none;"
+                data-i18n="clearDisplay">Clear Display</button>
+              <button onclick="closeSerialPort()" class="clear-button" id="closeSerialBtn" style="display: none;"
+                data-i18n="closeSerial">Close Connection</button>
+            </div>
+          </div>
+          <div id="serialInterface" style="display: none;">
+            <div class="serial-output dark-scrollbar" id="serialOutput"></div>
+            <div class="serial-input-container">
+              <input type="text" id="serialInput" placeholder="Enter content to send"
+                data-i18n="serialInputPlaceholder">
+              <button onclick="sendSerialData()" class="serial-button" data-i18n="send">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 自定义主题
+    const customTheme = Blockly.Theme.defineTheme('myCustomTheme', {
+      'base': Blockly.Themes.Classic, // 继承经典主题的基础配置
+      'categoryStyles': {
+        'communication_category': {
+          'colour': '#E63946', // 红色
+        },
+        'motion_category': {
+          'colour': '#4361EE', // 蓝色
+        },
+        'control_category': {
+          'colour': '#06D6A0', // 绿色
+        },
+        'sensor_category': {
+          'colour': '#FFB703', // 黄色
+        },
+        'console_category': {
+          'colour': '#9C27B0', // 紫色
+        }
+      }
+    });
+
+    // 动态创建工具箱配置
+    function createToolbox()
+    {
+      return {
+        kind: 'categoryToolbox',
+        contents: [
+          {
+            kind: 'category',
+            name: getText('categoryLogic'),
+            categorystyle: 'logic_category',
+            contents: [
+              { kind: 'block', type: 'controls_if' },
+              { kind: 'block', type: 'logic_compare' },
+              { kind: 'block', type: 'logic_operation' },
+              { kind: 'block', type: 'logic_negate' },
+              { kind: 'block', type: 'logic_boolean' },
+              { kind: 'block', type: 'logic_null' },
+              { kind: 'block', type: 'logic_ternary' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText('categoryLoops'),
+            categorystyle: 'loop_category',
+            contents: [
+              { kind: 'block', type: 'controls_repeat_ext' },
+              { kind: 'block', type: 'controls_whileUntil' },
+              { kind: 'block', type: 'controls_for' },
+              { kind: 'block', type: 'controls_forEach' },
+              { kind: 'block', type: 'controls_flow_statements' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText('categoryMath'),
+            categorystyle: 'math_category',
+            contents: [
+              { kind: 'block', type: 'math_number' },
+              { kind: 'block', type: 'math_arithmetic' },
+              { kind: 'block', type: 'math_single' },
+              { kind: 'block', type: 'math_trig' },
+              { kind: 'block', type: 'math_constant' },
+              { kind: 'block', type: 'math_number_property' },
+              { kind: 'block', type: 'math_round' },
+              { kind: 'block', type: 'math_modulo' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText('categoryText'),
+            categorystyle: 'text_category',
+            contents: [
+              { kind: 'block', type: 'text' },
+              { kind: 'block', type: 'text_join' },
+              { kind: 'block', type: 'text_append' },
+              { kind: 'block', type: 'text_length' },
+              { kind: 'block', type: 'text_isEmpty' },
+              { kind: 'block', type: 'text_indexOf' },
+              { kind: 'block', type: 'text_charAt' },
+              { kind: 'block', type: 'text_getSubstring' },
+              { kind: 'block', type: 'text_changeCase' },
+              { kind: 'block', type: 'text_trim' },
+              { kind: 'block', type: 'text_print' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText('categoryVariables'),
+            categorystyle: 'variable_category',
+            custom: 'VARIABLE'
+          },
+          {
+            kind: 'category',
+            name: getText('categoryFunctions'),
+            categorystyle: 'procedure_category',
+            custom: 'PROCEDURE'
+          },
+          {
+            kind: 'category',
+            name: getText('categoryCommunication'),
+            categorystyle: 'communication_category',
+            contents: [
+              { kind: 'block', type: 'make_connection' },
+              { kind: 'block', type: 'get_digital_input' },
+              { kind: 'block', type: 'get_analog_input' },
+              { kind: 'block', type: 'set_digital_output' },
+              { kind: 'block', type: 'set_analog_output' },
+              { kind: 'block', type: 'send_custom_command' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText('categoryMotion'),
+            categorystyle: 'motion_category',
+            contents: [
+              { kind: 'block', type: 'gait' },
+              { kind: 'block', type: 'posture' },
+              { kind: 'block', type: 'acrobatic_moves' },
+              { kind: 'block', type: 'set_motor_angle' },
+              { kind: 'block', type: 'get_joint_angle' },
+              { kind: 'block', type: 'get_all_joint_angles' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText("categoryControl"),
+            colour: '#06D6A0',
+            contents: [
+              { kind: 'block', type: 'gyro_control' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText("categoryConsole"),
+            colour: '#9C27B0',
+            contents: [
+              { kind: 'block', type: 'console_log_variable' },
+              { kind: 'block', type: 'delay_ms' }
+            ]
+          },
+          {
+            kind: 'category',
+            name: getText("categoryMusic"),
+            colour: '#FF6B6B',
+            contents: [
+              { kind: 'block', type: 'play_note' }
+            ]
+          }
+        ]
+      };
+    }
+
+    // 初始化变量
+    var workspace;
+
+    // 保存不同语言的消息对象
+    const zhMessages = {};
+    const enMessages = {};
+
+    // 当前语言
+    let isChangingLanguage = false;
+
+    // 新增翻译助手函数
+    function getText(key)
+    {
+      return TRANSLATIONS[currentLang][key] || key;
+    }
+
+    // 更新自定义积木的定义
+    function updateCustomBlockDefinitions()
+    {
+      // 更新所有工作区中的积木
+      if (workspace)
+      {
+        // 使用根块优先的方式处理
+        // 1. 首先找出所有没有父块的根积木
+        const rootBlocks = workspace.getTopBlocks(true);
+
+        // 2. 递归处理每个根积木及其子积木
+        rootBlocks.forEach(rootBlock =>
+        {
+          updateBlockAndChildren(rootBlock);
+        });
+      }
+
+      // 定义递归更新块和其子块的函数
+      function updateBlockAndChildren(block)
+      {
+        if (block.type === 'make_connection' ||
+          block.type === 'get_digital_input' ||
+          block.type === 'get_analog_input' ||
+          block.type === 'get_sensor_input' ||
+          block.type === 'set_digital_output' ||
+          block.type === 'set_analog_output' ||
+          block.type === 'send_custom_command' ||
+          block.type === 'delay_ms' ||
+          block.type === 'posture' ||
+          block.type === 'gait' ||
+          block.type === 'acrobatic_moves' ||
+          block.type === 'set_motor_angle' ||
+          block.type === 'get_joint_angle' ||
+          block.type === 'get_all_joint_angles' ||
+          block.type === 'gyro_control' ||
+          block.type === 'console_log_variable')
+        {
+          // 保存原有字段值
+          const fieldValues = {};
+          for (let i = 0; i < block.inputList.length; i++)
+          {
+            const input = block.inputList[i];
+            for (let j = 0; j < input.fieldRow.length; j++)
+            {
+              const field = input.fieldRow[j];
+              if (field.name)
+              {
+                fieldValues[field.name] = field.getValue();
+              }
+            }
+          }
+
+          // 保存位置信息
+          const position = block.getRelativeToSurfaceXY();
+
+          // 保存连接信息 - 包括所有输入连接
+          const savedConnections = [];
+
+          // 保存下一个块的连接
+          if (block.nextConnection && block.nextConnection.isConnected())
+          {
+            savedConnections.push({
+              type: 'next',
+              connection: block.nextConnection.targetConnection
+            });
+          }
+
+          // 保存所有输入连接
+          for (let i = 0; i < block.inputList.length; i++)
+          {
+            const input = block.inputList[i];
+            if (input.connection && input.connection.isConnected())
+            {
+              savedConnections.push({
+                type: 'input',
+                name: input.name,
+                connection: input.connection.targetConnection
+              });
+            }
+          }
+
+          // 清空输入列表，避免积木元素堆叠
+          block.inputList = [];
+
+          // 重新初始化积木
+          const initFunc = Blockly.Blocks[block.type].init;
+          if (initFunc)
+          {
+            initFunc.call(block);
+
+            // 恢复字段值
+            for (const name in fieldValues)
+            {
+              const field = block.getField(name);
+              if (field)
+              {
+                field.setValue(fieldValues[name]);
+              }
+            }
+
+            // 恢复位置 - 只对根块有效
+            if (!block.getParent())
+            {
+              const newPosition = block.getRelativeToSurfaceXY();
+              block.moveBy(position.x - newPosition.x, position.y - newPosition.y);
+            }
+
+            // 重新渲染以确保视觉正确
+            block.initSvg();
+            block.render();
+          }
+
+          // 延迟恢复连接，确保所有块都已更新
+          setTimeout(() =>
+          {
+            // 恢复所有保存的连接
+            savedConnections.forEach(savedConn =>
+            {
+              if (savedConn.type === 'next')
+              {
+                if (block.nextConnection && savedConn.connection)
+                {
+                  block.nextConnection.connect(savedConn.connection);
+                }
+              } else if (savedConn.type === 'input')
+              {
+                const input = block.getInput(savedConn.name);
+                if (input && input.connection && savedConn.connection)
+                {
+                  input.connection.connect(savedConn.connection);
+                }
+              }
+            });
+          }, 0);
+        }
+
+        // 递归处理所有子块
+        if (block.nextConnection && block.nextConnection.targetBlock())
+        {
+          updateBlockAndChildren(block.nextConnection.targetBlock());
+        }
+
+        // 处理所有输入连接的子块
+        for (let i = 0; i < block.inputList.length; i++)
+        {
+          const input = block.inputList[i];
+          if (input.connection && input.connection.targetBlock())
+          {
+            updateBlockAndChildren(input.connection.targetBlock());
+          }
+        }
+      }
+
+      // 通信积木
+      if (Blockly.Blocks['make_connection'])
+      {
+        Blockly.Blocks['make_connection'].init = function ()
+        {
+          this.jsonInit({
+            "type": "make_connection",
+            "message0": getText("connectWithIP"),
+            "args0": [
+              {
+                "type": "field_input",
+                "name": "IP_ADDRESS",
+                "text": currentDeviceIP || "192.168.4.1"
+              }
+            ],
+            "nextStatement": null,
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": "",
+            "helpUrl": ""
+          });
+        };
+      }
+
+      // 数字输入积木
+      if (Blockly.Blocks['get_digital_input'])
+      {
+        Blockly.Blocks['get_digital_input'].init = function ()
+        {
+          this.jsonInit({
+            "type": "get_digital_input",
+            "message0": getText("getDigitalInput"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "PIN",
+                "options": [
+                  ["34", "34"],
+                  ["35", "35"],
+                  ["36", "36"],
+                  ["39", "39"],
+                  ["BackTouch(38)", "38"],
+                  ["Rx2(9)", "9"],
+                  ["Tx2(10)", "10"]
+                ]
+              }
+            ],
+            "output": true,
+            "outputType": "Number",
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 模拟输入积木
+      if (Blockly.Blocks['get_analog_input'])
+      {
+        Blockly.Blocks['get_analog_input'].init = function ()
+        {
+          this.jsonInit({
+            "type": "get_analog_input",
+            "message0": getText("getAnalogInput"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "PIN",
+                "options": [
+                  ["34", "34"],
+                  ["35", "35"],
+                  ["36", "36"],
+                  ["39", "39"],
+                  ["BackTouch(38)", "38"],
+                  ["Rx2(9)", "9"],
+                  ["Tx2(10)", "10"]
+                ]
+              }
+            ],
+            "output": true,
+            "outputType": "Number",
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 传感器输入积木
+      if (Blockly.Blocks['get_sensor_input'])
+      {
+        Blockly.Blocks['get_sensor_input'].init = function ()
+        {
+          this.jsonInit({
+            "type": "get_sensor_input",
+            "message0": getText("getSensorInput"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "SENSOR",
+                "options": [
+                  [getText("ultrasonic"), "ultrasonic"],
+                  [getText("touch"), "touch"],
+                  [getText("distance"), "distance"],
+                  [getText("light"), "light"],
+                  [getText("temperature"), "temperature"],
+                  [getText("humidity"), "humidity"]
+                ]
+              }
+            ],
+            "output": true,
+            "outputType": "Number",
+            "colour": '#FFB703', // 传感器积木：黄色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 数字输出积木
+      if (Blockly.Blocks['set_digital_output'])
+      {
+        Blockly.Blocks['set_digital_output'].init = function ()
+        {
+          this.jsonInit({
+            "type": "set_digital_output",
+            "message0": getText("setDigitalOutput"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "PIN",
+                "options": [
+                  ["25", "25"],
+                  ["26", "26"],
+                  ["27", "27"],
+                  ["14", "14"],
+                  ["12", "12"],
+                  ["13", "13"]
+                ]
+              },
+              {
+                "type": "field_dropdown",
+                "name": "STATE",
+                "options": [
+                  ["HIGH", "1"],
+                  ["LOW", "0"]
+                ]
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 模拟输出积木
+      if (Blockly.Blocks['set_analog_output'])
+      {
+        Blockly.Blocks['set_analog_output'].init = function ()
+        {
+          this.jsonInit({
+            "type": "set_analog_output",
+            "message0": getText("setAnalogOutput"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "PIN",
+                "options": [
+                  ["25", "25"],
+                  ["26", "26"]
+                ]
+              },
+              {
+                "type": "field_number",
+                "name": "VALUE",
+                "value": 128,
+                "min": 0,
+                "max": 255
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 自定义命令积木
+      if (Blockly.Blocks['send_custom_command'])
+      {
+        Blockly.Blocks['send_custom_command'].init = function ()
+        {
+          this.jsonInit({
+            "type": "send_custom_command",
+            "message0": getText("sendCustomCommand"),
+            "args0": [
+              {
+                "type": "field_input",
+                "name": "COMMAND",
+                "text": ""
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#E63946', // 通信积木：红色
+            "tooltip": ""
+          });
+        };
+      }
+
+
+
+      // 本地动作积木
+      if (Blockly.Blocks['local_action'])
+      {
+        Blockly.Blocks['local_action'].init = function ()
+        {
+          this.jsonInit({
+            "type": "local_action",
+            "message0": getText("localAction"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "COMMAND",
+                "options": [
+                  [getText("stand"), "kup"],
+                  [getText("sit"), "ksit"],
+                  [getText("rest"), "d"],
+                  [getText("pee"), "kpee"]
+                ]
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#4361EE', // 动作积木：蓝色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 高难度动作积木
+      if (Blockly.Blocks['high_difficulty_action'])
+      {
+        Blockly.Blocks['high_difficulty_action'].init = function ()
+        {
+          this.jsonInit({
+            "type": "high_difficulty_action",
+            "message0": getText("highDifficultyAction"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "COMMAND",
+                "options": [
+                  [getText("jump"), "kjmp"],
+                  [getText("backflip"), "kbkF"],
+                  [getText("roll"), "kroll"],
+                  [getText("rotate"), "krot"]
+                ]
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#4361EE', // 动作积木：蓝色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 设置马达角度积木
+      if (Blockly.Blocks['set_motor_angle'])
+      {
+        delete Blockly.Blocks['set_motor_angle'];
+      }
+
+      Blockly.Blocks['set_motor_angle'] = {
+        init: function ()
+        {
+          var jointLabel = getText("setJointLabel");
+          var angleLabel = getText("angleTo");
+          var delayLabel = getText("thenDelay");
+          var unitLabel = getText("secUnit");
+
+          this.appendDummyInput()
+            .appendField(jointLabel)
+            .appendField(new Blockly.FieldDropdown([
+              [getText("jointHeadPanning"), "0"],
+              [getText("jointHeadTiltingNybble"), "1"],
+              [getText("jointTailNybble"), "2"],
+              [getText("jointReserved"), "3"],
+              [getText("jointLFArm"), "8"],
+              [getText("jointRFArm"), "9"],
+              [getText("jointRBArm"), "10"],
+              [getText("jointLBArm"), "11"],
+              [getText("jointLFKnee"), "12"],
+              [getText("jointRFKnee"), "13"],
+              [getText("jointRBKnee"), "14"],
+              [getText("jointLBKnee"), "15"],
+            ]), "MOTOR")
+            .appendField(angleLabel)
+            .appendField(new Blockly.FieldNumber(0, -125, 125), "ANGLE");
+          this.appendDummyInput()
+            .appendField(delayLabel)
+            .appendField(new Blockly.FieldNumber(0, 0, 10, 0.01), "DELAY")
+            .appendField(unitLabel);
+          this.setInputsInline(true);
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour('#4361EE');
+        }
+      };
+
+      // 获取舵机角度积木
+      if (Blockly.Blocks['get_joint_angle'])
+      {
+        Blockly.Blocks['get_joint_angle'].init = function ()
+        {
+          this.jsonInit({
+            "type": "get_joint_angle",
+            "message0": getText("getJointAngle"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "JOINT",
+                "options": [
+                  [getText("jointHeadPanning"), "0"],
+                  [getText("jointHeadTiltingNybble"), "1"],
+                  [getText("jointTailNybble"), "2"],
+                  [getText("jointReserved"), "3"],
+                  [getText("jointLFArm"), "8"],
+                  [getText("jointRFArm"), "9"],
+                  [getText("jointRBArm"), "10"],
+                  [getText("jointLBArm"), "11"],
+                  [getText("jointLFKnee"), "12"],
+                  [getText("jointRFKnee"), "13"],
+                  [getText("jointRBKnee"), "14"],
+                  [getText("jointLBKnee"), "15"],
+                ]
+              }
+            ],
+            "output": true,
+            "outputType": "Number",
+            "colour": '#4361EE', // 动作积木：蓝色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 获取所有舵机角度积木
+      if (Blockly.Blocks['get_all_joint_angles'])
+      {
+        Blockly.Blocks['get_all_joint_angles'].init = function ()
+        {
+          this.jsonInit({
+            "type": "get_all_joint_angles",
+            "message0": getText("getAllJointAngles"),
+            "output": true,
+            "outputType": "Array",
+            "colour": '#4361EE', // 动作积木：蓝色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 延时积木
+      if (Blockly.Blocks['delay_ms'])
+      {
+        Blockly.Blocks['delay_ms'].init = function ()
+        {
+          this.jsonInit({
+            "type": "delay_ms",
+            "message0": getText("delayMs"),
+            "args0": [
+              {
+                "type": "field_number",
+                "name": "DELAY",
+                "value": 1,
+                "min": 0
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#9C27B0', // 控制台积木：紫色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 陀螺仪控制积木
+      if (Blockly.Blocks['gyro_control'])
+      {
+        Blockly.Blocks['gyro_control'].init = function ()
+        {
+          this.jsonInit({
+            "type": "gyro_control",
+            "message0": getText("gyroControl"),
+            "args0": [
+              {
+                "type": "field_dropdown",
+                "name": "STATE",
+                "options": [
+                  [getText("gyroEnable"), "1"],
+                  [getText("gyroDisable"), "0"]
+                ]
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#FFB703', // 传感器积木：黄色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 控制台输出积木
+      if (Blockly.Blocks['console_log_variable'])
+      {
+        Blockly.Blocks['console_log_variable'].init = function ()
+        {
+          this.jsonInit({
+            "type": "console_log_variable",
+            "message0": getText("consoleLogVariable"),
+            "args0": [
+              {
+                "type": "input_value",
+                "name": "VARIABLE"
+              }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": '#9C27B0', // 控制台积木：紫色
+            "tooltip": ""
+          });
+        };
+      }
+
+      // 音乐积木
+      if (Blockly.Blocks['play_note'])
+      {
+        delete Blockly.Blocks['play_note'];
+      }
+
+      Blockly.Blocks['play_note'] = {
+        init: function ()
+        {
+          var noteLabel = getText("playNote");
+          var durationLabel = getText("forDuration");
+          var beatLabel = getText("beatUnit");
+
+          var noteOptions = [
+            [getText("noteRest"), "0"],
+            [getText("noteLowC"), "8"],
+            [getText("noteLowCSharp"), "9"],
+            [getText("noteLowD"), "10"],
+            [getText("noteLowDSharp"), "11"],
+            [getText("noteLowE"), "12"],
+            [getText("noteLowF"), "13"],
+            [getText("noteLowFSharp"), "14"],
+            [getText("noteLowG"), "15"],
+            [getText("noteLowGSharp"), "16"],
+            [getText("noteLowA"), "17"],
+            [getText("noteLowASharp"), "18"],
+            [getText("noteLowB"), "19"],
+            [getText("noteMiddleC"), "20"],
+            [getText("noteMiddleCSharp"), "21"],
+            [getText("noteMiddleD"), "22"],
+            [getText("noteMiddleDSharp"), "23"],
+            [getText("noteMiddleE"), "24"],
+            [getText("noteMiddleF"), "25"],
+            [getText("noteMiddleFSharp"), "26"],
+            [getText("noteMiddleG"), "27"],
+            [getText("noteMiddleGSharp"), "28"],
+            [getText("noteMiddleA"), "29"],
+            [getText("noteMiddleASharp"), "30"],
+            [getText("noteMiddleB"), "31"],
+            [getText("noteHighC"), "32"]
+          ];
+
+          var durationOptions = [
+            ["1", "1"],
+            ["1/2", "2"],
+            ["1/4", "4"],
+            ["1/8", "8"],
+            ["1/16", "16"]
+          ];
+
+          this.appendDummyInput()
+            .appendField(noteLabel)
+            .appendField(new Blockly.FieldDropdown(noteOptions), "NOTE")
+            .appendField(durationLabel)
+            .appendField(new Blockly.FieldDropdown(durationOptions), "DURATION")
+            .appendField(beatLabel);
+          this.setInputsInline(true);
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour('#FF6B6B'); // 音乐积木：红色
+        }
+      };
+
+      // 步态动作积木
+      if (Blockly.Blocks['gait'])
+      {
+        delete Blockly.Blocks['gait'];
+      }
+
+      Blockly.Blocks['gait'] = {
+        init: function ()
+        {
+          var gaitLabel = getText("gaitLabel");
+          var delayLabel = getText("thenDelay");
+          var unitLabel = getText("secUnit");
+          var options = [
+            [getText("gaitStep"), "kvtF"],
+            [getText("gaitRotateLeft"), "kvtL"],
+            [getText("gaitRotateRight"), "kvtR"],
+            [getText("gaitWalkForward"), "kwkF"],
+            [getText("gaitWalkLeft"), "kwkL"],
+            [getText("gaitWalkRight"), "kwkR"],
+            [getText("gaitWalkBackward"), "kbkF"],
+            [getText("gaitBackLeft"), "kbkL"],
+            [getText("gaitBackRight"), "kbkR"],
+            [getText("gaitTrotForward"), "ktrF"],
+            [getText("gaitTrotLeft"), "ktrL"],
+            [getText("gaitTrotRight"), "ktrR"],
+            [getText("gaitCrawlForward"), "kcrF"],
+            [getText("gaitCrawlLeft"), "kcrL"],
+            [getText("gaitCrawlRight"), "kcrR"],
+            [getText("gaitGapForward"), "kgpF"],
+            [getText("gaitGapLeft"), "kgpL"],
+            [getText("gaitGapRight"), "kgpR"],
+            [getText("gaitMoonwalk"), "kmw"]
+          ];
+
+          this.appendDummyInput()
+            .appendField(gaitLabel)
+            .appendField(new Blockly.FieldDropdown(options), "COMMAND");
+          this.appendDummyInput()
+            .appendField(delayLabel)
+            .appendField(new Blockly.FieldNumber(1, 0, 10, 0.01), "DELAY")
+            .appendField(unitLabel);
+          this.setInputsInline(true);
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour('#4361EE');
+        }
+      };
+
+      // 姿势动作积木
+      if (Blockly.Blocks['posture'])
+      {
+        delete Blockly.Blocks['posture'];
+      }
+
+      Blockly.Blocks['posture'] = {
+        init: function ()
+        {
+          var postureLabel = getText("postureLabel");
+          var delayLabel = getText("thenDelay");
+          var unitLabel = getText("secUnit");
+          var options = [
+            [getText("postureStand"), "kup"],
+            [getText("postureSit"), "ksit"],
+            [getText("postureRest"), "d"],
+            [getText("posturePee"), "kpee"]
+          ];
+
+          this.appendDummyInput()
+            .appendField(postureLabel)
+            .appendField(new Blockly.FieldDropdown(options), "COMMAND");
+          this.appendDummyInput()
+            .appendField(delayLabel)
+            .appendField(new Blockly.FieldNumber(0, 0, 10, 0.01), "DELAY")
+            .appendField(unitLabel);
+          this.setInputsInline(true);
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour('#4361EE');
+        }
+      };
+
+      // 杂技动作积木
+      if (Blockly.Blocks['acrobatic_moves'])
+      {
+        delete Blockly.Blocks['acrobatic_moves'];
+      }
+
+      Blockly.Blocks['acrobatic_moves'] = {
+        init: function ()
+        {
+          var moveLabel = getText("acrobaticMovesLabel");
+          var delayLabel = getText("thenDelay");
+          var unitLabel = getText("secUnit");
+          var options = [
+            [getText("acrobaticHandstand"), "khds"],
+            [getText("acrobaticBoxing"), "kbx"],
+            [getText("acrobaticBackflip"), "kflipB"],
+            [getText("acrobaticFrontflip"), "kflipF"],
+            [getText("acrobaticJump"), "kjmp"]
+          ];
+
+          this.appendDummyInput()
+            .appendField(moveLabel)
+            .appendField(new Blockly.FieldDropdown(options), "COMMAND");
+          this.appendDummyInput()
+            .appendField(delayLabel)
+            .appendField(new Blockly.FieldNumber(0, 0, 10, 0.01), "DELAY")
+            .appendField(unitLabel);
+          this.setInputsInline(true);
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour('#4361EE');
+        }
+      };
+    }
+
+    // 保存当前工作区的积木
+    function saveCurrentWorkspace()
+    {
+      return Blockly.serialization.workspaces.save(workspace);
+    }
+
+    // 恢复工作区积木
+    function restoreWorkspace(state)
+    {
+      Blockly.serialization.workspaces.load(state, workspace);
+    }
+
+    // 切换语言
+    function setLanguage(lang)
+    {
+      if (isChangingLanguage || currentLang === lang) return;
+      isChangingLanguage = true;
+
+      // 更新按钮样式
+      document.getElementById('zhBtn').classList.toggle('active', lang === 'zh');
+      document.getElementById('enBtn').classList.toggle('active', lang === 'en');
+      document.getElementById('jaBtn').classList.toggle('active', lang === 'ja');
+
+      // 保存当前工作区状态
+      const workspaceState = saveCurrentWorkspace();
+
+      // 加载相应语言文件
+      loadLanguageFile(lang, function ()
+      {
+        // 设置当前语言
+        currentLang = lang;
+
+        // 更新自定义积木的定义
+        updateCustomBlockDefinitions();
+
+        // 创建新的工具箱配置，确保使用新语言
+        const newToolbox = createToolbox();
+
+        // 重新注入工作区
+        workspace.dispose();
+        workspace = Blockly.inject('blocklyDiv', {
+          media: './node_modules/blockly/media/',
+          toolbox: newToolbox,
+          theme: customTheme,
+          grid: {
+            spacing: 20,
+            length: 3,
+            colour: '#ccc',
+            snap: true
+          },
+          zoom: {
+            controls: true,
+            wheel: true,
+            startScale: 1.0,
+            maxScale: 3,
+            minScale: 0.3,
+            scaleSpeed: 1.2
+          },
+          trashcan: true
+        });
+
+        // 恢复工作区状态
+        restoreWorkspace(workspaceState);
+
+        // 再次更新自定义积木
+        updateCustomBlockDefinitions();
+
+        // 更新撤销和重做按钮状态
+        updateUndoRedoState();
+
+        // 更新UI文本
+        updateUITranslations();
+
+        isChangingLanguage = false;
+      });
+    }
+
+    // 初始化时设置默认语言为英文
+    window.addEventListener('DOMContentLoaded', function ()
+    {
+      // 确保先动态加载英文语言文件，再进行其他初始化
+      loadLanguageFile('en', function ()
+      {
+        // 设置当前语言为英文
+        currentLang = 'en';
+
+        // 初始化自定义积木
+        updateCustomBlockDefinitions();
+
+        // 使用带有翻译的工具箱初始化工作区
+        workspace = Blockly.inject('blocklyDiv', {
+          media: './node_modules/blockly/media/',
+          toolbox: createToolbox(),
+          theme: customTheme,
+          grid: {
+            spacing: 20,
+            length: 3,
+            colour: '#ccc',
+            snap: true
+          },
+          zoom: {
+            controls: true,
+            wheel: true,
+            startScale: 1.0,
+            maxScale: 3,
+            minScale: 0.3,
+            scaleSpeed: 1.2
+          },
+          trashcan: true
+        });
+
+        // 更新UI文本
+        updateUIText();
+
+        if (typeof window.updateUITranslations === 'function')
+        {
+          window.updateUITranslations();
+        }
+
+        // 添加窗口大小变化事件监听器
+        window.addEventListener('resize', resizeBlocklyWorkspace);
+
+        // 设置初始宽度比例
+        const container = document.querySelector('.workspace-container');
+        const blocklyDiv = document.getElementById('blocklyDiv');
+        const windowsContainer = document.querySelector('.windows-container');
+
+        blocklyDiv.style.flexBasis = '70%';
+        blocklyDiv.style.width = '70%';
+        windowsContainer.style.flexBasis = '29%'; // 减去分隔线宽度
+        windowsContainer.style.width = '29%';
+
+        // 初始调整工作区大小
+        resizeBlocklyWorkspace();
+
+        // 添加默认的connect with IP积木块
+        addDefaultConnectionBlock();
+
+        // 监听工作区变化事件
+        workspace.addChangeListener(function (event)
+        {
+          // 当工作区被清空时，添加默认积木块
+          if (event.type === Blockly.Events.FINISHED_LOADING ||
+            (event.type === Blockly.Events.DELETE && workspace.getAllBlocks().length === 0))
+          {
+            addDefaultConnectionBlock();
+          }
+
+          // 更新撤销和重做按钮状态
+          updateUndoRedoState();
+        });
+
+        // 添加撤销和重做按钮
+        addUndoRedoButtons();
+
+        // 更新按钮状态
+        document.getElementById('zhBtn').classList.toggle('active', false);
+        document.getElementById('enBtn').classList.toggle('active', true);
+        document.getElementById('jaBtn').classList.toggle('active', false);
+      });
+
+      // 加载默认语言积木
+      loadLanguageFile('en', function ()
+      {
+        // 工作区已在DOMContentLoaded事件中初始化
+        // 翻译UI
+        updateUIText();
+      });
+
+      // 添加控制台和串口输出区域的键盘复制功能
+      function setupCopyKeyboardShortcuts()
+      {
+        // 控制台区域复制功能
+        const consoleLogElement = document.getElementById('consoleLog');
+        // 设置tabindex，使元素可以接收键盘事件
+        consoleLogElement.setAttribute('tabindex', '0');
+
+        consoleLogElement.addEventListener('keydown', function (e)
+        {
+          // 检测Ctrl+C或Command+C (Mac)
+          if ((e.ctrlKey || e.metaKey) && e.key === 'c')
+          {
+            const selectedText = window.getSelection().toString();
+            if (selectedText)
+            {
+              navigator.clipboard.writeText(selectedText)
+                .then(() => {/* 移除复制成功消息 */ })
+                .catch(err => console.error('复制失败:', err));
+            }
+          }
+        });
+
+        // 使控制台区域可以通过点击获得焦点
+        consoleLogElement.addEventListener('click', function ()
+        {
+          this.focus();
+        });
+
+        // 串口输出区域复制功能
+        const serialOutputElement = document.getElementById('serialOutput');
+        // 设置tabindex，使元素可以接收键盘事件
+        serialOutputElement.setAttribute('tabindex', '0');
+
+        serialOutputElement.addEventListener('keydown', function (e)
+        {
+          // 检测Ctrl+C或Command+C (Mac)
+          if ((e.ctrlKey || e.metaKey) && e.key === 'c')
+          {
+            const selectedText = window.getSelection().toString();
+            if (selectedText)
+            {
+              navigator.clipboard.writeText(selectedText)
+                .then(() => {/* 移除复制成功消息 */ })
+                .catch(err => console.error('复制失败:', err));
+            }
+          }
+        });
+
+        // 使串口输出区域可以通过点击获得焦点
+        serialOutputElement.addEventListener('click', function ()
+        {
+          this.focus();
+        });
+      }
+
+      // 初始化复制功能
+      setupCopyKeyboardShortcuts();
+    });
+
+    // 添加动态加载语言文件的辅助函数
+    function loadLanguageFile(lang, callback)
+    {
+      const script = document.createElement('script');
+      script.onload = function ()
+      {
+        if (typeof callback === 'function')
+        {
+          callback();
+        }
+      };
+
+      // 根据语言选择对应的Blockly语言文件
+      const langMap = {
+        'zh': './node_modules/blockly/msg/zh-hans.js',
+        'en': './node_modules/blockly/msg/en.js',
+        'ja': './node_modules/blockly/msg/ja.js'
+        // 可以在这里添加更多语言
+      };
+      script.src = langMap[lang] || langMap['en']; // 默认使用英文
+
+      // 标记并添加新脚本
+      script.setAttribute('data-language-script', 'true');
+      document.head.appendChild(script);
+    }
+
+    // 更新UI文本的函数
+    function updateUIText()
+    {
+      // 调用translations.js中的updateUITranslations函数
+      if (typeof window.updateUITranslations === 'function')
+      {
+        window.updateUITranslations();
+      }
+
+      // 更新当前文件名显示
+      const currentFileNameSpan = document.getElementById('currentFileName');
+      const currentFileLabelSpan = document.getElementById('currentFileLabel');
+
+      if (currentFileLabelSpan)
+      {
+        // 只在有文件时显示标签
+        currentFileLabelSpan.style.display = currentFile ? 'inline' : 'none';
+      }
+
+      if (currentFileNameSpan && currentFile)
+      {
+        currentFileNameSpan.textContent = currentFile.name;
+      } else if (currentFileNameSpan)
+      {
+        currentFileNameSpan.textContent = '';
+      }
+    }
+
+    // 窗口大小变化时调整Blockly工作区
+    function resizeBlocklyWorkspace()
+    {
+      // 在下一个事件循环中执行，确保DOM已更新
+      setTimeout(function ()
+      {
+        if (workspace)
+        {
+          // 确保工作区和控制台区域的宽度比例保持不变
+          const container = document.querySelector('.workspace-container');
+          const blocklyDiv = document.getElementById('blocklyDiv');
+          const windowsContainer = document.querySelector('.windows-container');
+
+          // 如果没有显式设置宽度，则应用默认比例
+          if (!blocklyDiv.style.width || !windowsContainer.style.width)
+          {
+            const containerWidth = container.getBoundingClientRect().width;
+            blocklyDiv.style.flexBasis = '70%';
+            blocklyDiv.style.width = '70%';
+            windowsContainer.style.flexBasis = '29%'; // 减去分隔线宽度
+            windowsContainer.style.width = '29%';
+          }
+
+          Blockly.svgResize(workspace);
+
+          // 在调整工作区大小后重新定位撤销重做按钮
+          repositionUndoRedoButtons();
+        }
+      }, 0);
+    }
+
+    // 定位撤销重做按钮的函数
+    function repositionUndoRedoButtons()
+    {
+      const undoRedoControls = document.querySelector('.undoRedoControls');
+      if (!undoRedoControls) return;
+
+      // 获取放大缩小按钮容器
+      const zoomControls = document.querySelector('.blocklyZoom');
+
+      if (zoomControls)
+      {
+        const zoomRect = zoomControls.getBoundingClientRect();
+
+        // 将撤销重做按钮与缩放控件在同一条竖线上
+        undoRedoControls.style.right = (window.innerWidth - zoomRect.right) + 'px'; // 与放大缩小按钮右对齐
+        undoRedoControls.style.top = (zoomRect.top - 70) + 'px'; // 放在放大缩小按钮上方
+      }
+    }
+
+    // 添加默认的connect with IP积木块
+    function addDefaultConnectionBlock()
+    {
+      // 只有当工作区为空时才添加默认积木
+      if (workspace.getAllBlocks().length === 0)
+      {
+        // 创建make_connection积木块
+        var connectionBlock = workspace.newBlock('make_connection');
+        // 设置IP地址为当前设备IP
+        connectionBlock.setFieldValue(currentDeviceIP, 'IP_ADDRESS');
+        // 初始化积木块(确保所有连接点正确设置)
+        connectionBlock.initSvg();
+        // 渲染积木块
+        connectionBlock.render();
+        // 将积木块移动到合适的位置
+        connectionBlock.moveBy(50, 50);
+      }
+    }
+
+    // 添加清空工作区的函数
+    function clearWorkspace()
+    {
+      workspace.clear();
+      // 清空后自动添加默认连接积木
+      addDefaultConnectionBlock();
+    }
+
+    function showCode()
+    {
+      Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
+
+      // 修改：查找工作区中的'make_connection'积木块（Connect with IP）
+      const makeConnectionBlocks = workspace.getBlocksByType('make_connection');
+
+      // 如果没有找到make_connection积木块，显示错误信息
+      if (makeConnectionBlocks.length === 0)
+      {
+        console.error(getText("noConnectionBlockError") || "错误：请添加一个'Connect with IP'积木块并将代码连接在其下方！");
+        alert(getText("noConnectionBlockError") || "错误：请添加一个'Connect with IP'积木块并将代码连接在其下方！");
+        return;
+      }
+
+      // 如果找到多个make_connection积木块，使用第一个
+      const mainBlock = makeConnectionBlocks[0];
+
+      // 准备一个临时的工作区，只包含我们要运行的代码
+      const tempWorkspace = new Blockly.Workspace();
+
+      // 复制主块及其所有连接的块到临时工作区
+      // 先克隆主块
+      const clonedMainBlock = Blockly.serialization.blocks.save(mainBlock);
+      Blockly.serialization.blocks.append(clonedMainBlock, tempWorkspace);
+
+      // 生成临时工作区的代码
+      var code = Blockly.JavaScript.workspaceToCode(tempWorkspace);
+
+      // 清理临时工作区
+      tempWorkspace.dispose();
+
+      // 创建蒙版背景
+      var overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      overlay.style.zIndex = '1200';  // 提高z-index值，高于控件
+      overlay.style.display = 'flex';
+      overlay.style.justifyContent = 'center';
+      overlay.style.alignItems = 'center';
+
+      // 点击蒙版时关闭对话框
+      overlay.addEventListener('click', function (event)
+      {
+        if (event.target === overlay)
+        {
+          document.body.removeChild(overlay);
+        }
+      });
+
+      // 创建一个包含代码的对话框
+      var codeDialog = document.createElement('div');
+      codeDialog.className = 'code-dialog';
+      codeDialog.style.position = 'relative';
+      codeDialog.style.backgroundColor = '#282c34';
+      codeDialog.style.color = '#abb2bf';
+      codeDialog.style.padding = '20px';
+      codeDialog.style.borderRadius = '8px';
+      codeDialog.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.5)';
+      codeDialog.style.zIndex = '1201';  // 比overlay高1
+      codeDialog.style.maxWidth = '90%';
+      codeDialog.style.maxHeight = '80%';
+      codeDialog.style.overflow = 'auto';
+      codeDialog.style.fontFamily = '"Consolas", "Monaco", "Microsoft YaHei", "PingFang SC", "SimHei", sans-serif';
+
+      // 标题
+      var titleBar = document.createElement('div');
+      titleBar.style.display = 'flex';
+      titleBar.style.justifyContent = 'space-between';
+      titleBar.style.alignItems = 'center';
+      titleBar.style.marginBottom = '15px';
+
+      var title = document.createElement('h3');
+      // 使用getText函数获取翻译文本
+      title.innerHTML = getText("generatedJSCode");
+      title.style.margin = '0';
+      title.style.color = '#e6e6e6';
+      title.style.fontFamily = '"Microsoft YaHei", "PingFang SC", "SimHei", "Arial", sans-serif';
+
+      var closeButton = document.createElement('button');
+      closeButton.textContent = '×';
+      closeButton.style.background = 'none';
+      closeButton.style.border = 'none';
+      closeButton.style.color = '#e6e6e6';
+      closeButton.style.fontSize = '24px';
+      closeButton.style.cursor = 'pointer';
+      closeButton.onclick = function ()
+      {
+        document.body.removeChild(overlay);
+      };
+
+      titleBar.appendChild(title);
+      titleBar.appendChild(closeButton);
+      codeDialog.appendChild(titleBar);
+
+      // 格式化代码
+      // 1. 分割每行
+      var codeLines = code.split('\n');
+
+      // 2. 创建代码显示区域
+      var codeContainer = document.createElement('pre');
+      codeContainer.style.margin = '0';
+      codeContainer.style.overflow = 'auto';
+      codeContainer.style.backgroundColor = '#282c34';
+      codeContainer.style.padding = '10px';
+      codeContainer.style.borderRadius = '4px';
+      codeContainer.style.lineHeight = '1.5';
+      codeContainer.style.maxHeight = '60vh';
+      codeContainer.style.fontSize = '14px';
+      codeContainer.style.color = '#e6e6e6'; // 设置代码文本颜色
+
+      // 添加自定义滚动条样式
+      codeContainer.style.scrollbarWidth = 'thin';
+      codeContainer.style.scrollbarColor = '#4d4d4d #282c34';
+
+      // 添加整个代码块的文本，而不是逐行添加
+      codeContainer.textContent = code;
+
+      codeDialog.appendChild(codeContainer);
+
+      // 添加复制按钮
+      var copyButton = document.createElement('button');
+      copyButton.innerHTML = getText("copyCode");
+      copyButton.style.marginTop = '15px';
+      copyButton.style.padding = '6px 12px';
+      copyButton.style.backgroundColor = '#4d78cc';
+      copyButton.style.color = 'white';
+      copyButton.style.border = 'none';
+      copyButton.style.borderRadius = '4px';
+      copyButton.style.cursor = 'pointer';
+      copyButton.style.fontFamily = '"Microsoft YaHei", "PingFang SC", "SimHei", "Arial", sans-serif';
+      copyButton.onclick = function ()
+      {
+        navigator.clipboard.writeText(code).then(function ()
+        {
+          copyButton.innerHTML = getText("copySuccess");
+          setTimeout(function ()
+          {
+            copyButton.innerHTML = getText("copyCode");
+          }, 2000);
+        });
+      };
+
+      codeDialog.appendChild(copyButton);
+      overlay.appendChild(codeDialog);
+      document.body.appendChild(overlay);
+
+      // 添加ESC键监听
+      function handleEscKey(event)
+      {
+        if (event.key === 'Escape')
+        {
+          document.body.removeChild(overlay);
+          document.removeEventListener('keydown', handleEscKey);
+        }
+      }
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    function runCode()
+    {
+      window.LoopTrap = 1000;
+      Blockly.JavaScript.INFINITE_LOOP_TRAP =
+        'if (--window.LoopTrap < 0) throw "无限循环";\n';
+
+      // 修改：查找工作区中的'make_connection'积木块（Connect with IP）
+      const makeConnectionBlocks = workspace.getBlocksByType('make_connection');
+
+      // 如果没有找到make_connection积木块，显示错误信息
+      if (makeConnectionBlocks.length === 0)
+      {
+        console.error(getText("noConnectionBlockError") || "错误：请添加一个'Connect with IP'积木块并将代码连接在其下方！");
+        alert(getText("noConnectionBlockError") || "错误：请添加一个'Connect with IP'积木块并将代码连接在其下方！");
+        return;
+      }
+
+      // 如果找到多个make_connection积木块，使用第一个
+      const mainBlock = makeConnectionBlocks[0];
+
+      // 准备一个临时的工作区，只包含我们要运行的代码
+      const tempWorkspace = new Blockly.Workspace();
+
+      // 复制主块及其所有连接的块到临时工作区
+      // 先克隆主块
+      const clonedMainBlock = Blockly.serialization.blocks.save(mainBlock);
+      Blockly.serialization.blocks.append(clonedMainBlock, tempWorkspace);
+
+      // 生成临时工作区的代码
+      var code = Blockly.JavaScript.workspaceToCode(tempWorkspace);
+
+      // 清理临时工作区
+      tempWorkspace.dispose();
+
+      Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
+
+      // 添加辅助函数确保异步操作按顺序执行
+      const asyncHelper = `
+          // 辅助函数，确保异步打印能够立即执行
+          function asyncLog(message) {
+            return new Promise((resolve) => {
+              console.log(message);
+              // 强制浏览器更新DOM
+              setTimeout(resolve, 0);
+            });
+          }
+
+        // HTTP请求函数 - 发送命令到设备 (同步版本)
+        function httpRequest(ip, command, returnResult = false) {
+          // 构造请求URL
+          const url = "http://" + ip + "/?cmd=" + encodeURIComponent(command);
+          
+          // 根据开关决定是否显示发送的命令
+          if (showSentCommands) {
+            console.log(getText("sendingCommand") + command);
+          }
+          
+          try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, false); // false表示同步请求
+            xhr.withCredentials = false;
+            xhr.send();
+            
+            if (xhr.status === 200) {
+              const result = xhr.responseText.trim();
+              
+              if (returnResult) {
+                // 特别检查是否是连接测试命令并返回了模拟数据
+                if (command === '?' && result === 'PetoiModel-v1.0') {
+                  console.error(getText("errorMockData"));
+                }
+                
+                // 检查命令是否为读取模拟、数字输入或传感器的命令
+                const isReadCommand = command.startsWith("Ra") || 
+                                     command.startsWith("Rd") || 
+                                     command.startsWith("i ") ||
+                                     command === '?' ||
+                                     command.includes(" ?");
+                
+                if (isReadCommand) {
+                  // 对于连接测试命令，直接返回响应
+                  if (command === '?') {
+                    console.log(getText("deviceModelInfo") + result);
+                    return result;
+                  }
+                  
+                  // 从结果中提取等号后面的数字，如果有的话
+                  const match = result.match(/=\\s*(-?\\d+)/);
+                  if (match && match[1]) {
+                    return match[1]; // 返回等号后的数字（字符串格式）
+                  }
+                }
+                return result; // 对于其他命令或未找到匹配，返回原始结果
+              }
+              return true;
+            } else {
+              throw new Error(getText("httpError") + xhr.status);
+            }
+          } catch (error) {
+            console.error(getText("commandFailed"), error.message);
+            if (returnResult) {
+              return "";
+            }
+            return false;
+          }
+          }
+        `;
+
+      // 将普通的console.log替换为使用asyncLog的形式
+      code = code.replace(/console\.log\((.*?)\);/g, 'await asyncLog($1);');
+
+      // 包装整个代码到一个异步函数中
+      code = asyncHelper + "\n(async function() {\n" + code + "\n" +
+        "try {\n" +
+        "  // 程序结束时自动发送休息指令'd'\n" +
+        "  if(currentDeviceIP) {\n" +
+        "    await asyncLog(getText('programEndingRestCommand'));\n" +
+        "    httpRequest(currentDeviceIP, 'd', true);\n" +
+        "  }\n" +
+        "} catch(e) {\n" +
+        "  console.error(getText('restCommandFailed') + e.message);\n" +
+        "}\n" +
+        "console.log(getText('taskEnded'));" + // 添加任务结束消息
+        "\n})().catch(e => { console.error(getText('networkRequestError') + ': ' + e.message); alert(getText('networkRequestError') + ': ' + e.message); });";
+
+      try
+      {
+        eval(code);
+      } catch (e)
+      {
+        console.error(getText("networkRequestError") + ": " + e.message);
+        alert(getText("networkRequestError") + ": " + e.message);
+      }
+    }
+
+    function saveWorkspace()
+    {
+      // 显示保存对话框，提供保存和另存为选项
+      promptSaveOptions();
+    }
+
+    function promptSaveOptions()
+    {
+      // 创建蒙版背景
+      var overlay = document.createElement('div');
+      overlay.className = 'overlay';
+
+      // 创建对话框
+      var dialog = document.createElement('div');
+      dialog.className = 'wifi-dialog';
+      dialog.style.maxWidth = '400px';
+
+      // 使用getText获取本地化文本
+      const title = getText('saveProgram');
+      const message = currentFile ?
+        getText('currentFile').replace('{filename}', currentFile.name) :
+        getText('noFileSaved');
+      const saveText = getText('save');
+      const saveAsText = getText('saveAs');
+      const cancelText = getText('cancel');
+      const warningText = getText('saveWarning');
+
+      dialog.innerHTML = `
+        <h3>${title}</h3>
+        <p>${message}</p>
+        <p style="color: #999; font-size: 12px;">${warningText}</p>
+      <div style="text-align: center; margin: 20px 0;">
+        ${currentFile ?
+          `<button onclick="saveFile('${currentFile.name}'); closeSaveOptionsDialog();" class="confirm" style="margin-right: 10px;">
+              ${saveText}
+            </button>` : ''}
+        <button onclick="saveFileWithPrompt(); closeSaveOptionsDialog();" class="confirm" style="margin-right: 10px;">
+          ${saveAsText}
+        </button>
+        <button onclick="closeSaveOptionsDialog()" class="cancel">
+          ${cancelText}
+        </button>
+      </div>
+    `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(dialog);
+    }
+
+    function closeSaveOptionsDialog()
+    {
+      const dialog = document.querySelector('.wifi-dialog');
+      const overlay = document.querySelector('.overlay');
+      if (dialog) dialog.remove();
+      if (overlay) overlay.remove();
+    }
+
+    function saveFile(filename)
+    {
+      var json = Blockly.serialization.workspaces.save(workspace);
+      var blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+
+      var a = document.createElement('a');
+      a.download = filename;
+      a.href = URL.createObjectURL(blob);
+      a.click();
+
+      // 显示保存成功消息
+      showSaveSuccessDialog(filename);
+    }
+
+    function saveFileWithPrompt()
+    {
+      // 显示默认文件名
+      let defaultName = 'program.json';
+      if (currentFile)
+      {
+        defaultName = currentFile.name;
+      }
+
+      // 提示用户输入文件名
+      const fileName = prompt(
+        getText("enterFileName"),
+        defaultName
+      );
+
+      if (fileName)
+      {
+        // 添加.json扩展名（如果用户没有输入）
+        let finalName = fileName;
+        if (!finalName.toLowerCase().endsWith('.json'))
+        {
+          finalName += '.json';
+        }
+
+        // 保存文件
+        saveFile(finalName);
+
+        // 更新当前文件名
+        currentFile = {
+          name: finalName,
+          lastModified: new Date().getTime()
+        };
+
+        // 更新显示的文件名和标签
+        updateUIText();
+      }
+    }
+
+    function showSaveSuccessDialog(fileName)
+    {
+      // 创建蒙版背景
+      var overlay = document.createElement('div');
+      overlay.className = 'overlay';
+
+      // 创建对话框
+      var dialog = document.createElement('div');
+      dialog.className = 'wifi-dialog';
+      dialog.style.maxWidth = '450px';
+
+      // 使用getText函数获取本地化文本
+      const title = getText("saveSuccess");
+      const message = getText("savedToDownloads");
+      const fileNameNote = getText("filenameNote").replace("{filename}", fileName);
+      const closeText = getText("close");
+
+      dialog.innerHTML = `
+      <h3 style="color: #4CAF50;">${title}</h3>
+      <p>${message}</p>
+      <p style="margin-top: 10px; font-size: 14px;">${fileNameNote}</p>
+      <div style="text-align: center; margin: 20px 0;">
+        <button onclick="closeSuccessDialog()" class="confirm">
+          ${closeText}
+        </button>
+      </div>
+    `;
+
+      document.body.appendChild(overlay);
+      document.body.appendChild(dialog);
+    }
+
+    function closeSuccessDialog()
+    {
+      const dialog = document.querySelector('.wifi-dialog');
+      const overlay = document.querySelector('.overlay');
+      if (dialog) dialog.remove();
+      if (overlay) overlay.remove();
+    }
+
+    function loadWorkspace(file)
+    {
+      var reader = new FileReader();
+      reader.onload = function (e)
+      {
+        try
+        {
+          var json = JSON.parse(e.target.result);
+          Blockly.serialization.workspaces.load(json, workspace);
+
+          // 保存当前文件信息
+          currentFile = file;
+
+          // 更新文件名和标签显示
+          updateUIText();
+
+          // 不使用alert，而是在控制台显示加载成功信息
+          const successMsg = getText('fileLoaded').replace('{filename}', file.name);
+          addConsoleMessage([successMsg]);
+        } catch (err)
+        {
+          alert(getText('loadFileFailed'));
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.addEventListener('keydown', function (event)
+    {
+      if ((event.ctrlKey || event.metaKey) && event.key === 's')
+      {
+        event.preventDefault();
+        saveWorkspace();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key === 'o')
+      {
+        event.preventDefault();
+        document.getElementById('loadInput').click();
+      }
+      // 添加撤销快捷键(Ctrl+Z)
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z')
+      {
+        event.preventDefault();
+        // 使用undoStack_属性检查是否可以撤销
+        if (workspace.undoStack_ && workspace.undoStack_.length > 0)
+        {
+          workspace.undo(false);
+          updateUndoRedoState();
+        }
+      }
+      // 添加重做快捷键(Ctrl+Y 或 Ctrl+Shift+Z)
+      if ((event.ctrlKey || event.metaKey) &&
+        ((event.key.toLowerCase() === 'y') ||
+          (event.shiftKey && event.key.toLowerCase() === 'z')))
+      {
+        event.preventDefault();
+        // 使用redoStack_属性检查是否可以重做
+        if (workspace.redoStack_ && workspace.redoStack_.length > 0)
+        {
+          workspace.undo(true);
+          updateUndoRedoState();
+        }
+      }
+    });
+
+    function addConsoleMessage(args)
+    {
+      const logDiv = document.getElementById('consoleLog');
+      const time = new Date().toLocaleTimeString();
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'console-item';
+
+      // 处理不同类型的参数
+      const messages = Array.from(args).map(arg =>
+      {
+        if (typeof arg === 'object')
+        {
+          try
+          {
+            return JSON.stringify(arg, null, 2);
+          } catch (e)
+          {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      });
+
+      const messageText = messages.join(' ');
+      messageDiv.textContent = `[${time}] ${messageText} `;
+
+      // 检测是否为"任务结束"消息，如果是则使用绿色字体
+      if (messageText === getText('taskEnded'))
+      {
+        messageDiv.style.color = '#4CAF50'; // 使用绿色
+        messageDiv.style.fontWeight = 'bold'; // 加粗显示
+      }
+
+      // 使用原生DOM方法确保立即渲染，改为添加到末尾
+      logDiv.appendChild(messageDiv);
+
+      // 保持最多显示100条记录
+      while (logDiv.children.length > 100)
+      {
+        logDiv.removeChild(logDiv.firstChild);
+      }
+
+      // 立即滚动到底部，不使用setTimeout
+      logDiv.scrollTop = logDiv.scrollHeight;
+
+      // 强制DOM重绘，确保视图更新
+      void logDiv.offsetHeight;
+    }
+
+    function clearConsole()
+    {
+      document.getElementById('consoleLog').innerHTML = '';
+    }
+
+    // 切换是否显示发送的命令
+    function toggleShowSentCommands()
+    {
+      showSentCommands = !showSentCommands;
+      // 更新按钮样式
+      const btn = document.getElementById('showSentCommandsBtn');
+      if (showSentCommands)
+      {
+        btn.classList.add('active');
+      } else
+      {
+        btn.classList.remove('active');
+      }
+    }
+
+    // 只重写 console.log
+    const originalLog = console.log;
+    console.log = function ()
+    {
+      addConsoleMessage(arguments);
+      originalLog.apply(console, arguments);
+    };
+
+    // 添加串口通信相关的JavaScript代码
+    let port = null;
+    let reader = null;
+    let writer = null;
+
+    // 添加文件相关变量
+    let currentFile = null;
+    let currentFilePath = '';
+
+    // 设备IP地址
+    let currentDeviceIP = '192.168.4.1'; // 默认IP地址
+
+    // 添加命令历史记录相关变量
+    let commandHistory = [];
+    let historyIndex = -1;
+    let tempInputValue = '';
+
+    // 是否显示发送的命令
+    let showSentCommands = false;
+
+    let ipCheckTimer = null;
+    let lastPartialIP = null;
+    let serialBuffer = '';
+
+    async function openSerialPort()
+    {
+      try
+      {
+        port = await navigator.serial.requestPort();
+        try
+        {
+          await port.open({ baudRate: 115200 });
+        } catch (portError)
+        {
+          // 检查是否是因为串口被占用
+          if (portError.name === 'NetworkError' ||
+            portError.message.includes('failed to open') ||
+            portError.message.includes('busy') ||
+            portError.message.includes('in use'))
+          {
+            // 显示提示窗口
+            alert(getText("serialPortBusy"));
+            return;
+          } else
+          {
+            // 其他错误，继续抛出
+            throw portError;
+          }
+        }
+
+        // 显示串口界面，使用flex布局但不改变整体宽度
+        const serialInterface = document.getElementById('serialInterface');
+        serialInterface.style.display = 'flex';
+
+        // 添加connected类，调整串口容器样式
+        const serialContainer = document.getElementById('serialContainer');
+        serialContainer.classList.add('connected');
+
+        // 显示分隔线
+        document.getElementById('console-serial-divider').style.display = 'block';
+
+        // 设置控制台和串口区域的初始高度比例为50%/50%
+        document.getElementById('consoleWindow').style.flex = '50';
+        serialContainer.style.flex = '49'; // 减去分隔线高度
+
+        // 更新按钮状态
+        document.getElementById('openSerialBtn').style.display = 'none'; // 隐藏连接按钮
+        document.getElementById('closeSerialBtn').style.display = 'inline-flex'; // 显示关闭按钮
+        document.getElementById('clearSerialBtn').style.display = 'inline-flex'; // 显示清除按钮
+        document.getElementById('quickConnectBtn').disabled = false; // 启用快速连接按钮
+
+        // 强制重新调整工作区大小，确保布局不变
+        // 等DOM更新后再执行调整
+        setTimeout(function ()
+        {
+          // 确保工作区和串口区域的宽度比例保持不变
+          const container = document.querySelector('.workspace-container');
+          const blocklyDiv = document.getElementById('blocklyDiv');
+          const windowsContainer = document.querySelector('.windows-container');
+
+          // 重新应用之前的宽度比例
+          if (blocklyDiv.style.width)
+          {
+            const blocklyWidth = blocklyDiv.style.width;
+            blocklyDiv.style.flexBasis = blocklyWidth;
+            blocklyDiv.style.width = blocklyWidth;
+
+            // 确保窗口容器宽度正确
+            const blocklyPercent = parseFloat(blocklyWidth);
+            windowsContainer.style.flexBasis = `${99 - blocklyPercent}% `;
+            windowsContainer.style.width = `${99 - blocklyPercent}% `;
+          }
+
+          resizeBlocklyWorkspace();
+          repositionUndoRedoButtons();
+        }, 100);
+
+        // 设置读取器
+        reader = port.readable.getReader();
+        readSerialData();
+
+        // 设置写入器
+        writer = port.writable.getWriter();
+
+      } catch (error)
+      {
+        console.error(getText("serialConnectionError"), error);
+        // 连接失败时重置按钮样式
+        resetQuickConnectButton();
+      }
+    }
+
+    async function closeSerialPort()
+    {
+      try
+      {
+        if (reader)
+        {
+          await reader.cancel();
+          reader = null;
+        }
+        if (writer)
+        {
+          await writer.close();
+          writer = null;
+        }
+        if (port)
+        {
+          await port.close();
+          port = null;
+        }
+
+        // 更新UI状态
+        document.getElementById('serialInterface').style.display = 'none';
+
+        // 移除connected类，恢复串口容器默认样式
+        const serialContainer = document.getElementById('serialContainer');
+        serialContainer.classList.remove('connected');
+
+        // 调整控制台和串口区域的比例，控制台占据大部分空间
+        document.getElementById('consoleWindow').style.flex = '90';
+        serialContainer.style.flex = '10';
+
+        // 隐藏分隔线
+        document.getElementById('console-serial-divider').style.display = 'none';
+        document.getElementById('openSerialBtn').style.display = 'inline-flex'; // 显示连接按钮
+        document.getElementById('closeSerialBtn').style.display = 'none'; // 隐藏关闭按钮
+        document.getElementById('clearSerialBtn').style.display = 'none'; // 隐藏清除按钮
+        document.getElementById('quickConnectBtn').disabled = true; // 禁用快速连接按钮
+
+        // 重置Quick Connect按钮样式
+        resetQuickConnectButton();
+
+        // 强制重新调整工作区大小
+        setTimeout(function ()
+        {
+          resizeBlocklyWorkspace();
+          repositionUndoRedoButtons();
+        }, 100);
+
+        // 不要重置当前IP地址，保留上一次的连接信息
+        // currentDeviceIP = '192.168.4.1'; // 重置为默认IP
+      } catch (error)
+      {
+        console.error('关闭串口错误:', error);
+      }
+    }
+
+    async function quickConnect()
+    {
+      // 创建遮罩层
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      document.body.appendChild(overlay);
+
+      // 创建对话框
+      const dialog = document.createElement('div');
+      dialog.className = 'wifi-dialog';
+      dialog.innerHTML = `
+      <h3>${getText("wifiConfig")}</h3>
+      <input type="text" id="ssidInput" placeholder="${getText("ssidPlaceholder")}">
+      <input type="password" id="passwordInput" placeholder="${getText("passwordPlaceholder")}">
+      <div class="button-container">
+        <button class="cancel" onclick="closeWifiDialog()">${getText("cancel")}</button>
+        <button class="confirm" onclick="confirmWifiSettings()">${getText("confirm")}</button>
+      </div>
+    `;
+      document.body.appendChild(dialog);
+    }
+
+    function closeWifiDialog()
+    {
+      const dialog = document.querySelector('.wifi-dialog');
+      const overlay = document.querySelector('.overlay');
+      if (dialog) dialog.remove();
+      if (overlay) overlay.remove();
+    }
+
+    // 重置Quick Connect按钮样式和文本为默认状态
+    function resetQuickConnectButton()
+    {
+      const quickConnectBtn = document.getElementById('quickConnectBtn');
+      if (quickConnectBtn)
+      {
+        quickConnectBtn.textContent = getText("quickConnect");
+        quickConnectBtn.style.backgroundColor = ''; // 恢复默认颜色
+        quickConnectBtn.removeAttribute('data-connected'); // 移除连接状态标记
+      }
+    }
+
+    async function confirmWifiSettings()
+    {
+      const ssid = document.getElementById('ssidInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+
+      if (!ssid)
+      {
+        alert(getText("enterWifiName"));
+        return;
+      }
+
+      const command = `w % ${ssid}% ${password} \n`;
+
+      try
+      {
+        await writer.write(new TextEncoder().encode(command));
+        closeWifiDialog();
+
+        // 确保按钮状态正确 - Wifi配置可能意味着连接已建立
+        if (!document.getElementById('closeSerialBtn').style.display ||
+          document.getElementById('closeSerialBtn').style.display === 'none')
+        {
+          // 如果关闭按钮不可见，则现在应该显示
+          document.getElementById('openSerialBtn').style.display = 'none';
+          document.getElementById('closeSerialBtn').style.display = 'inline-flex';
+        }
+      } catch (error)
+      {
+        console.error(getText("wifiCommandError"), error);
+        alert(getText("wifiCommandFailed"));
+        // 连接失败时重置按钮
+        resetQuickConnectButton();
+      }
+    }
+
+    async function readSerialData()
+    {
+      try
+      {
+        while (true)
+        {
+          const { value, done } = await reader.read();
+          if (done)
+          {
+            reader.releaseLock();
+            break;
+          }
+          const text = new TextDecoder().decode(value);
+          serialBuffer += text;
+
+          // 取消任何正在进行的IP检查定时器
+          if (ipCheckTimer)
+          {
+            clearTimeout(ipCheckTimer);
+            ipCheckTimer = null;
+          }
+
+          // 检查是否找到"IP Address:"字符串
+          const ipAddressPosition = serialBuffer.indexOf("IP Address:");
+          if (ipAddressPosition !== -1)
+          {
+            // 找到IP地址前缀，提取后续内容检查
+            const afterPrefix = serialBuffer.substring(ipAddressPosition + "IP Address:".length).trim();
+
+            // 使用更宽松的正则表达式先找出可能的IP地址
+            const possibleIPMatch = afterPrefix.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+
+            if (possibleIPMatch)
+            {
+              const possibleIP = possibleIPMatch[1];
+
+              // 检查该IP地址后是否紧跟着还有数字，如果有可能是不完整的
+              const afterIP = afterPrefix.substring(possibleIP.length);
+              const hasMoreDigits = /^\d/.test(afterIP);
+
+              if (hasMoreDigits)
+              {
+                // 后面还有数字，可能是不完整的IP，暂时不处理，等待更多数据
+                console.log(getText("incompleteIPDetected").replace("{ip}", possibleIP));
+                lastPartialIP = possibleIP;
+              } else
+              {
+                // 延迟处理IP地址，等待可能的后续数据片段
+                lastPartialIP = possibleIP;
+
+                // 设置延迟处理定时器 (100ms)
+                ipCheckTimer = setTimeout(() =>
+                {
+                  processDetectedIP(lastPartialIP);
+                  ipCheckTimer = null;
+                  lastPartialIP = null;
+                }, 100);
+              }
+            }
+          }
+
+          // 更新输出显示，确保每条消息后面都有换行符
+          const outputDiv = document.getElementById('serialOutput');
+          // 修复：优化换行符处理，避免产生过多空行
+          // 1. 将连续的换行符替换为单个换行
+          // 2. 只在文本末尾不是换行符时添加换行
+          const processedText = text.replace(/\n{2,}/g, '\n');
+
+          // 只拼接内容，不使用innerHTML直接累加，避免渲染问题
+          const textNode = document.createTextNode(processedText);
+          const fragment = document.createDocumentFragment();
+
+          // 将文本内容分行，逐行添加
+          processedText.split('\n').forEach((line, index, array) =>
+          {
+            if (index > 0)
+            {
+              fragment.appendChild(document.createElement('br'));
+            }
+            if (line)
+            {
+              fragment.appendChild(document.createTextNode(line));
+            }
+          });
+
+          outputDiv.appendChild(fragment);
+
+          // 立即滚动到底部，不使用setTimeout
+          outputDiv.scrollTop = outputDiv.scrollHeight;
+          // 强制DOM重绘
+          void outputDiv.offsetHeight;
+        }
+      } catch (error)
+      {
+        console.error(getText("serialReadError"), error);
+      }
+    }
+
+    // 处理检测到的IP地址
+    function processDetectedIP(ip)
+    {
+      if (!ip) return;
+
+      // 验证IP地址格式是否合法
+      const ipSegments = ip.split('.');
+      if (ipSegments.length === 4 && ipSegments.every(segment =>
+      {
+        // 检查每段是否为有效数字且在0-255范围内
+        const num = parseInt(segment, 10);
+        return !isNaN(num) && num >= 0 && num <= 255;
+      }))
+      {
+        // IP地址格式完整且合法，可以安全使用
+
+        // 检查是否为新的IP地址
+        if (currentDeviceIP !== ip)
+        {
+          console.log(getText("newIPDetected").replace("{ip}", ip).replace("{oldIP}", currentDeviceIP));
+
+          // 保存设备IP到全局变量
+          currentDeviceIP = ip;
+
+          // 修改Quick Connect按钮样式和文本
+          const quickConnectBtn = document.getElementById('quickConnectBtn');
+          if (quickConnectBtn)
+          {
+            quickConnectBtn.textContent = ip;
+            quickConnectBtn.style.backgroundColor = '#4CAF50'; // 绿色背景
+            quickConnectBtn.setAttribute('data-connected', 'true'); // 标记连接状态
+          }
+
+          // 查找工作区中的make_connection积木块并更新IP地址
+          const makeConnectionBlocks = workspace.getBlocksByType('make_connection');
+          if (makeConnectionBlocks && makeConnectionBlocks.length > 0)
+          {
+            // 更新第一个make_connection积木块的IP_ADDRESS字段
+            makeConnectionBlocks[0].setFieldValue(ip, 'IP_ADDRESS');
+          }
+        }
+
+        // 从缓冲区中清除已处理的IP地址部分
+        const ipPosition = serialBuffer.indexOf('IP Address: ' + ip);
+        if (ipPosition !== -1)
+        {
+          serialBuffer = serialBuffer.substring(0, ipPosition) +
+            serialBuffer.substring(ipPosition + ('IP Address: ' + ip).length);
+        }
+      } else
+      {
+        console.log(getText("invalidIPFormat").replace("{ip}", ip));
+      }
+
+      // 如果缓冲区过大，防止内存泄漏
+      if (serialBuffer.length > 10000)
+      {
+        serialBuffer = serialBuffer.substring(serialBuffer.length - 5000);
+      }
+    }
+
+    async function sendSerialData()
+    {
+      if (!writer) return;
+
+      const input = document.getElementById('serialInput');
+      // 检查输入是否为空
+      if (input.value.trim() === '') return;
+
+      const data = input.value + '\n';
+
+      try
+      {
+        await writer.write(new TextEncoder().encode(data));
+
+        // 添加命令到历史记录
+        if (input.value.trim() !== '')
+        {
+          // 避免重复添加相同的命令
+          if (commandHistory.length === 0 || commandHistory[commandHistory.length - 1] !== input.value)
+          {
+            commandHistory.push(input.value);
+          }
+          // 保持历史记录在合理范围内(最多保存50条)
+          if (commandHistory.length > 50)
+          {
+            commandHistory.shift();
+          }
+          // 重置历史索引
+          historyIndex = -1;
+          tempInputValue = '';
+        }
+
+        input.value = '';
+      } catch (error)
+      {
+        console.error(getText("serialSendError"), error);
+      }
+    }
+
+    function clearSerialOutput()
+    {
+      const outputDiv = document.getElementById('serialOutput');
+      outputDiv.innerHTML = '';
+    }
+
+    // 添加回车键发送功能
+    document.getElementById('serialInput').addEventListener('keypress', function (e)
+    {
+      if (e.key === 'Enter')
+      {
+        sendSerialData();
+      }
+    });
+
+    // 添加上下箭头键历史命令功能
+    document.getElementById('serialInput').addEventListener('keydown', function (e)
+    {
+      // 上箭头键
+      if (e.key === 'ArrowUp')
+      {
+        e.preventDefault(); // 防止光标移到文本开头
+
+        if (commandHistory.length > 0)
+        {
+          // 如果是第一次按上箭头，保存当前输入的内容
+          if (historyIndex === -1)
+          {
+            tempInputValue = this.value;
+          }
+
+          // 向上浏览历史
+          historyIndex = Math.min(historyIndex + 1, commandHistory.length - 1);
+          this.value = commandHistory[commandHistory.length - 1 - historyIndex];
+        }
+      }
+      // 下箭头键
+      else if (e.key === 'ArrowDown')
+      {
+        e.preventDefault(); // 防止光标移到文本末尾
+
+        if (historyIndex > 0)
+        {
+          // 向下浏览历史
+          historyIndex--;
+          this.value = commandHistory[commandHistory.length - 1 - historyIndex];
+        }
+        else if (historyIndex === 0)
+        {
+          // 回到临时保存的输入
+          historyIndex = -1;
+          this.value = tempInputValue;
+        }
+      }
+    });
+
+    // 添加撤销和重做按钮
+    function addUndoRedoButtons()
+    {
+      // 检查是否已存在按钮，如果存在则移除
+      const existingControls = document.querySelector('.undoRedoControls');
+      if (existingControls)
+      {
+        existingControls.remove();
+      }
+
+      // 创建包含按钮的div
+      const undoRedoControls = document.createElement('div');
+      undoRedoControls.className = 'undoRedoControls';
+
+      // 创建撤销按钮
+      const undoButton = document.createElement('button');
+      undoButton.className = 'undoRedoButton';
+      undoButton.id = 'undoButton';
+      undoButton.title = getText('undo');
+      undoButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 14L4 9l5-5"/>
+          <path d="M4 9h13c2.5 0 4 2 4 4s-1.5 4-4 4H8"/>
+        </svg>
+      `;
+      undoButton.onclick = function ()
+      {
+        if (workspace.undoStack_ && workspace.undoStack_.length > 0)
+        {
+          workspace.undo(false);
+          updateUndoRedoState();
+        }
+      };
+
+      // 创建重做按钮
+      const redoButton = document.createElement('button');
+      redoButton.className = 'undoRedoButton';
+      redoButton.id = 'redoButton';
+      redoButton.title = getText('redo');
+      redoButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 14l5-5-5-5"/>
+          <path d="M20 9H7c-2.5 0-4 2-4 4s1.5 4 4 4h9"/>
+        </svg>
+      `;
+      redoButton.onclick = function ()
+      {
+        if (workspace.redoStack_ && workspace.redoStack_.length > 0)
+        {
+          workspace.undo(true);
+          updateUndoRedoState();
+        }
+      };
+
+      // 将按钮添加到控件容器
+      undoRedoControls.appendChild(undoButton);
+      undoRedoControls.appendChild(redoButton);
+
+      // 将控件容器添加到body
+      document.body.appendChild(undoRedoControls);
+
+      // 确保按钮是可见的
+      undoRedoControls.style.display = 'flex';
+
+      // 尝试初次定位按钮
+      repositionUndoRedoButtons();
+
+      // 再尝试几次定位，确保即使DOM渲染有延迟也能正确显示
+      setTimeout(repositionUndoRedoButtons, 500);
+      setTimeout(repositionUndoRedoButtons, 1000);
+
+      // 初始化按钮状态
+      updateUndoRedoState();
+    }
+
+    // 更新撤销和重做按钮状态
+    function updateUndoRedoState()
+    {
+      const undoButton = document.getElementById('undoButton');
+      const redoButton = document.getElementById('redoButton');
+
+      if (undoButton && redoButton)
+      {
+        // 修复hasUndo和hasRedo方法调用，改用undoStack_和redoStack_属性判断
+        const canUndo = workspace.undoStack_ && workspace.undoStack_.length > 0;
+        const canRedo = workspace.redoStack_ && workspace.redoStack_.length > 0;
+
+        undoButton.disabled = !canUndo;
+        redoButton.disabled = !canRedo;
+
+        // 更新按钮标题语言
+        undoButton.title = getText('undo');
+        redoButton.title = getText('redo');
+      }
+    }
+
+    // 添加分隔线拖动功能
+    document.addEventListener('DOMContentLoaded', function ()
+    {
+      // 获取所有需要的DOM元素
+      const horizontalDivider = document.getElementById('console-serial-divider');
+      const divider = document.getElementById('divider');
+      const container = document.querySelector('.workspace-container');
+      const blocklyDiv = document.getElementById('blocklyDiv');
+      const windowsContainer = document.querySelector('.windows-container');
+      const consoleWindow = document.getElementById('consoleWindow');
+      const serialContainer = document.getElementById('serialContainer');
+
+      // 确保分隔线初始隐藏
+      if (horizontalDivider)
+      {
+        horizontalDivider.style.display = 'none';
+      }
+
+      // 设置初始的控制台和串口区域比例
+      // 控制台占据大部分空间，串口区域只占据底部一小部分
+      consoleWindow.style.flex = '90';
+      serialContainer.style.flex = '10';
+
+      let isResizing = false;
+      let initialX, initialWidth;
+
+      divider.addEventListener('mousedown', function (e)
+      {
+        // 启动调整大小
+        isResizing = true;
+        initialX = e.clientX;
+        initialWidth = blocklyDiv.getBoundingClientRect().width;
+
+        // 添加调整中的样式
+        container.classList.add('resizing');
+        divider.classList.add('active');
+
+        // 阻止默认行为，确保拖动正常工作
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function (e)
+      {
+        if (!isResizing) return;
+
+        // 计算移动距离
+        const deltaX = e.clientX - initialX;
+
+        // 计算容器总宽度
+        const containerWidth = container.getBoundingClientRect().width;
+
+        // 计算新的blocklyDiv宽度 (百分比)
+        let newWidthPercent = ((initialWidth + deltaX) / containerWidth) * 100;
+
+        // 确保合理范围 (20% - 80%)
+        newWidthPercent = Math.max(20, Math.min(80, newWidthPercent));
+
+        // 应用新宽度 - 同时设置flexBasis和width属性
+        blocklyDiv.style.flexBasis = `${newWidthPercent}% `;
+        blocklyDiv.style.width = `${newWidthPercent}% `;
+        windowsContainer.style.flexBasis = `${99 - newWidthPercent}% `;
+        windowsContainer.style.width = `${99 - newWidthPercent}% `;
+
+        // 调整Blockly工作区大小以适应新尺寸
+        if (workspace)
+        {
+          Blockly.svgResize(workspace);
+        }
+
+        // 更新undo/redo按钮位置
+        repositionUndoRedoButtons();
+
+        // 阻止默认行为
+        e.preventDefault();
+      });
+
+      document.addEventListener('mouseup', function ()
+      {
+        if (isResizing)
+        {
+          // 停止调整大小
+          isResizing = false;
+
+          // 移除调整中的样式
+          container.classList.remove('resizing');
+          divider.classList.remove('active');
+
+          // 确保Blockly工作区尺寸正确
+          if (workspace)
+          {
+            Blockly.svgResize(workspace);
+          }
+        }
+
+        // 同时处理垂直调整的停止
+        if (isVerticalResizing)
+        {
+          // 停止垂直调整
+          isVerticalResizing = false;
+
+          // 移除调整中的样式
+          horizontalDivider.classList.remove('active');
+          document.body.style.cursor = '';
+        }
+      });
+
+      // 添加垂直分隔线拖动功能
+      let isVerticalResizing = false;
+      let initialY, initialConsoleHeight;
+
+      // 确保分隔线存在
+      if (horizontalDivider)
+      {
+        horizontalDivider.addEventListener('mousedown', function (e)
+        {
+          // 启动垂直调整
+          isVerticalResizing = true;
+          initialY = e.clientY;
+          initialConsoleHeight = consoleWindow.getBoundingClientRect().height;
+
+          // 添加调整中的样式
+          horizontalDivider.classList.add('active');
+          document.body.style.cursor = 'row-resize';
+
+          // 阻止事件冒泡和默认行为
+          e.stopPropagation();
+          e.preventDefault();
+        });
+      }
+
+      // 扩展现有的mousemove事件处理程序，处理垂直调整
+      document.addEventListener('mousemove', function (e)
+      {
+        // 处理垂直调整
+        if (isVerticalResizing && horizontalDivider)
+        {
+          // 计算移动距离
+          const deltaY = e.clientY - initialY;
+
+          // 获取windows-container的总高度
+          const containerHeight = windowsContainer.getBoundingClientRect().height;
+
+          // 计算新的控制台高度百分比
+          let newConsoleHeightPercent = ((initialConsoleHeight + deltaY) / containerHeight) * 100;
+
+          // 确保合理范围 (20% - 80%)
+          newConsoleHeightPercent = Math.max(20, Math.min(80, newConsoleHeightPercent));
+
+          // 应用新高度比例
+          consoleWindow.style.flex = `${newConsoleHeightPercent} `;
+          serialContainer.style.flex = `${100 - newConsoleHeightPercent - 1}`;  // 减去分隔线高度
+
+          // 更新undo/redo按钮位置
+          repositionUndoRedoButtons();
+
+          // 阻止事件继续传播和默认行为
+          e.stopPropagation();
+          e.preventDefault();
+        }
+      });
+    });
+
+  </script>
+</body>
+
+</html>

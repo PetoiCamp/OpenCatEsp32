@@ -1,0 +1,116 @@
+{
+  "name": "blockly",
+  "version": "11.0.0",
+  "description": "Blockly is a library for building visual programming editors.",
+  "keywords": [
+    "blockly"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/google/blockly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/google/blockly/issues"
+  },
+  "homepage": "https://developers.google.com/blockly/",
+  "author": {
+    "name": "Neil Fraser"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "umd": "./blockly.min.js",
+      "default": "./index.js"
+    },
+    "./core": {
+      "types": "./core.d.ts",
+      "node": "./core-node.js",
+      "import": "./blockly.mjs",
+      "default": "./blockly_compressed.js"
+    },
+    "./blocks": {
+      "types": "./blocks.d.ts",
+      "import": "./blocks.mjs",
+      "default": "./blocks_compressed.js"
+    },
+    "./dart": {
+      "types": "./dart.d.ts",
+      "import": "./dart.mjs",
+      "default": "./dart_compressed.js"
+    },
+    "./lua": {
+      "types": "./lua.d.ts",
+      "import": "./lua.mjs",
+      "default": "./lua_compressed.js"
+    },
+    "./javascript": {
+      "types": "./javascript.d.ts",
+      "import": "./javascript.mjs",
+      "default": "./javascript_compressed.js"
+    },
+    "./php": {
+      "types": "./php.d.ts",
+      "import": "./php.mjs",
+      "default": "./php_compressed.js"
+    },
+    "./python": {
+      "types": "./python.d.ts",
+      "import": "./python.mjs",
+      "default": "./python_compressed.js"
+    },
+    "./msg/*": {
+      "types": "./msg/*.d.ts",
+      "import": "./msg/*.mjs",
+      "default": "./msg/*.js"
+    }
+  },
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@blockly/block-test": "^5.0.0",
+    "@blockly/dev-tools": "^7.0.2",
+    "@blockly/theme-modern": "^5.0.0",
+    "@hyperjump/json-schema": "^1.5.0",
+    "@microsoft/api-documenter": "^7.22.4",
+    "@microsoft/api-extractor": "^7.29.5",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "async-done": "^2.0.0",
+    "chai": "^4.2.0",
+    "concurrently": "^8.0.1",
+    "eslint": "^8.4.1",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-jsdoc": "^48.0.2",
+    "glob": "^10.3.4",
+    "google-closure-compiler": "^20230802.0.0",
+    "gulp": "^4.0.2",
+    "gulp-concat": "^2.6.1",
+    "gulp-gzip": "^1.4.2",
+    "gulp-header": "^2.0.9",
+    "gulp-insert": "^0.5.0",
+    "gulp-rename": "^2.0.0",
+    "gulp-replace": "^1.0.0",
+    "gulp-series": "^1.0.2",
+    "gulp-shell": "^0.8.0",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-umd": "^2.0.0",
+    "http-server": "^14.0.0",
+    "json5": "^2.2.0",
+    "markdown-tables-to-json": "^0.1.7",
+    "mocha": "^10.0.0",
+    "patch-package": "^8.0.0",
+    "prettier": "3.2.5",
+    "readline-sync": "^1.4.10",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.3.3",
+    "webdriverio": "^8.32.2",
+    "yargs": "^17.2.1"
+  },
+  "dependencies": {
+    "jsdom": "23.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "commonjs"
+}
