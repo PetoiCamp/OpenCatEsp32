@@ -134,7 +134,20 @@ int ICM42670::begin()
     return rc;
   }
   icm_driver.sensor_event_cb = event_cb;
-  int1_config = {(inv_imu_interrupt_value)0};
+  int1_config = {
+      .INV_UI_FSYNC = INV_IMU_DISABLE,
+      .INV_UI_DRDY = INV_IMU_DISABLE,
+      .INV_FIFO_THS = INV_IMU_DISABLE,
+      .INV_FIFO_FULL = INV_IMU_DISABLE,
+      .INV_SMD = INV_IMU_DISABLE,
+      .INV_WOM_X = INV_IMU_DISABLE,
+      .INV_WOM_Y = INV_IMU_DISABLE,
+      .INV_WOM_Z = INV_IMU_DISABLE,
+      .INV_FF = INV_IMU_DISABLE,
+      .INV_LOWG = INV_IMU_DISABLE,
+      .INV_STEP_DET = INV_IMU_DISABLE,
+      .INV_STEP_CNT_OVFL = INV_IMU_DISABLE,
+      .INV_TILT_DET = INV_IMU_DISABLE};
 
   /* Check WHOAMI */
   rc = inv_imu_get_who_am_i(&icm_driver, &who_am_i);
