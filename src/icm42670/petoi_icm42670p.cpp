@@ -1,11 +1,13 @@
 #include "petoi_icm42670p.h"
 
 imu42670p::imu42670p(TwoWire &i2c, bool address_lsb)
-  : ICM42670(i2c, address_lsb) {
-  Serial.println("Constructor");// why is it unused ("Constructor" is not printed during bootup)
+    : ICM42670(i2c, address_lsb)
+{
+  Serial.println("Constructor"); // why is it unused ("Constructor" is not printed during bootup)
 }
 
-int imu42670p::init(uint16_t odr, uint16_t accel_fsr, uint16_t gyro_fsr) {
+int imu42670p::init(uint16_t odr, uint16_t accel_fsr, uint16_t gyro_fsr)
+{
   int rc = 0;
   rc |= inv_imu_set_accel_fsr(&icm_driver, accel_fsr_g_to_param(accel_fsr));
   rc |= inv_imu_set_accel_frequency(&icm_driver, accel_freq_to_param(odr));
@@ -23,13 +25,15 @@ int imu42670p::init(uint16_t odr, uint16_t accel_fsr, uint16_t gyro_fsr) {
   return rc;
 }
 
-void imu42670p::getOffset(int num) {
+void imu42670p::getOffset(int num)
+{
   inv_imu_sensor_event_t temp;
 
   Serial.println("Start IMU calibration...");
   Serial.println("Please put the sensor on a leveled plane!");
   Serial.println("Calculate mean");
-  for (int i = 0; i < num; i++) {
+  for (int i = 0; i < num; i++)
+  {
     getDataFromRegisters(temp);
     offset_accel[0] += temp.accel[0];
     offset_accel[1] += temp.accel[1];
@@ -48,38 +52,42 @@ void imu42670p::getOffset(int num) {
 
   offset_accel[0] = offset_accel[0] / num;
   offset_accel[1] = offset_accel[1] / num;
-  offset_accel[2] = offset_accel[2] / num - accel_ratio;  // Z axis with G
+  offset_accel[2] = offset_accel[2] / num - accel_ratio; // Z axis with G
   offset_gyro[0] = offset_gyro[0] / num;
   offset_gyro[1] = offset_gyro[1] / num;
   offset_gyro[2] = offset_gyro[2] / num;
 
-//  Serial.print("ICM42670 offset:\t");
-//  for (byte i = 0; i < 3; i++) {
-//    Serial.print(offset_gyro[i]);
-//    Serial.print('\t');
-//  }
-//  Serial.println();
+  //  Serial.print("ICM42670 offset:\t");
+  //  for (byte i = 0; i < 3; i++) {
+  //    Serial.print(offset_gyro[i]);
+  //    Serial.print('\t');
+  //  }
+  //  Serial.println();
 }
 
-float imu42670p::getTemperature() {
+float imu42670p::getTemperature()
+{
   float temp = imuData.temperature / 128 + 25;
   Serial.print("Temperature in C - ");
   Serial.println(temp);
   return temp;
 }
 
-float imu42670p::getAccelRatio(uint8_t accel_fsr) {
+float imu42670p::getAccelRatio(uint8_t accel_fsr)
+{
 
   // get accel sensitivity
   return accel_ratio;
 }
 
-float imu42670p::getGyroRatio(uint8_t gyro_fsr) {
+float imu42670p::getGyroRatio(uint8_t gyro_fsr)
+{
   // get gyro sensitivity
   return gyro_ratio;
 }
 
-void imu42670p::transformIMUData() {
+void imu42670p::transformIMUData()
+{
   ax_real = imuData.accel[0] / accel_ratio;
   ay_real = imuData.accel[1] / accel_ratio;
   az_real = imuData.accel[2] / accel_ratio;
@@ -88,7 +96,8 @@ void imu42670p::transformIMUData() {
   gz_real = imuData.gyro[2] / gyro_ratio;
 }
 
-void imu42670p::transformIMUDataWithOffset() {
+void imu42670p::transformIMUDataWithOffset()
+{
   a_real[0] = ax_real = (imuData.accel[0] - offset_accel[0]) / accel_ratio;
   a_real[1] = ay_real = (imuData.accel[1] - offset_accel[1]) / accel_ratio;
   a_real[2] = az_real = (imuData.accel[2] - offset_accel[2]) / accel_ratio;
@@ -97,7 +106,8 @@ void imu42670p::transformIMUDataWithOffset() {
   gz_real = (imuData.gyro[2] - offset_gyro[2]) / gyro_ratio;
 }
 
-void imu42670p::printRealworldData() {
+void imu42670p::printRealworldData()
+{
   // Format data for Serial Plotter
   Serial.print("Acc:");
   Serial.print(ax_real);
@@ -120,18 +130,20 @@ void imu42670p::printRealworldData() {
 // device orientation -- which can be converted to yaw, pitch, and roll. Useful for stabilizing quadcopters, etc.
 // The performance of the orientation filter is at least as good as conventional Kalman-based filtering algorithms
 // but is much less computationally intensive---it can be performed on a 3.3 V Pro Mini operating at 8 MHz!
-void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyrox, float gyroy, float gyroz, float deltaT) {
-  float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];          // short name local variable for readability
-  float norm;                                                // vector norm
-  float f1, f2, f3;                                          // objetive funcyion elements
-  float J_11or24, J_12or23, J_13or22, J_14or21, J_32, J_33;  // objective function Jacobian elements
+void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyrox, float gyroy, float gyroz, float deltaT)
+{
+  float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];         // short name local variable for readability
+  float norm;                                               // vector norm
+  float f1, f2, f3;                                         // objetive funcyion elements
+  float J_11or24, J_12or23, J_13or22, J_14or21, J_32, J_33; // objective function Jacobian elements
   float qDot1, qDot2, qDot3, qDot4;
   float hatDot1, hatDot2, hatDot3, hatDot4;
-  float gerrx, gerry, gerrz, gbiasx, gbiasy, gbiasz;  // gyro bias error
+  float gerrx, gerry, gerrz;                                // gyro bias error
+  static float gbiasx = 0.0f, gbiasy = 0.0f, gbiasz = 0.0f; // gyro bias (static to maintain state)
 
-  float GyroMeasError = PI * (40.0f / 180.0f);     // gyroscope measurement error in rads/s (start at 60 deg/s), then reduce after ~10 s to 3
-  float beta = sqrt(3.0f / 4.0f) * GyroMeasError;  // compute beta
-  float GyroMeasDrift = PI * (2.0f / 180.0f);      // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
+  float GyroMeasError = PI * (40.0f / 180.0f);    // gyroscope measurement error in rads/s (start at 60 deg/s), then reduce after ~10 s to 3
+  float beta = sqrt(3.0f / 4.0f) * GyroMeasError; // compute beta
+  float GyroMeasDrift = PI * (2.0f / 180.0f);     // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
   float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;
 
   // Auxiliary variables to avoid repeated arithmetic
@@ -143,13 +155,11 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
   float _2q2 = 2.0f * q2;
   float _2q3 = 2.0f * q3;
   float _2q4 = 2.0f * q4;
-  float _2q1q3 = 2.0f * q1 * q3;
-  float _2q3q4 = 2.0f * q3 * q4;
 
   // Normalise accelerometer measurement
   norm = sqrt(ax * ax + ay * ay + az * az);
   if (norm == 0.0f)
-    return;  // handle NaN
+    return; // handle NaN
   norm = 1.0f / norm;
   ax *= norm;
   ay *= norm;
@@ -205,7 +215,7 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
   q4 += (qDot4 - (beta * hatDot4)) * deltaT;
 
   // Normalize the quaternion
-  norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);  // normalise quaternion
+  norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4); // normalise quaternion
   norm = 1.0f / norm;
   q[0] = q1 * norm;
   q[1] = q2 * norm;
@@ -221,23 +231,25 @@ void imu42670p::MadgwickQuaternionUpdate(float ax, float ay, float az, float gyr
   ypr[1] = ypr[1] * MEAN_FILTER_SIZE - yprHistory[index][1];
   ypr[2] = ypr[2] * MEAN_FILTER_SIZE - yprHistory[index][2];
   yprHistory[index][1] = pitch = (asin(2.0f * (q[1] * q[3] - q[0] * q[2]))) * 180.0f / PI;
-  if (az<0) // the raw pitch won't exceed 90 degrees
+  if (az < 0) // the raw pitch won't exceed 90 degrees
     yprHistory[index][1] = (pitch < 0 ? -1 : 1) * 180 - pitch;
   yprHistory[index][2] = roll = (atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3])) * 180.0f / PI;
   ypr[1] = (ypr[1] + yprHistory[index][1]) / MEAN_FILTER_SIZE;
   ypr[2] = (ypr[2] + yprHistory[index][2]) / MEAN_FILTER_SIZE;
   index = (index + 1) % MEAN_FILTER_SIZE;
 }
-void imu42670p::getImuGyro() {
+void imu42670p::getImuGyro()
+{
   getDataFromRegisters(imuData);
-  if (imuData.accel[0] != prevData.accel[0] || imuData.accel[1] != prevData.accel[1] || imuData.accel[2] != prevData.accel[2]) {  // only calculate if the gyro data is updated
+  if (imuData.accel[0] != prevData.accel[0] || imuData.accel[1] != prevData.accel[1] || imuData.accel[2] != prevData.accel[2])
+  { // only calculate if the gyro data is updated
     for (byte i = 0; i < 3; i++)
       prevData.accel[i] = imuData.accel[i];
     // print realWorld data
     // transformIMUData();
     transformIMUDataWithOffset();
     now = micros();
-    deltaT = ((now - lastUpdate) / 1000000.0f);  // set integration time by time elapsed since last filter update
+    deltaT = ((now - lastUpdate) / 1000000.0f); // set integration time by time elapsed since last filter update
     lastUpdate = now;
     // if (lastUpdate - firstUpdate > 10000000uL) {
     //   beta = 0.041;  // decrease filter gain after stabilized

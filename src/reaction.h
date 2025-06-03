@@ -5,7 +5,6 @@
 void completeWebTask();
 void errorWebTask(String errorMessage);
 void finishWebCommand();
-void finishWebCommandWithError(String errorMsg);
 #endif
 
 void dealWithExceptions()
@@ -1368,7 +1367,9 @@ void reaction()
       if (lastToken == T_SKILL && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
+#ifdef WEB_SERVER
     finishWebCommand();
+#endif
     resetCmd();
 #ifdef PWM_LED_PIN
     if (autoLedQ)
@@ -1472,30 +1473,13 @@ void reaction()
 }
 
 // 异步Web处理函数
+#ifdef WEB_SERVER
 void finishWebCommand()
 {
-#ifdef WEB_SERVER
   if (cmdFromWeb)
   {
     completeWebTask(); // 调用异步完成函数
     // cmdFromWeb 将在 completeWebTask() 中设为 false
   }
-#endif
 }
-
-void finishWebCommandWithError(String errorMsg)
-{
-#ifdef WEB_SERVER
-  if (cmdFromWeb)
-  {
-    errorWebTask(errorMsg); // 调用异步错误处理
-    // cmdFromWeb 将在 errorWebTask() 中设为 false
-  }
-  else
-  {
-    cmdFromWeb = false; // 兼容性处理
-  }
-#else
-  cmdFromWeb = false;
 #endif
-}
