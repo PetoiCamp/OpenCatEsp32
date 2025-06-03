@@ -787,6 +787,13 @@
         try
         {
           const response = await fetch(this.baseUrl + "/?cmd=" + encodeURIComponent(cmd));
+
+          // 检查HTTP响应状态
+          if (!response.ok)
+          {
+            throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+          }
+
           const responseText = await response.text();
 
           if (responseText.startsWith('TASK_ID:'))
@@ -795,12 +802,28 @@
             return await this.waitForCompletion(taskId);
           } else
           {
-            // 如果没有任务ID，直接返回响应（可能是同步命令）
+            // 如果没有任务ID，说明是同步命令，直接返回响应
             return responseText;
           }
         } catch (error)
         {
-          throw new Error(getText("commandSendFailed") + ": " + error.message);
+          // 提供更详细的错误信息
+          let errorMsg = getText("commandSendFailed") + ": ";
+
+          if (error.name === 'TypeError' && error.message.includes('Failed to fetch'))
+          {
+            errorMsg += getText("deviceConnectionLost").replace("{ip}", this.baseUrl.replace("http://", ""));
+          }
+          else if (error.message.includes('ERR_CONNECTION_RESET'))
+          {
+            errorMsg += getText("deviceConnectionLost").replace("{ip}", this.baseUrl.replace("http://", ""));
+          }
+          else
+          {
+            errorMsg += error.message;
+          }
+
+          throw new Error(errorMsg);
         }
       }
 
@@ -847,7 +870,7 @@
     }
 
     // 全局异步HTTP请求函数
-    function httpRequestAsync(ip, cmd, timeout = 2000, needResponse = true)
+    function httpRequest(ip, cmd, timeout = 2000, needResponse = true)
     {
       return new Promise(async (resolve, reject) =>
       {
@@ -875,7 +898,7 @@
     }
 
     // 将函数设为全局可用
-    window.httpRequestAsync = httpRequestAsync;
+    window.httpRequest = httpRequest;
     window.PetoiAsyncClient = PetoiAsyncClient;
 
     // 动态创建工具箱配置
@@ -2362,67 +2385,7 @@
             });
           }
 
-        // 注意：httpRequestAsync和PetoiAsyncClient已在全局定义，无需重复定义
-
-        // HTTP请求函数 - 发送命令到设备 (同步版本)
-        function httpRequest(ip, command, returnResult = false) {
-          // 构造请求URL
-          const url = "http://" + ip + "/?cmd=" + encodeURIComponent(command);
-          
-          // 根据开关决定是否显示发送的命令
-          if (showSentCommands) {
-            console.log(getText("sendingCommand") + command);
-          }
-          
-          try {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', url, false); // false表示同步请求
-            xhr.withCredentials = false;
-            xhr.send();
-            
-            if (xhr.status === 200) {
-              const result = xhr.responseText.trim();
-              
-              if (returnResult) {
-                // 特别检查是否是连接测试命令并返回了模拟数据
-                if (command === '?' && result === 'PetoiModel-v1.0') {
-                  console.error(getText("errorMockData"));
-                }
-                
-                // 检查命令是否为读取模拟、数字输入或传感器的命令
-                const isReadCommand = command.startsWith("Ra") || 
-                                     command.startsWith("Rd") || 
-                                     command.startsWith("i ") ||
-                                     command === '?' ||
-                                     command.includes(" ?");
-                
-                if (isReadCommand) {
-                  // 对于连接测试命令，直接返回响应
-                  if (command === '?') {
-                    console.log(getText("deviceModelInfo") + result);
-                    return result;
-                  }
-                  
-                  // 从结果中提取等号后面的数字，如果有的话
-                  const match = result.match(/=\\s*(-?[0-9]+)/);
-                  if (match && match[1]) {
-                    return match[1]; // 返回等号后的数字（字符串格式）
-                  }
-                }
-                return result; // 对于其他命令或未找到匹配，返回原始结果
-              }
-              return true;
-            } else {
-              throw new Error(getText("httpError") + xhr.status);
-            }
-          } catch (error) {
-            console.error(getText("commandFailed"), error.message);
-            if (returnResult) {
-              return "";
-            }
-            return false;
-          }
-          }
+        // 注意：httpRequest和PetoiAsyncClient已在全局定义，无需重复定义
         `;
 
       // 将普通的console.log替换为使用asyncLog的形式
@@ -2434,7 +2397,7 @@
         "  // 程序结束时自动发送休息指令'd'\n" +
         "  if(currentDeviceIP) {\n" +
         "    await asyncLog(getText('programEndingRestCommand'));\n" +
-        "    await httpRequestAsync(currentDeviceIP, 'd', 2000, true);\n" +
+        "    await httpRequest(currentDeviceIP, 'd', 2000, true);\n" +
         "  }\n" +
         "} catch(e) {\n" +
         "  console.error(getText('restCommandFailed') + e.message);\n" +

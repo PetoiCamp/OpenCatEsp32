@@ -54,7 +54,7 @@ async function makeConnection(ip, timeout = 2000)
     // console.log(getText("connectingDevice") + ip);
 
     // 使用异步HTTP请求函数发送问号命令
-    const model = await httpRequestAsync(ip, '?', timeout, true);
+    const model = await httpRequest(ip, '?', timeout, true);
     // console.log(getText("deviceResponseInfo") + model);
 
     // 更严格地检查响应内容，特别识别模拟数据
@@ -83,6 +83,9 @@ async function makeConnection(ip, timeout = 2000)
     if (err.message.includes('timeout') || err.message.includes('超时'))
     {
       alert(getText("connectionTimeout").replace("{ip}", ip) + '\n\n' + getText("programExecutionStopped"));
+    } else if (err.message.includes('Failed to fetch') || err.message.includes('Connection reset') || err.message.includes('ERR_CONNECTION_RESET'))
+    {
+      alert(getText("deviceConnectionLost").replace("{ip}", ip) + '\n\n' + getText("checkDeviceAndNetwork") + '\n\n' + getText("programExecutionStopped"));
     } else if (err.message.includes('Network Error') || err.message.includes('网络'))
     {
       alert(getText("networkError").replace("{ip}", ip) + '\n\n' + getText("programExecutionStopped"));
@@ -221,7 +224,7 @@ javascript.javascriptGenerator.forBlock['set_analog_output'] = function (block)
   const pin = block.getFieldValue('PIN');
   const value = block.getFieldValue('VALUE');
 
-  return `httpRequest(deviceIP, "AnalogWrite(${pin},${value})");`;
+  return `console.log(await httpRequest(deviceIP, "AnalogWrite(${pin},${value})", 2000, true));\n`;
 };
 
 // 定义设置数字输出积木块
@@ -261,7 +264,7 @@ javascript.javascriptGenerator.forBlock['set_digital_output'] = function (block)
   const pin = block.getFieldValue('PIN');
   const value = block.getFieldValue('VALUE');
 
-  return `httpRequest(deviceIP, "DigitalWrite(${pin},${value})");`;
+  return `console.log(await httpRequest(deviceIP, "DigitalWrite(${pin},${value})", 2000, true));\n`;
 };
 
 // 发送自定义命令积木

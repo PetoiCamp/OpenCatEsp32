@@ -45,6 +45,7 @@ const TRANSLATIONS = {
     // 命令消息
     "sendingCommand": "发送命令: ",
     "commandFailed": "命令执行失败:",
+    "commandSendFailed": "命令发送失败",
     "httpError": "HTTP错误: ",
 
     // 显示代码窗口
@@ -153,6 +154,8 @@ const TRANSLATIONS = {
     "networkError": "网络错误：无法连接到 {ip}，请检查网络连接。",
     "connectionErrorDetails": "连接机器人出错: {error}",
     "programExecutionStopped": "程序已中断执行，后续指令将不会运行。",
+    "deviceConnectionLost": "设备连接中断：无法连接到 {ip}",
+    "checkDeviceAndNetwork": "请检查设备是否开启并且在同一网络中，或者尝试重启设备。",
     "errorInvalidIP": "错误：无效的IP地址",
     "receivedResponse": "收到响应: ",
     "requestFailedStatusCode": "请求失败，状态码: {status}",
@@ -294,10 +297,10 @@ const TRANSLATIONS = {
 
     // 新增异步相关翻译项
     "noConnectionBlockError": "错误：请添加一个'连接IP地址'积木块并将代码连接在其下方！",
-    "commandSendFailed": "命令发送失败",
     "taskQueryFailed": "任务状态查询失败",
     "taskTimeout": "任务超时",
     "httpRequestError": "HTTP请求错误",
+    "programExecutionError": "程序执行错误",
   },
 
   en: {
@@ -346,6 +349,7 @@ const TRANSLATIONS = {
     // Command messages
     "sendingCommand": "Sending command: ",
     "commandFailed": "Command execution failed:",
+    "commandSendFailed": "Command send failed",
     "httpError": "HTTP error: ",
 
     // Code Display Window
@@ -454,6 +458,8 @@ const TRANSLATIONS = {
     "networkError": "Network error: Unable to connect to {ip}, please check your network connection.",
     "connectionErrorDetails": "Robot connection error: {error}",
     "programExecutionStopped": "Program execution has been stopped, subsequent instructions will not run.",
+    "deviceConnectionLost": "Device connection lost: Unable to connect to {ip}",
+    "checkDeviceAndNetwork": "Please check if the device is on and in the same network, or try restarting the device.",
     "errorInvalidIP": "Error: Invalid IP address",
     "receivedResponse": "Received response: ",
     "requestFailedStatusCode": "Request failed, status code: {status}",
@@ -595,10 +601,10 @@ const TRANSLATIONS = {
 
     // 新增异步相关翻译项
     "noConnectionBlockError": "Error: Please add a 'Connect with IP' block and connect the code below it!",
-    "commandSendFailed": "Command send failed",
     "taskQueryFailed": "Task status query failed",
     "taskTimeout": "Task timeout",
     "httpRequestError": "HTTP request error",
+    "programExecutionError": "Program execution error",
   },
 
   ja: {
@@ -647,6 +653,7 @@ const TRANSLATIONS = {
     // コマンドメッセージ
     "sendingCommand": "コマンド送信中: ",
     "commandFailed": "コマンド実行失敗:",
+    "commandSendFailed": "コマンド送信失敗",
     "httpError": "HTTPエラー: ",
 
     // コード表示ウィンドウ
@@ -755,6 +762,8 @@ const TRANSLATIONS = {
     "networkError": "ネットワークエラー：{ip}に接続できません。ネットワーク接続を確認してください。",
     "connectionErrorDetails": "ロボット接続エラー: {error}",
     "programExecutionStopped": "プログラムの実行が停止しました。後続の指示は実行されません。",
+    "deviceConnectionLost": "デバイス接続が失われました: {ip}",
+    "checkDeviceAndNetwork": "デバイスがオンになっていて同じネットワークにあるか、デバイスを再起動してください。",
     "errorInvalidIP": "エラー：無効なIPアドレス",
     "receivedResponse": "受信したレスポンス: ",
     "requestFailedStatusCode": "リクエストに失敗しました。ステータスコード: {status}",
@@ -902,10 +911,10 @@ const TRANSLATIONS = {
 
     // 新增异步相关翻译项
     "noConnectionBlockError": "エラー：「IPアドレスに接続」ブロックを追加し、その下にコードを接続してください！",
-    "commandSendFailed": "コマンド送信失敗",
     "taskQueryFailed": "タスク状態クエリ失敗",
     "taskTimeout": "タスクタイムアウト",
     "httpRequestError": "HTTPリクエストエラー",
+    "programExecutionError": "プログラム実行エラー",
   }
 };
 

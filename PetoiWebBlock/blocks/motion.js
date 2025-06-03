@@ -27,7 +27,7 @@ Blockly.defineBlocksWithJsonArray([
 javascript.javascriptGenerator.forBlock['local_action'] = function (block)
 {
   const code = block.getFieldValue('COMMAND');
-  return `httpRequest(deviceIP, "${code}");\n`;
+  return `console.log(await httpRequest(deviceIP, "${code}", 2000, true));\n`;
 };
 
 // 发送高难度特技动作
@@ -57,7 +57,7 @@ Blockly.defineBlocksWithJsonArray([
 javascript.javascriptGenerator.forBlock['high_difficulty_action'] = function (block)
 {
   const code = block.getFieldValue('COMMAND');
-  return `httpRequest(deviceIP, "${code}");\n`;
+  return `console.log(await httpRequest(deviceIP, "${code}", 2000, true));\n`;
 };
 
 // 定义设置马达角度积木块
@@ -95,7 +95,7 @@ javascript.javascriptGenerator.forBlock['set_motor_angle'] = function (block)
 {
   const motorId = block.getFieldValue('MOTOR');
   const angle = block.getFieldValue('ANGLE');
-  return `httpRequest(deviceIP, "m ${motorId} " + Math.min(125, Math.max(-125, ${angle})));\n`;
+  return `console.log(await httpRequest(deviceIP, "m ${motorId} " + Math.min(125, Math.max(-125, ${angle})), 2000, true));\n`;
 };
 
 
@@ -135,7 +135,7 @@ Blockly.defineBlocksWithJsonArray([
 javascript.javascriptGenerator.forBlock['get_joint_angle'] = function (block)
 {
   const jointId = block.getFieldValue('JOINT');
-  return [`parseInt(httpRequest(deviceIP, "m ${jointId} ?", true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+  return [`parseInt(await httpRequest(deviceIP, "m ${jointId} ?", 2000, true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
 
@@ -155,10 +155,10 @@ Blockly.defineBlocksWithJsonArray([
 javascript.javascriptGenerator.forBlock['get_all_joint_angles'] = function (block)
 {
   const code = `
-    (function() {
+    (async function() {
       let angles = {};
       for(let i = 1; i <= 16; i++) {
-        angles["joint" + i] = parseInt(httpRequest(deviceIP, "m " + i + " ?", true)) || 0;
+        angles["joint" + i] = parseInt(await httpRequest(deviceIP, "m " + i + " ?", 2000, true)) || 0;
       }
       return JSON.stringify(angles);
     })()
