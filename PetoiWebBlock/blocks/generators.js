@@ -8,7 +8,7 @@ Blockly.JavaScript.forBlock['gait'] = function (block)
   const code = block.getFieldValue('COMMAND');
   const delay = block.getFieldValue('DELAY');
   const delayMs = Math.round(delay * 1000);
-  return `console.log(httpRequest(deviceIP, "${code}", true));\n` +
+  return `console.log(await httpRequestAsync(deviceIP, "${code}", 2000, true));\n` +
     `await new Promise(resolve => setTimeout(resolve, ${delayMs}));\n`;
 };
 
@@ -18,7 +18,7 @@ Blockly.JavaScript.forBlock['posture'] = function (block)
   const code = block.getFieldValue('COMMAND');
   const delay = block.getFieldValue('DELAY');
   const delayMs = Math.round(delay * 1000);
-  return `console.log(httpRequest(deviceIP, "${code}", true));\n` +
+  return `console.log(await httpRequestAsync(deviceIP, "${code}", 2000, true));\n` +
     `await new Promise(resolve => setTimeout(resolve, ${delayMs}));\n`;
 };
 
@@ -28,7 +28,7 @@ Blockly.JavaScript.forBlock['acrobatic_moves'] = function (block)
   const code = block.getFieldValue('COMMAND');
   const delay = block.getFieldValue('DELAY');
   const delayMs = Math.round(delay * 1000);
-  return `console.log(httpRequest(deviceIP, "${code}", true));\n` +
+  return `console.log(await httpRequestAsync(deviceIP, "${code}", 2000, true));\n` +
     `await new Promise(resolve => setTimeout(resolve, ${delayMs}));\n`;
 };
 
@@ -43,7 +43,7 @@ Blockly.JavaScript.forBlock['set_motor_angle'] = function (block)
   const uniqueSuffix = Math.floor(Math.random() * 10000);
 
   return `// 设置关节角度并获取响应
-console.log(httpRequest(deviceIP, "m ${motorId} " + Math.min(125, Math.max(-125, ${angle})), true));\n` +
+console.log(await httpRequestAsync(deviceIP, "m ${motorId} " + Math.min(125, Math.max(-125, ${angle})), 2000, true));\n` +
     `await new Promise(resolve => setTimeout(resolve, ${delayMs}));\n`;
 };
 
@@ -51,17 +51,17 @@ console.log(httpRequest(deviceIP, "m ${motorId} " + Math.min(125, Math.max(-125,
 Blockly.JavaScript.forBlock['get_joint_angle'] = function (block)
 {
   const jointId = block.getFieldValue('JOINT');
-  return [`parseInt(httpRequest(deviceIP, "m ${jointId} ?", true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+  return [`parseInt(await httpRequestAsync(deviceIP, "m ${jointId} ?", 2000, true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
 // 代码生成:获取所有关节角度的代码生成器
 Blockly.JavaScript.forBlock['get_all_joint_angles'] = function (block)
 {
   const code = `
-    (function() {
+    (async function() {
       let angles = {};
       for(let i = 0; i <= 11; i++) {
-        angles["joint" + i] = parseInt(httpRequest(deviceIP, "m " + i + " ?", true)) || 0;
+        angles["joint" + i] = parseInt(await httpRequestAsync(deviceIP, "m " + i + " ?", 2000, true)) || 0;
       }
       return JSON.stringify(angles);
     })()
@@ -81,7 +81,7 @@ Blockly.JavaScript.forBlock['delay_ms'] = function (block)
 Blockly.JavaScript.forBlock['gyro_control'] = function (block)
 {
   const state = block.getFieldValue('STATE');
-  return `console.log(httpRequest(deviceIP, "g ${state}", true));\n`;
+  return `console.log(await httpRequestAsync(deviceIP, "g ${state}", 2000, true));\n`;
 };
 
 // 代码生成:连接代码生成器
@@ -99,25 +99,79 @@ if(connectionResult) {
 }\n`;
 };
 
-// 代码生成:获取数字输入代码生成器
+// 代码生成:获取数字输入代码生成器 - 移除重复定义，改为异步
 Blockly.JavaScript.forBlock['get_digital_input'] = function (block)
 {
   const pin = block.getFieldValue('PIN');
-  return [`parseInt(httpRequest(deviceIP, "Rd" + String.fromCharCode(${pin}) + "\\n", true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+  const code = `await (async function() {
+    const rawResult = await httpRequestAsync(deviceIP, "Rd" + String.fromCharCode(${pin}) + "\\\\n", 2000, true);
+    
+    // 首先尝试提取=号后的数字
+    if (rawResult && rawResult.includes('=')) {
+      const lines = rawResult.split('\\\\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '=' && i + 1 < lines.length) {
+          const num = parseInt(lines[i + 1].trim());
+          if (!isNaN(num)) {
+            return num;
+          }
+        }
+      }
+    }
+    
+    // 尝试从单行格式中提取数字，如"4094 R"
+    const words = rawResult.trim().split(/\\\\s+/);
+    for (const word of words) {
+      const num = parseInt(word);
+      if (!isNaN(num)) {
+        return num;
+      }
+    }
+    
+    return 0;
+  })()`;
+  return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
-// 代码生成:获取模拟输入代码生成器
+// 代码生成:获取模拟输入代码生成器 - 移除重复定义，改为异步
 Blockly.JavaScript.forBlock['get_analog_input'] = function (block)
 {
   const pin = block.getFieldValue('PIN');
-  return [`parseInt(httpRequest(deviceIP, "Ra" + String.fromCharCode(${pin}) + "\\n", true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+  const code = `await (async function() {
+    const rawResult = await httpRequestAsync(deviceIP, "Ra" + String.fromCharCode(${pin}) + "\\\\n", 2000, true);
+    
+    // 首先尝试提取=号后的数字
+    if (rawResult && rawResult.includes('=')) {
+      const lines = rawResult.split('\\\\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === '=' && i + 1 < lines.length) {
+          const num = parseInt(lines[i + 1].trim());
+          if (!isNaN(num)) {
+            return num;
+          }
+        }
+      }
+    }
+    
+    // 尝试从单行格式中提取数字，如"4094 R"
+    const words = rawResult.trim().split(/\\\\s+/);
+    for (const word of words) {
+      const num = parseInt(word);
+      if (!isNaN(num)) {
+        return num;
+      }
+    }
+    
+    return 0;
+  })()`;
+  return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
 // 代码生成:获取传感器输入代码生成器
 Blockly.JavaScript.forBlock['get_sensor_input'] = function (block)
 {
   const sensor = block.getFieldValue('SENSOR');
-  return [`parseInt(httpRequest(deviceIP, "i ${sensor}", true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
+  return [`parseInt(await httpRequestAsync(deviceIP, "i ${sensor}", 2000, true)) || 0`, Blockly.JavaScript.ORDER_FUNCTION_CALL];
 };
 
 // 代码生成:设置数字输出代码生成器
@@ -125,7 +179,7 @@ Blockly.JavaScript.forBlock['set_digital_output'] = function (block)
 {
   const pin = block.getFieldValue('PIN');
   const state = block.getFieldValue('STATE');
-  return `console.log(httpRequest(deviceIP, "o ${pin} d ${state}", true));\n`;
+  return `console.log(await httpRequestAsync(deviceIP, "o ${pin} d ${state}", 2000, true));\n`;
 };
 
 // 代码生成:设置模拟输出代码生成器
@@ -133,14 +187,14 @@ Blockly.JavaScript.forBlock['set_analog_output'] = function (block)
 {
   const pin = block.getFieldValue('PIN');
   const value = block.getFieldValue('VALUE');
-  return `console.log(httpRequest(deviceIP, "o ${pin} a ${value}", true));\n`;
+  return `console.log(await httpRequestAsync(deviceIP, "o ${pin} a ${value}", 2000, true));\n`;
 };
 
 // 代码生成:发送自定义命令代码生成器
 Blockly.JavaScript.forBlock['send_custom_command'] = function (block)
 {
   const command = block.getFieldValue('COMMAND');
-  return `console.log(httpRequest(deviceIP, "${command}", true));\n`;
+  return `console.log(await httpRequestAsync(deviceIP, "${command}", 2000, true));\n`;
 };
 
 // 代码生成:控制台输出变量代码生成器
@@ -155,7 +209,7 @@ Blockly.JavaScript.forBlock['play_note'] = function (block)
 {
   const note = block.getFieldValue('NOTE');
   const duration = block.getFieldValue('DURATION');
-  return `console.log(httpRequest(deviceIP, "b ${note} ${duration}", true));\n`;
+  return `console.log(await httpRequestAsync(deviceIP, "b ${note} ${duration}", 2000, true));\n`;
 };
 
 // HTTP请求函数，用于在生成的代码中使用 - 仅供模拟测试

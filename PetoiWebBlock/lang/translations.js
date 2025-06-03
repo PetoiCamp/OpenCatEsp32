@@ -291,6 +291,13 @@ const TRANSLATIONS = {
     // Undo/Redo buttons
     "undo": "撤销",
     "redo": "重做",
+
+    // 新增异步相关翻译项
+    "noConnectionBlockError": "错误：请添加一个'连接IP地址'积木块并将代码连接在其下方！",
+    "commandSendFailed": "命令发送失败",
+    "taskQueryFailed": "任务状态查询失败",
+    "taskTimeout": "任务超时",
+    "httpRequestError": "HTTP请求错误",
   },
 
   en: {
@@ -585,6 +592,13 @@ const TRANSLATIONS = {
     // Undo/Redo buttons
     "undo": "Undo",
     "redo": "Redo",
+
+    // 新增异步相关翻译项
+    "noConnectionBlockError": "Error: Please add a 'Connect with IP' block and connect the code below it!",
+    "commandSendFailed": "Command send failed",
+    "taskQueryFailed": "Task status query failed",
+    "taskTimeout": "Task timeout",
+    "httpRequestError": "HTTP request error",
   },
 
   ja: {
@@ -884,7 +898,14 @@ const TRANSLATIONS = {
     "enterFileName": "ファイル名を入力してください:",
 
     // コードダイアログUIテキスト
-    "generatedJSCode": "生成されたJavaScriptコード"
+    "generatedJSCode": "生成されたJavaScriptコード",
+
+    // 新增异步相关翻译项
+    "noConnectionBlockError": "エラー：「IPアドレスに接続」ブロックを追加し、その下にコードを接続してください！",
+    "commandSendFailed": "コマンド送信失敗",
+    "taskQueryFailed": "タスク状態クエリ失敗",
+    "taskTimeout": "タスクタイムアウト",
+    "httpRequestError": "HTTPリクエストエラー",
   }
 };
 

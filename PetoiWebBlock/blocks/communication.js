@@ -148,27 +148,6 @@ Blockly.defineBlocksWithJsonArray([
   }
 ]);
 
-// 代码生成:数字输入积木 untested
-javascript.javascriptGenerator.forBlock['get_digital_input'] = function (block)
-{
-  var pin = block.getFieldValue('PIN');
-  var code = `(function() { 
-    const result = httpRequest(deviceIP, "Rd"+'\\${String.fromCharCode(pin)}'+"\\n", true); 
-    // 尝试解析结果中的数字
-    if (result) {
-      const lines = result.split('\\n');
-      for (const line of lines) {
-        const num = parseInt(line.trim());
-        if (!isNaN(num)) {
-          return num;
-        }
-      }
-    }
-    return 0; // 如果无法解析，返回默认值
-  })()`;
-  return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
-};
-
 // 模拟输入积木
 Blockly.defineBlocksWithJsonArray([
   {
@@ -204,27 +183,6 @@ Blockly.defineBlocksWithJsonArray([
     helpUrl: ""
   }
 ]);
-
-// 代码生成:模拟输入积木
-javascript.javascriptGenerator.forBlock['get_analog_input'] = function (block)
-{
-  var pin = block.getFieldValue('PIN');
-  var code = `(function() { 
-    const result = httpRequest(deviceIP, "Ra"+'\\${String.fromCharCode(pin)}'+"\\n", true); 
-    // 尝试解析结果中的数字
-    if (result) {
-      const lines = result.split('\\n');
-      for (const line of lines) {
-        const num = parseInt(line.trim());
-        if (!isNaN(num)) {
-          return num;
-        }
-      }
-    }
-    return 0; // 如果无法解析，返回默认值
-  })()`;
-  return [code, Blockly.JavaScript.ORDER_FUNCTION_CALL];
-};
 
 // 设置模拟输出积木
 Blockly.defineBlocksWithJsonArray([
@@ -360,119 +318,3 @@ javascript.javascriptGenerator.forBlock['console_log_variable'] = function (bloc
   // 使用asyncLog函数确保消息立即显示并且按顺序执行
   return `await asyncLog("${varName}: " + (${value}));`;
 };
-/*
-发送命令，不需要响应
-httpRequest('192.168.1.100', 'walk');
-
-获取数据，需要响应
-const value = httpRequest('192.168.1.100', 'query', true);
-*/
-function httpRequest(ip, cmd, needResponse = true)
-{
-  // 确保deviceIP已设置
-  if (!ip && deviceIP)
-  {
-    ip = deviceIP;
-  }
-
-  // 检查IP是否有效
-  if (!ip || typeof ip !== 'string' || !ip.match(/^\d+\.\d+\.\d+\.\d+$/))
-  {
-    // console.error(getText("errorInvalidIP"), ip);
-    return needResponse ? '' : false;
-  }
-
-  // 统一使用URL编码构造请求地址
-  const url = `http://${ip}/?cmd=${encodeURIComponent(cmd)}`;
-  // console.log(getText("sendingCommand") + url);
-
-  try
-  {
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', url, false);  // false for synchronous request
-    xhr.withCredentials = false;
-    xhr.send();
-
-    if (xhr.status === 200)
-    {
-      const value = xhr.responseText.trim();
-      // console.log(getText("receivedResponse") + value);
-      return needResponse ? value : true;
-    } else
-    {
-      throw new Error(getText("requestFailedStatusCode").replace("{status}", xhr.status));
-    }
-  } catch (error)
-  {
-    // console.error(getText("requestError") + error.message);
-    return needResponse ? '' : false;
-  }
-}
-
-// 异步版本的HTTP请求函数，带超时控制
-function httpRequestAsync(ip, cmd, timeout = 2000, needResponse = true)
-{
-  return new Promise((resolve, reject) =>
-  {
-    // 检查IP是否有效
-    if (!ip || typeof ip !== 'string' || !ip.match(/^\d+\.\d+\.\d+\.\d+$/))
-    {
-      reject(new Error(getText("invalidIPAddress")));
-      return;
-    }
-
-    // 创建超时控制
-    const timeoutId = setTimeout(() =>
-    {
-      reject(new Error(getText("requestTimeout")));
-    }, timeout);
-
-    try
-    {
-      const xhr = new XMLHttpRequest();
-      const url = `http://${ip}/?cmd=${encodeURIComponent(cmd)}`;
-      // console.log(getText("asyncSendingCommand") + url);
-
-      xhr.onreadystatechange = function ()
-      {
-        if (xhr.readyState === 4)
-        {
-          clearTimeout(timeoutId);
-
-          if (xhr.status === 200)
-          {
-            const value = xhr.responseText.trim();
-            // console.log(getText("asyncReceivedResponse") + value);
-            resolve(needResponse ? value : true);
-          } else
-          {
-            reject(new Error(getText("requestFailedStatusCode").replace("{status}", xhr.status)));
-          }
-        }
-      };
-
-      xhr.onerror = function ()
-      {
-        clearTimeout(timeoutId);
-        reject(new Error(getText("networkRequestError")));
-      };
-
-      xhr.open('GET', url, true);
-      xhr.withCredentials = false;
-      xhr.send();
-    } catch (error)
-    {
-      clearTimeout(timeoutId);
-      reject(error);
-    }
-  });
-}
-
-
-
-
-
-
-
-
-

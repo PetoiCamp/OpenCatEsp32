@@ -773,6 +773,111 @@
       }
     });
 
+    // 全局异步客户端类定义
+    class PetoiAsyncClient
+    {
+      constructor(baseUrl = null)
+      {
+        this.baseUrl = baseUrl || "http://" + window.location.hostname;
+        this.taskTimeout = 10000;
+      }
+
+      async sendCommand(cmd)
+      {
+        try
+        {
+          const response = await fetch(this.baseUrl + "/?cmd=" + encodeURIComponent(cmd));
+          const responseText = await response.text();
+
+          if (responseText.startsWith('TASK_ID:'))
+          {
+            const taskId = responseText.replace('TASK_ID:', '').trim();
+            return await this.waitForCompletion(taskId);
+          } else
+          {
+            // 如果没有任务ID，直接返回响应（可能是同步命令）
+            return responseText;
+          }
+        } catch (error)
+        {
+          throw new Error(getText("commandSendFailed") + ": " + error.message);
+        }
+      }
+
+      async waitForCompletion(taskId)
+      {
+        const startTime = Date.now();
+        while (Date.now() - startTime < this.taskTimeout)
+        {
+          try
+          {
+            const response = await fetch(this.baseUrl + "/status?taskId=" + taskId);
+            const status = await response.text();
+
+            if (status.startsWith('completed'))
+            {
+              // 正确处理多行返回数据
+              let result = status;
+              if (status.indexOf('\n') !== -1)
+              {
+                // 如果有换行符，提取completed后的所有内容
+                result = status.substring(status.indexOf('\n') + 1);
+              } else
+              {
+                // 如果没有换行符，可能是单行格式如"completed 4094 R"
+                result = status.substring('completed'.length).trim();
+              }
+              return result;
+            } else if (status.startsWith('error'))
+            {
+              throw new Error(status);
+            } else
+            {
+              // 任务还在运行，等待一下再查询
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          } catch (error)
+          {
+            console.error(getText("taskQueryFailed"), error);
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
+        throw new Error(getText("taskTimeout"));
+      }
+    }
+
+    // 全局异步HTTP请求函数
+    function httpRequestAsync(ip, cmd, timeout = 2000, needResponse = true)
+    {
+      return new Promise(async (resolve, reject) =>
+      {
+        // 检查IP是否有效
+        if (!ip || typeof ip !== 'string' || !ip.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/))
+        {
+          reject(new Error(getText("invalidIPAddress")));
+          return;
+        }
+
+        try
+        {
+          // 为每个请求创建新的客户端实例，确保使用正确的IP
+          const client = new PetoiAsyncClient("http://" + ip);
+
+          const result = await client.sendCommand(cmd);
+
+          resolve(needResponse ? result : true);
+        } catch (error)
+        {
+          console.error(getText("httpRequestError"), error);
+          reject(error);
+        }
+      });
+    }
+
+    // 将函数设为全局可用
+    window.httpRequestAsync = httpRequestAsync;
+    window.PetoiAsyncClient = PetoiAsyncClient;
+
     // 动态创建工具箱配置
     function createToolbox()
     {
@@ -2257,6 +2362,8 @@
             });
           }
 
+        // 注意：httpRequestAsync和PetoiAsyncClient已在全局定义，无需重复定义
+
         // HTTP请求函数 - 发送命令到设备 (同步版本)
         function httpRequest(ip, command, returnResult = false) {
           // 构造请求URL
@@ -2297,7 +2404,7 @@
                   }
                   
                   // 从结果中提取等号后面的数字，如果有的话
-                  const match = result.match(/=\\s*(-?\\d+)/);
+                  const match = result.match(/=\\s*(-?[0-9]+)/);
                   if (match && match[1]) {
                     return match[1]; // 返回等号后的数字（字符串格式）
                   }
@@ -2327,7 +2434,7 @@
         "  // 程序结束时自动发送休息指令'd'\n" +
         "  if(currentDeviceIP) {\n" +
         "    await asyncLog(getText('programEndingRestCommand'));\n" +
-        "    httpRequest(currentDeviceIP, 'd', true);\n" +
+        "    await httpRequestAsync(currentDeviceIP, 'd', 2000, true);\n" +
         "  }\n" +
         "} catch(e) {\n" +
         "  console.error(getText('restCommandFailed') + e.message);\n" +
