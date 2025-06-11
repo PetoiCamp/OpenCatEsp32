@@ -25,9 +25,13 @@ SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #endif
 #endif
 
-// int8_t cameraPrintQ = 0;
+bool detectedObjectQ = false;
 bool cameraReactionQ = true;
 bool updateCoordinateLock = false;
+int8_t cameraPrintQ = 0;
+int xCoord, yCoord, width, height; // the x y returned by the sensor
+int imgRangeX = 100;               // the frame size 0~100 on X and Y direction
+int imgRangeY = 100;
 
 #ifdef BiBoard_V1_0
 #define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.

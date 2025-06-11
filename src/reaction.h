@@ -1154,6 +1154,32 @@ void reaction()
         break;
       }
 #endif
+#ifdef GESTURE
+      case EXTENSION_GESTURE:
+      {
+        char *option = newCmd;
+        while (*(++option) != '~')
+        {
+          if (*option == 'P')
+            gesturePrintQ = 2;
+          else if (*option == 'p')
+            gesturePrintQ = 1;
+          else if (*option == 'R')
+            gestureReactionQ = true;
+          else if (*option == 'r')
+            gestureReactionQ = false;
+        }
+
+        if (gesturePrintQ == 1)
+        {
+          printToAllPorts('=');
+          if(gestureGetValue != GESTURE_NONE)
+            printToAllPorts(gestureGetValue);
+          gesturePrintQ = 0; // if the command is XGp, the gesture will print the detected result only once
+        }
+        break;
+      }
+#endif
       }
       break;
     }
@@ -1458,6 +1484,13 @@ void reaction()
     servoFeedback(measureServoPin);
   // }
   else
+#ifdef GESTURE
+  if (gesturePrintQ == 2)
+  {
+    if(gestureGetValue != GESTURE_NONE)
+      printToAllPorts(gestureGetValue);
+  }
+#endif
 #ifdef CAMERA
       if (cameraPrintQ == 2)
   {
@@ -1465,7 +1498,7 @@ void reaction()
     PTL();
     FPS();
   }
-  else if (!cameraTaskActiveQ)
+  //else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1); // avoid triggering WDT

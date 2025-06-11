@@ -419,12 +419,7 @@ long lastSerialTime = 0;
 String webResponse = "";
 
 #ifdef CAMERA
-// #define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
-bool detectedObjectQ = false;
-int8_t cameraPrintQ = 0;
-int xCoord, yCoord, width, height; // the x y returned by the sensor
-int imgRangeX = 100;               // the frame size 0~100 on X and Y direction
-int imgRangeY = 100;
+#define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
 #endif
 
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
