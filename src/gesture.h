@@ -19,6 +19,10 @@
 
 #include "gesture9960/Arduino_APDS9960.h"
 
+bool gestureReactionQ = true;
+int8_t gesturePrintQ = 0;
+int gestureGetValue = -1;
+
 void gestureSetup() {
   if (!APDS.begin()) {
     PTLF("Error initializing APDS-9960 sensor!");
@@ -42,7 +46,10 @@ int8_t melody54321[] = { 19, 64, 17, 64, 16, 64, 14, 64, 12, 32, '~' };
 int8_t melody12345[] = { 12, 64, 14, 64, 16, 64, 17, 64, 19, 32, '~' };
 int8_t melody67345[] = { 21, 16, 23, 32, 16, 64, 17, 64, 19, 64, '~' };
 int8_t melody32654[] = { 16, 64, 14, 16, 21, 64, 19, 32, 17, 16, '~' };
-void read_gesture() {
+
+// unsigned long lastValidGestureTime = 0;
+int read_gesture() {
+  // if(millis() - lastValidGestureTime > 5000){
 #ifndef USE_WIRE1
   while (cameraLockI2c)
     delay(1);  //wait for the camera to release lock. potentially to cause dead lock with camera
@@ -52,58 +59,68 @@ void read_gesture() {
     delay(1);  //wait for the imu to release lock. potentially to cause dead lock with camera
 #endif
   gestureLockI2c = true;
-  if (APDS.gestureAvailable()) {
+  int gesture = GESTURE_NONE;
+  if (APDS.gestureAvailable()) 
+  {
     // a gesture was detected, read and print to Serial Monitor
-    int gesture = APDS.readGesture();
-    PTF("Detected ");
-    switch (gesture) {
-      case GESTURE_UP:
-        {
-          PTLF("UP\t↑");
-          tQueue->addTask(T_INDEXED_SEQUENTIAL_ASC, "1 90 1 0", 0);
-          tQueue->addTask(T_BEEP_BIN, melody12345, 0);
-          tQueue->addTask('k', "fiv", 2000);
-          break;
-        }
+    gesture = APDS.readGesture();
+    if (gestureReactionQ) 
+    {
+      PTF("Detected ");
+      switch (gesture) 
+      {
+        case GESTURE_UP:
+          {
+            PTLF("UP\t↑");
+            tQueue->addTask(T_INDEXED_SEQUENTIAL_ASC, "1 90 1 0", 0);
+            tQueue->addTask(T_BEEP_BIN, melody12345, 0);
+            tQueue->addTask('k', "fiv", 2000);
+            break;
+          }
 
-      case GESTURE_DOWN:
-        {
-          PTLF("DOWN\t↓");
-          tQueue->addTask('i', "");
-          tQueue->addTask(T_BEEP_BIN, melody54321, 0);
-          tQueue->addTask('k', "sit");
-          tQueue->addTask('k',
+        case GESTURE_DOWN:
+          {
+            PTLF("DOWN\t↓");
+            tQueue->addTask('i', "");
+            tQueue->addTask(T_BEEP_BIN, melody54321, 0);
+            tQueue->addTask('k', "sit");
+            tQueue->addTask('k',
 #ifdef NYBBLE
-                          "wsf"
+                            "wsf"
 #else
-                          "scrh"
+                            "scrh"
 #endif
-          );
-          break;
-        }
+            );
+            break;
+          }
 
-      case GESTURE_LEFT:
-        {
-          PTLF("LEFT\t←");
-          int8_t move[] = { 0, -60, 0, -55, '~' };
-          tQueue->addTask(T_BEEP_BIN, melody32654, 0);
-          tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 1000);
-          tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");
+        case GESTURE_LEFT:
+          {
+            PTLF("LEFT\t←");
+            int8_t move[] = { 0, -60, 0, -55, '~' };
+            tQueue->addTask(T_BEEP_BIN, melody32654, 0);
+            tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 1000);
+            tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");
+            break;
+          }
+        case GESTURE_RIGHT:
+          {
+            PTLF("RIGHT\t→");
+            int8_t move[] = { 0, 60, 0, 55, '~' };
+            tQueue->addTask(T_BEEP_BIN, melody67345, 0);
+            tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 0);
+            tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");
+            break;
+          }
+        default:
+          // ignore
           break;
-        }
-      case GESTURE_RIGHT:
-        {
-          PTLF("RIGHT\t→");
-          int8_t move[] = { 0, 60, 0, 55, '~' };
-          tQueue->addTask(T_BEEP_BIN, melody67345, 0);
-          tQueue->addTask(T_INDEXED_SEQUENTIAL_BIN, move, 0);
-          tQueue->addTask(T_INDEXED_SIMULTANEOUS_ASC, "0 0");
-          break;
-        }
-      default:
-        // ignore
-        break;
+      }
+      // lastValidGestureTime = millis();
     }
   }
   gestureLockI2c = false;
+  // PTHL("gestureValue01:", gesture);
+  return gesture;
+  // }
 }
