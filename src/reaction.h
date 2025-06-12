@@ -1498,7 +1498,7 @@ void reaction()
     PTL();
     FPS();
   }
-  //else if (!cameraTaskActiveQ)
+  else if (!cameraTaskActiveQ)
 #endif
   {
     delay(1); // avoid triggering WDT

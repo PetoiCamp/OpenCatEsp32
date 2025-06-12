@@ -419,7 +419,7 @@ long lastSerialTime = 0;
 String webResponse = "";
 
 #ifdef CAMERA
-#define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
+// #define SENTRY2_CAMERA //This macro must be manually turned on if a Sentry2 is connected
 #endif
 
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
