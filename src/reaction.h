@@ -1172,9 +1172,10 @@ void reaction()
 
         if (gesturePrintQ == 1)
         {
+          int readGesture = read_gesture();
           printToAllPorts('=');
-          if(gestureGetValue != GESTURE_NONE)
-            printToAllPorts(gestureGetValue);
+          if(readGesture != GESTURE_NONE)
+            printToAllPorts(readGesture);
           gesturePrintQ = 0; // if the command is XGp, the gesture will print the detected result only once
         }
         break;
