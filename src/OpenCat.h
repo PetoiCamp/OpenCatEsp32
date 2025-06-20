@@ -76,16 +76,17 @@
 #else
 #define BOARD "B"
 #endif
-#define DATE "250618" // YYMMDD
+
+#define DATE "250620" // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
-#define BT_BLE     // toggle Bluetooth Low Energy (BLE）
-#define BT_SSP     // toggle Bluetooth Secure Simple Pairing (BT_SSP)
+#define BT_BLE // toggle Bluetooth Low Energy (BLE）
+#define BT_SSP // toggle Bluetooth Secure Simple Pairing (BT_SSP)
 // #define WEB_SERVER // toggle web server
-#define GYRO_PIN   // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
+#define GYRO_PIN // toggle the Inertia Measurement Unit (IMU), i.e. the gyroscope
 #define SERVO_FREQ 240
 
 // Tutorial: https://bittle.petoi.com/11-tutorial-on-creating-new-skills

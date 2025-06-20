@@ -752,5 +752,6 @@ void taskCalibrateImuUsingCore0(void *parameter) {
   // Loop to resume waiting
   // }
   updateGyroQ = true;
-  vTaskDelete(NULL);  // Terminate this task if an error occurs in the loop
+  printToAllPorts("\nCalibration done.\n");  // for confirming the desktop app
+  vTaskDelete(NULL);                         // Terminate this task if an error occurs in the loop
 }
