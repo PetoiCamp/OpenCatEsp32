@@ -160,12 +160,12 @@ String uniqueName = "";
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef BITTLE
-  19, 2, 4, 27,  // head or shoulder roll
+    19, 2,  4,  27,  // head or shoulder roll
 #elif defined NYBBLE
-  19, 4, 2, 27,  // head or shoulder roll
+    19, 4,  2,  27,  // head or shoulder roll
 #endif
-  33, 5, 15, 14,  // shoulder pitch
-  32, 18, 13, 12  // knee
+    33, 5,  15, 14,  // shoulder pitch
+    32, 18, 13, 12  // knee
 };
 
 #elif defined BiBoard_V1_0
@@ -204,12 +204,12 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
 #ifdef BITTLE
-  18, 14, 5, 27,  // head or shoulder roll
+    18, 14, 5,  27,  // head or shoulder roll
 #elif defined NYBBLE
-  18, 5, 14, 27,  // head or shoulder roll
+    18, 5,  14, 27,  // head or shoulder roll
 #endif
-  23, 4, 12, 33,  // shoulder pitch
-  19, 15, 13, 32  // knee
+    23, 4,  12, 33,  // shoulder pitch
+    19, 15, 13, 32  // knee
 };
 
 #elif defined BiBoard2
@@ -229,12 +229,12 @@ const uint8_t PWM_pin[PWM_NUM] = {
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
-  12, 11, 4, 3,  //                                headPan, tilt, tailPan, NA
-  13, 10, 5, 2,  // shoulder roll
-  14, 9, 6, 1,   // shoulder pitch
+    12, 11, 4, 3,  //                                headPan, tilt, tailPan, NA
+    13, 10, 5, 2,  // shoulder roll
+    14, 9, 6, 1,   // shoulder pitch
   //                                  13,       10,     6,    2,     //shoulder roll
   //                                  14,        9,     5,    1,     //shoulder pitch
-  15, 8, 7, 0  // knee
+    15, 8, 7, 0  // knee
 };
 
 #endif
@@ -260,78 +260,91 @@ enum ServoModel_t {
   P50
 };
 
-ServoModel_t servoModelList[] = {
-  REGULAR, REGULAR, REGULAR, REGULAR,
-  REGULAR, REGULAR, REGULAR, REGULAR,
-  REGULAR, REGULAR, REGULAR, REGULAR,
-  KNEE, KNEE, KNEE, KNEE
-};
+ServoModel_t servoModelList[] = {REGULAR, REGULAR, REGULAR, REGULAR, REGULAR, REGULAR, REGULAR, REGULAR,
+                                 REGULAR, REGULAR, REGULAR, REGULAR, KNEE,    KNEE,    KNEE,    KNEE};
 
 bool newBoard = false;
 #include <math.h>
 /*  Token (T_) and Character (C_) Command list.
       Character Commands modify the behavior of the Token that they are associated with in reaction().
-      Tokens are stored in the global "token" char variable and Character Commands are stored in the global char array newCmd[0].
+      Tokens are stored in the global "token" char variable and Character Commands are stored in the global char array
+   newCmd[0].
 
       Directive macros that #define Character Commands have the following NAME format (all uppercase letters):
         C{char-array-position}_{association-name}_{character-command-name}
             where:
-              {char-array-position} = 0, 1, 2, ...  indicates the location of the Character Command in the char array newCmd[0],
-                                                    and therefore indicates where the Character Command must be placed after the token.
-                                                    Note:  "C_" is the same as "C0_".
-              {association-name} =  the Token name or the Token behavior name that the Character Command is associated with.
-                                    This allows some Character Commands to be associated with multiple tokens
-                                      Examples include:  C_PRINT, C_FOLLOW series.
-              {character-command-name} = unique name for the character command.
+              {char-array-position} = 0, 1, 2, ...  indicates the location of the Character Command in the char array
+   newCmd[0], and therefore indicates where the Character Command must be placed after the token. Note:  "C_" is the
+   same as "C0_". {association-name} =  the Token name or the Token behavior name that the Character Command is
+   associated with. This allows some Character Commands to be associated with multiple tokens Examples include: C_PRINT,
+   C_FOLLOW series. {character-command-name} = unique name for the character command.
 
-      This adds a Character Command sequencing paradigm to the token system where the ability to append multiple Character Commands
-      after a Token provides additional flexibility.
+      This adds a Character Command sequencing paradigm to the token system where the ability to append multiple
+   Character Commands after a Token provides additional flexibility.
 
     Change Log:
-      Renamed T_CALIBRATE to T_SERVO_CALIBRATE        to make its behavior more obvious now that we are calibrating the IMU.
+      Renamed T_CALIBRATE to T_SERVO_CALIBRATE        to make its behavior more obvious now that we are calibrating the
+   IMU.
 
 */
 #define T_ABORT 'a'            // abort the calibration values
-#define T_BEEP 'b'             // b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4. bVolume will change the volume of the sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. a single 'b' will toggle all sound on/off
-#define T_BEEP_BIN 'B'         // B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4. a single 'B' will toggle all sound on/off
-#define T_SERVO_CALIBRATE 'c'  // send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. c jointIndex1 offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
-#define T_COLOR 'C'            // change the eye colors of the RGB ultrasonic sensor. a single 'C' will cancel the manual eye colors
-#define T_REST 'd'             // set the robot to rest posture and shut down all the servos. "d index" can turn off a single servo
-#define T_SERVO_FEEDBACK 'f'   // return the servo's position info if the chip supports feedback. e.g. f8 returns the 8th joint's position. A single 'f' returns all the joints' position
+#define T_BEEP \
+  'b'  // b note1 duration1 note2 duration2 ... e.g. b12 8 14 8 16 8 17 8 19 4. bVolume will change the volume of the
+       // sound, in scale of 0~10. 0 will mute all sound effect. e.g. b3. a single 'b' will toggle all sound on/off
+#define T_BEEP_BIN \
+  'B'  // B note1 duration1 note2 duration2 ... e.g. B12 8 14 8 16 8 17 8 19 4. a single 'B' will toggle all sound
+       // on/off
+#define T_SERVO_CALIBRATE \
+  'c'  // send the robot to calibration posture for attaching legs and fine-tuning the joint offsets. c jointIndex1
+       // offset1 jointIndex2 offset2 ... e.g. c0 7 1 -4 2 3 8 5
+#define T_COLOR \
+  'C'  // change the eye colors of the RGB ultrasonic sensor. a single 'C' will cancel the manual eye colors
+#define T_REST 'd'  // set the robot to rest posture and shut down all the servos. "d index" can turn off a single servo
+#define T_SERVO_FEEDBACK \
+  'f'  // return the servo's position info if the chip supports feedback. e.g. f8 returns the 8th joint's position. A
+       // single 'f' returns all the joints' position
 #define C_FOLLOW 'F'
 #define C_FOLLOW_OFF 'f'
-#define C_LEARN 'l'         // Should be named C_SERVO_FEEDBACK_LEARN since it is only associated with T_SERVO_FEEDBACK?
-#define C_REPLAY 'r'        // Should be named C_SERVO_FEEDBACK_REPLAY since it is only associated with T_SERVO_FEEDBACK?
+#define C_LEARN 'l'  // Should be named C_SERVO_FEEDBACK_LEARN since it is only associated with T_SERVO_FEEDBACK?
+#define C_REPLAY 'r'  // Should be named C_SERVO_FEEDBACK_REPLAY since it is only associated with T_SERVO_FEEDBACK?
 #define T_SERVO_FOLLOW 'F'  // make the other legs follow the moved legs
 
 #define T_GYRO 'g'  // gyro-related commands. by itself, is a toggle to turn on or off the gyro function
 // These Character (C_) commands apply to the T_GYRO Token
-#define C_GYRO_FINENESS 'F'                // increase the frequency of gyroscope sampling
-#define C_GYRO_FINENESS_OFF 'f'            // reduce the frequency of gyroscope sampling to accelerate motion
-#define C_GYRO_BALANCE 'B'                 // turn on the gyro balancing
-#define C_GYRO_BALANCE_OFF 'b'             // turn off the gyro balancing
-#define C_GYRO_CALIBRATE 'c'               // calibrate the IMU. enter "gc"
+#define C_GYRO_FINENESS 'F'  // increase the frequency of gyroscope sampling
+#define C_GYRO_FINENESS_OFF 'f'  // reduce the frequency of gyroscope sampling to accelerate motion
+#define C_GYRO_BALANCE 'B'  // turn on the gyro balancing
+#define C_GYRO_BALANCE_OFF 'b'  // turn off the gyro balancing
+#define C_GYRO_CALIBRATE 'c'  // calibrate the IMU. enter "gc"
 #define C1_GYRO_CALIBRATE_IMMEDIATELY 'i'  // calibrate the IMU immediately. enter "gci"
 
 // These Character (C_) commands apply to various tokens that have a print capability (e.g. T_GYRO, T_SERVO_FEEDBACK)
-#define C_PRINT 'P'      // Continuously print data
+#define C_PRINT 'P'  // Continuously print data
 #define C_PRINT_OFF 'p'  // Print data once then stop
 
-#define T_HELP_INFO 'h'                 // hold the loop to check printed information.
-#define T_INDEXED_SIMULTANEOUS_ASC 'i'  // i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20. a single 'i' will free the head joints if it were previously manually controlled.
+#define T_HELP_INFO 'h'  // hold the loop to check printed information.
+#define T_INDEXED_SIMULTANEOUS_ASC \
+  'i'  // i jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. i0 70 8 -20 9 -20. a single 'i' will free the head
+       // joints if it were previously manually controlled.
 #define T_INDEXED_SIMULTANEOUS_BIN 'I'  // I jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. I0 70 8 -20 9 -20
-#define T_JOINTS 'j'                    // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
+#define T_JOINTS 'j'  // A single "j" returns all angles. "j Index" prints the joint's angle. e.g. "j 8" or "j11".
 #define T_JOYSTICK 'J'
 #define T_SKILL 'k'
 #define T_SKILL_DATA 'K'
-#define T_BALANCE_SLOPE 'l'           // change the slope of the balancing adjustment in roll and pitch directions. default "l 1 1". the numbers allows [-2,-1,0,1,2]
-#define T_LISTED_BIN 'L'              // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
-#define T_INDEXED_SEQUENTIAL_ASC 'm'  // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
-#define T_INDEXED_SEQUENTIAL_BIN 'M'  // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
-#define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog". it takes effect the next time the board boosup. it won't interrupt the current connecton.
+#define T_BALANCE_SLOPE \
+  'l'  // change the slope of the balancing adjustment in roll and pitch directions. default "l 1 1". the numbers allows
+       // [-2,-1,0,1,2]
+#define T_LISTED_BIN 'L'  // a list of the DOFx joint angles: angle0 angle1 angle2 ... angle15
+#define T_INDEXED_SEQUENTIAL_ASC \
+  'm'  // m jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. m0 70 0 -70 8 -20 9 -20
+#define T_INDEXED_SEQUENTIAL_BIN \
+  'M'  // M jointIndex1 jointAngle1 jointIndex2 jointAngle2 ... e.g. M0 70 0 -70 8 -20 9 -20
+#define T_NAME \
+  'n'  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog". it takes effect
+       // the next time the board boosup. it won't interrupt the current connecton.
 // #define T_MELODY 'o'
 #define T_SIGNAL_GEN 'o'
-#define T_CPG 'r'    // Oscillator for Central Pattern Generator
+#define T_CPG 'r'  // Oscillator for Central Pattern Generator
 #define T_PAUSE 'p'  // pause
 #define T_POWER 'P'  // power, print the voltage
 #define T_TASK_QUEUE 'q'
@@ -346,9 +359,9 @@ bool newBoard = false;
 #define T_LEARN 'x'
 #define T_RANDOM_MIND 'z'  // toggle random behaviors
 
-#define T_READ 'R'        // read pin     R
-#define T_WRITE 'W'       // write pin                      W
-#define TYPE_ANALOG 'a'   //            Ra(analog read)   Wa(analog write)
+#define T_READ 'R'  // read pin     R
+#define T_WRITE 'W'  // write pin                      W
+#define TYPE_ANALOG 'a'  //            Ra(analog read)   Wa(analog write)
 #define TYPE_DIGITAL 'd'  //            Rd(digital read)  Wd(digital write)
 
 #define T_RESET '!'
@@ -358,17 +371,19 @@ bool newBoard = false;
 #define T_DECELERATE ','
 
 #define EXTENSION 'X'
-#define EXTENSION_GROVE_SERIAL 'S'        // connect to Grove UART2
-#define EXTENSION_VOICE 'A'               // connect to Grove UART2 (on V0_*: a slide switch can choose the voice or the Grove), or UART1 (on V1). Hidden on board.
-#define EXTENSION_DOUBLE_TOUCH 'T'        // connect to ANALOG1, ANALOG2
-#define EXTENSION_DOUBLE_LIGHT 'L'        // connect to ANALOG1, ANALOG2
+#define EXTENSION_GROVE_SERIAL 'S'  // connect to Grove UART2
+#define EXTENSION_VOICE \
+  'A'  // connect to Grove UART2 (on V0_*: a slide switch can choose the voice or the Grove), or UART1 (on V1). Hidden
+       // on board.
+#define EXTENSION_DOUBLE_TOUCH 'T'  // connect to ANALOG1, ANALOG2
+#define EXTENSION_DOUBLE_LIGHT 'L'  // connect to ANALOG1, ANALOG2
 #define EXTENSION_DOUBLE_IR_DISTANCE 'D'  // connect to ANALOG3, ANALOG4
-#define EXTENSION_PIR 'I'                 // connect to ANALOG3
-#define EXTENSION_BACKTOUCH 'B'           // connect to BACKTOUCH_PIN
-#define EXTENSION_ULTRASONIC 'U'          // connect to Grove UART2
-#define EXTENSION_GESTURE 'G'             // connect to Grove I2C
-#define EXTENSION_CAMERA 'C'              // connect to Grove I2C
-#define EXTENSION_QUICK_DEMO 'Q'          // activate the quick demo at the end of OpenCatEsp32.ino
+#define EXTENSION_PIR 'I'  // connect to ANALOG3
+#define EXTENSION_BACKTOUCH 'B'  // connect to BACKTOUCH_PIN
+#define EXTENSION_ULTRASONIC 'U'  // connect to Grove UART2
+#define EXTENSION_GESTURE 'G'  // connect to Grove I2C
+#define EXTENSION_CAMERA 'C'  // connect to Grove I2C
+#define EXTENSION_QUICK_DEMO 'Q'  // activate the quick demo at the end of OpenCatEsp32.ino
 
 #define T_CAMERA_PRINT 'P'
 #define T_CAMERA_PRINT_OFF 'p'
@@ -392,7 +407,7 @@ float radPerDeg = M_PI / 180;
 #define IDLE_TIME 1000
 long idleTimer = 0;
 #define CHECK_BATTERY_PERIOD 1000  // every 1 seconds. 60 mins -> 3600 seconds
-#define BATTERY_WARNING_FREQ 10    // every 10 seconds
+#define BATTERY_WARNING_FREQ 10  // every 10 seconds
 byte batteryWarningCounter = 0;
 float lastVoltage;
 int uptime = -1;
@@ -427,14 +442,16 @@ String webResponse = "";
 /*  These "Q" booleans are conditions that are checked to activate or deactivate different states.
     A condition set to true activates (turns on) a state.
 */
-bool lowBatteryQ = false;  // true = lowBattery() has determined that the battery voltage is below a threshold (see above VOLTAGE macros).
+bool lowBatteryQ = false;  // true = lowBattery() has determined that the battery voltage is below a threshold (see
+                           // above VOLTAGE macros).
 bool autoLedQ = false;
 bool updateGyroQ = true;
 bool fineAdjustQ = true;
-bool gyroBalanceQ = true;      // true = CONTINUOUSLY access recovery options in dealWithExceptions().
-bool printGyroQ = false;       // true = CONTINUOUSLY access print6Axis() which prints Gyro (IMU) data.
-bool readFeedbackQ = false;    // true = CONTINUOUSLY access servoFeedback() which prints servo angles.
-bool followFeedbackQ = false;  // true = CONTINUOUSLY access servoFollow() which follows servo angles as servos are manipulated and automatically calls servoFeedback() to show updated servo angles.
+bool gyroBalanceQ = true;  // true = CONTINUOUSLY access recovery options in dealWithExceptions().
+bool printGyroQ = false;  // true = CONTINUOUSLY access print6Axis() which prints Gyro (IMU) data.
+bool readFeedbackQ = false;  // true = CONTINUOUSLY access servoFeedback() which prints servo angles.
+bool followFeedbackQ = false;  // true = CONTINUOUSLY access servoFollow() which follows servo angles as servos are
+                               // manipulated and automatically calls servoFeedback() to show updated servo angles.
 bool walkingQ = false;
 bool manualHeadQ = false;
 bool nonHeadJointQ = false;
@@ -461,24 +478,25 @@ byte transformSpeed = 2;
 float protectiveShift;  // reduce the wearing of the potentiometer
 
 int8_t moduleList[] = {
-  EXTENSION_GROVE_SERIAL,
-  EXTENSION_VOICE,
-  EXTENSION_DOUBLE_TOUCH,
-  EXTENSION_DOUBLE_LIGHT,
-  EXTENSION_DOUBLE_IR_DISTANCE,
-  EXTENSION_PIR,
-  EXTENSION_BACKTOUCH,
-  EXTENSION_ULTRASONIC,
-  EXTENSION_GESTURE,
-  EXTENSION_CAMERA,
-  EXTENSION_QUICK_DEMO,
+    EXTENSION_GROVE_SERIAL,
+    EXTENSION_VOICE,
+    EXTENSION_DOUBLE_TOUCH,
+    EXTENSION_DOUBLE_LIGHT,
+    EXTENSION_DOUBLE_IR_DISTANCE,
+    EXTENSION_PIR,
+    EXTENSION_BACKTOUCH,
+    EXTENSION_ULTRASONIC,
+    EXTENSION_GESTURE,
+    EXTENSION_CAMERA,
+    EXTENSION_QUICK_DEMO,
 };
 
-String moduleNames[] = { "Grove_Serial", "Voice", "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir", "BackTouch", "Ultrasonic", "Gesture", "Camera", "Quick_Demo" };
+String moduleNames[] = {"Grove_Serial", "Voice",      "Double_Touch", "Double_Light ", "Double_Ir_Distance ", "Pir",
+                        "BackTouch",    "Ultrasonic", "Gesture",      "Camera",        "Quick_Demo"};
 #ifdef NYBBLE
-bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0 };
+bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0};
 #else
-bool moduleActivatedQ[] = { 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
+bool moduleActivatedQ[] = {0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0};
 #endif
 bool moduleDemoQ = false;
 int8_t moduleIndex;
@@ -505,141 +523,67 @@ int delayPrevious;
 int runDelay = delayMid;
 
 #ifdef NYBBLE
-int8_t middleShift[] = { 0, 15, 0, 0,
-                         -45, -45, -45, -45,
-                         10, 10, -10, -10,
-                         -30, -30, 30, 30 };
+int8_t middleShift[] = {0, 15, 0, 0, -45, -45, -45, -45, 10, 10, -10, -10, -30, -30, 30, 30};
 #elif defined BITTLE
 #ifndef MINI
-int8_t middleShift[] = { 0, -90, 0, 0,
-                         -45, -45, -45, -45,
-                         55, 55, -55, -55,
-                         -55, -55, -55, -55 };
+int8_t middleShift[] = {0, -90, 0, 0, -45, -45, -45, -45, 55, 55, -55, -55, -55, -55, -55, -55};
 #else
-int8_t middleShift[] = { 0, 0, 0, 0,
-                         0, 0, 0, 0,
-                         0, 0, 0, 0,
-                         -15, -15, -15, -15 };
+int8_t middleShift[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -15, -15, -15, -15};
 #endif
 
 #else  // CUB
-int8_t middleShift[] = { 0, 15, 0, 0,
-                         -45, -45, -45, -45,
-                         55, 55, -55, -55,
-                         -45, -45, -45, -45 };
+int8_t middleShift[] = {0, 15, 0, 0, -45, -45, -45, -45, 55, 55, -55, -55, -45, -45, -45, -45};
 #endif
 
 // #define INVERSE_SERVO_DIRECTION
 #ifdef CUB
-int8_t rotationDirection[] = { 1, -1, 1, 1,
-                               1, -1, 1, -1,
-                               1, -1, -1, 1,
-                               1, -1, -1, 1 };
+int8_t rotationDirection[] = {1, -1, 1, 1, 1, -1, 1, -1, 1, -1, -1, 1, 1, -1, -1, 1};
 int angleLimit[][2] = {
-  { -120, 120 },
-  { -30, 80 },
-  { -120, 120 },
-  { -120, 120 },
-  { -90, 60 },
-  { -90, 60 },
-  { -90, 90 },
-  { -90, 90 },
-  { -180, 120 },
-  { -180, 120 },
-  { -80, 200 },
-  { -80, 200 },
-  { -66, 100 },
-  { -66, 100 },
-  { -66, 100 },
-  { -66, 100 },
+    {-120, 120}, {-30, 80},   {-120, 120}, {-120, 120}, {-90, 60},  {-90, 60},  {-90, 90},  {-90, 90},
+    {-180, 120}, {-180, 120}, {-80, 200},  {-80, 200},  {-66, 100}, {-66, 100}, {-66, 100}, {-66, 100},
 };
 #else
-int8_t rotationDirection[] = { 1, -1, -1, 1,
-                               1, -1, 1, -1,
-                               1, -1, -1, 1,
-                               -1, 1, 1, -1 };
+int8_t rotationDirection[] = {1, -1, -1, 1, 1, -1, 1, -1, 1, -1, -1, 1, -1, 1, 1, -1};
 #ifdef BITTLE
 int angleLimit[][2] = {
-  { -120, 120 },
+    {-120, 120},
 #ifdef ROBOT_ARM
-  { -10, 180 },
+    {-10, 180},
 #else
-  { -85, 85 },
+    {-85, 85},
 #endif
-  { -120, 120 },
-  { -120, 120 },
+    {-120, 120}, {-120, 120},
 
-  { -90, 60 },
-  { -90, 60 },
-  { -90, 90 },
-  { -90, 90 },
+    {-90, 60},   {-90, 60},   {-90, 90},  {-90, 90},
 
-  { -200, 80 },
-  { -200, 80 },
-  { -80, 200 },
-  { -80, 200 },
-  { -80, 200 },
-  { -80, 200 },
-  { -80, 200 },
-  { -80, 200 },
+    {-200, 80},  {-200, 80},  {-80, 200}, {-80, 200}, {-80, 200}, {-80, 200}, {-80, 200}, {-80, 200},
 };
 #else  // Nybble
 int angleLimit[][2] = {
-  { -120, 120 },
-  { -75, 35 },
-  { -120, 120 },
-  { -120, 120 },
-  { -90, 60 },
-  { -90, 60 },
-  { -90, 90 },
-  { -90, 90 },
-  { -200, 80 },
-  { -200, 80 },
-  { -80, 200 },
-  { -80, 200 },
-  { -80, 80 },
-  { -80, 80 },
-  { -80, 80 },
-  { -80, 80 },
+    {-120, 120}, {-75, 35},  {-120, 120}, {-120, 120}, {-90, 60}, {-90, 60}, {-90, 90}, {-90, 90},
+    {-200, 80},  {-200, 80}, {-80, 200},  {-80, 200},  {-80, 80}, {-80, 80}, {-80, 80}, {-80, 80},
 };
 #endif
 #endif
 
 #ifdef X_LEG
-int currentAng[DOF] = { 0, 0, 0, 0,
-                        0, 0, 0, 0,
-                        75, 75, -75, -75,
-                        -55, -55, 55, 55 };
-int previousAng[DOF] = { 0, 0, 0, 0,
-                         0, 0, 0, 0,
-                         75, 75, -75, -75,
-                         -55, -55, 55, 55 };
+int currentAng[DOF] = {0, 0, 0, 0, 0, 0, 0, 0, 75, 75, -75, -75, -55, -55, 55, 55};
+int previousAng[DOF] = {0, 0, 0, 0, 0, 0, 0, 0, 75, 75, -75, -75, -55, -55, 55, 55};
 #else
-int currentAng[DOF] = { 0, 0, 0, 0,
-                        0, 0, 0, 0,
-                        75, 75, 75, 75,
-                        -55, -55, -55, -55 };
-int previousAng[DOF] = { 0, 0, 0, 0,
-                         0, 0, 0, 0,
-                         75, 75, 75, 75,
-                         -55, -55, -55, -55 };
+int currentAng[DOF] = {0, 0, 0, 0, 0, 0, 0, 0, 75, 75, 75, 75, -55, -55, -55, -55};
+int previousAng[DOF] = {0, 0, 0, 0, 0, 0, 0, 0, 75, 75, 75, 75, -55, -55, -55, -55};
 #endif
 int zeroPosition[DOF] = {};
 int calibratedZeroPosition[DOF] = {};
 
-int8_t servoCalib[DOF] = { 0, 0, 0, 0,
-                           0, 0, 0, 0,
-                           0, 0, 0, 0,
-                           0, 0, 0, 0 };
+int8_t servoCalib[DOF] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-int16_t mpuOffset[9] = { 0, 0, 0,
-                         0, 0, 0,
-                         0, 0, 0 };
+int16_t mpuOffset[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 float expectedRollPitch[2];
 float RollPitchDeviation[2];
 float currentAdjust[DOF] = {};
-int balanceSlope[2] = { 1, 1 };  // roll, pitch
+int balanceSlope[2] = {1, 1};  // roll, pitch
 
 #include "tools.h"
 #include "QList/QList.h"
@@ -647,10 +591,10 @@ int balanceSlope[2] = { 1, 1 };  // roll, pitch
 
 /* Dependencies for displayNsvPartition() */
 #include "esp_partition.h"  // To check ESP32 partitions
-#include "esp_log.h"        // To check ESP32 partitions
-#include "nvs_flash.h"      // To check namespaces in the nvs partition of the ESP32
-#include "nvs.h"            // To check namespaces in the nvs partition of the ESP32
-#include <set>              // To manage unique namespaces
+#include "esp_log.h"  // To check ESP32 partitions
+#include "nvs_flash.h"  // To check namespaces in the nvs partition of the ESP32
+#include "nvs.h"  // To check namespaces in the nvs partition of the ESP32
+#include <set>  // To manage unique namespaces
 
 #include "sound.h"
 #include <Wire.h>

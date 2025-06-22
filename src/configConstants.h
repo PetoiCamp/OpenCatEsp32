@@ -77,7 +77,7 @@ void i2cDetect(TwoWire &wirePort) {
 #else
                              "Mu3 Camera",
 #endif
-                             "AI Vision", "MPU6050", "ICM42670"};
+                             "AI Vision",        "MPU6050",     "ICM42670"};
   Serial.println("Scanning I2C network...");
   nDevices = 0;
   for (address = 1; address < 127; address++) {
@@ -353,8 +353,8 @@ void copydataFromBufferToI2cEeprom(unsigned int eeAddress, int8_t *newCmd) {
       Wire.write((byte)newCmd[writtenToEE++]);
       writtenToWire++;
       eeAddress++;
-    } while ((--len > 0) && (eeAddress % PAGE_LIMIT) &&
-             (writtenToWire < WIRE_LIMIT));  // be careful with the chained conditions
+    } while ((--len > 0) && (eeAddress % PAGE_LIMIT)
+             && (writtenToWire < WIRE_LIMIT));  // be careful with the chained conditions
     // self-increment may not work as expected
     Wire.endTransmission();
     delay(6);  // needs 5ms for page write
@@ -388,6 +388,36 @@ void loadDataFromI2cEeprom(unsigned int eeAddress) {
   }
   //      newCmd[tail] = '\0';
 }
+
+// This function will write a 2-byte unsigned integer to the EEPROM at the specified address and address + 1
+// Used specifically for storing EEPROM addresses which range from 0-65535 and must be unsigned
+// to avoid negative value issues when address > 32767
+void i2c_eeprom_write_uint16(unsigned int eeaddress, uint16_t p_value) {
+  byte lowByte = ((p_value >> 0) & 0xFF);
+  byte highByte = ((p_value >> 8) & 0xFF);
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
+  Wire.write((int)(eeaddress >> 8));    // MSB
+  Wire.write((int)(eeaddress & 0xFF));  // LSB
+  Wire.write(lowByte);
+  Wire.write(highByte);
+  Wire.endTransmission();
+  delay(5);  // needs 5ms for write
+}
+
+// This function will read a 2-byte unsigned integer from the EEPROM at the specified address and address + 1
+// Critical for reading EEPROM addresses correctly - prevents negative values when address > 32767
+// which would cause invalid memory access when cast to unsigned int
+uint16_t i2c_eeprom_read_uint16(unsigned int eeaddress) {
+  Wire.beginTransmission(I2C_EEPROM_ADDRESS);
+  Wire.write((int)(eeaddress >> 8));    // MSB
+  Wire.write((int)(eeaddress & 0xFF));  // LSB
+  Wire.endTransmission();
+  Wire.requestFrom(I2C_EEPROM_ADDRESS, 2);
+  byte lowByte = Wire.read();
+  byte highByte = Wire.read();
+  return (uint16_t((lowByte << 0) & 0xFF) + ((highByte << 8) & 0xFF00));
+}
+
 #endif
 
 bool newBoardQ(unsigned int eeaddress = EEPROM_BIRTHMARK_ADDRESS) {
@@ -519,10 +549,10 @@ void configSetup() {
     i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'a');  // a for English, b for Chinese
     i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'b');  // a for English, b for Chinese
     // save a preset skill to the temp skill in case its called before assignment
-    unsigned int i2cEepromAddress =
-        SERIAL_BUFF +
-        2;  // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
-    i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
+    unsigned int i2cEepromAddress = SERIAL_BUFF + 2;  // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550); //save
+                                                      // to random position to protect the EEPROM
+    // Use uint16 version to properly handle addresses > 32767 without sign extension issues
+    i2c_eeprom_write_uint16(SERIAL_BUFF, (uint16_t)i2cEepromAddress);  // the address takes 2 bytes to store
     copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
     i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, rebootForWifiManagerQ);
 

@@ -215,10 +215,10 @@ bool lowBattery() {
 #else
     voltage = voltage / 414;
 #endif
-    if (voltage < NO_BATTERY_VOLTAGE2 ||
-        ((voltage < LOW_VOLTAGE2  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-          || (voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE))  // powered by 7.4V
-         && fabs(voltage - lastVoltage) < 0.2)  // not caused by power fluctuation during movements
+    if (voltage < NO_BATTERY_VOLTAGE2
+        || ((voltage < LOW_VOLTAGE2  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+             || (voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE))  // powered by 7.4V
+            && fabs(voltage - lastVoltage) < 0.2)  // not caused by power fluctuation during movements
     ) {  // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
@@ -272,8 +272,8 @@ bool lowBattery() {
     }
     lastVoltage = voltage;
     if ((voltage > LOW_VOLTAGE + 0.2  // powered by 7.4V
-         || (voltage > LOW_VOLTAGE2 + 0.2 &&
-             voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+         || (voltage > LOW_VOLTAGE2 + 0.2
+             && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
         && lowBatteryQ)  // +0.2 to avoid fluctuation around the threshold
     {
       // if (voltage > LOW_VOLTAGE + 0.2){
@@ -312,20 +312,20 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
-    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN &&
-        token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE &&
-        token != T_JOYSTICK)
+    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN
+        && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE
+        && token != T_JOYSTICK)
       beep(15 + newCmdIdx, 5);  // ToDo: check the muted sound when newCmdIdx = -1
-    if (!workingStiffness &&
-        (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
+    if (!workingStiffness
+        && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC
+            || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
       setServoP(P_WORKING);
       workingStiffness = true;
 #endif
     }
-    if ((lastToken == T_SERVO_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW ||
-         !strcmp(lastCmd, "fd")) &&
-        token != T_SERVO_CALIBRATE) {
+    if ((lastToken == T_SERVO_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd"))
+        && token != T_SERVO_CALIBRATE) {
       // updateGyroQ = true;
       gyroBalanceQ = true;  // This is the default state for this "Q" boolean with all tokens except (T_SERVO_CALIBRATE
                             // && when lastToken is one of the listed values)
@@ -472,8 +472,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                   token = fineAdjustQ ? 'G' : 'g';  // G for activated gyro
                 } else if (toupper(newCmd[i]) == C_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
                   gyroBalanceQ =
-                      (newCmd[i] ==
-                       C_GYRO_BALANCE);  // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
+                      (newCmd[i]
+                       == C_GYRO_BALANCE);  // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
                 else if (toupper(newCmd[i]) == C_PRINT) {  // if newCmd[i] is 'p' or 'P'
                   printGyroQ =
                       (newCmd[i] == C_PRINT);  // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
@@ -707,8 +707,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               inLen++;
             }
 
-            if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 &&
-                target[0] < DOF) {
+            if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0
+                && target[0] < DOF) {
               targetFrame[target[0]] = target[1];
               if (target[0] < 4) {
                 targetHead[target[0]] = target[1];
@@ -776,8 +776,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #endif
                   if (target[0] < DOF && target[0] >= 0) {
                 int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 &&
-                    target[0] < 8)  // there's no such joint in this configuration
+                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3
+                    && target[0] < 8)  // there's no such joint in this configuration
                   continue;
                 int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
@@ -877,8 +877,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
             PTL();
           }
 #endif
-          if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) &&
-              (nonHeadJointQ || lastToken != T_SKILL)) {
+          if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC)
+              && (nonHeadJointQ || lastToken != T_SKILL)) {
             // printToAllPorts(token);
             transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
             skill->convertTargetToPosture(targetFrame);
@@ -967,8 +967,9 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       }
       case EXTENSION: {
         // PTH("cmdLen = ", cmdLen);
-        if (newCmd[0] != 'U' ||
-            (newCmd[0] == 'U' && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
+        if (newCmd[0] != 'U'
+            || (newCmd[0] == 'U'
+                && cmdLen == 1)) {  // when reading the distance from ultrasonic sensor, the cmdLen is 3.
           // and we don't want to change the activation status of the ultrasonic sensor behavior
           reconfigureTheActiveModule(newCmd);
         }
@@ -1159,7 +1160,9 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #endif
       case T_TEMP: {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
-        loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
+        // Use uint16 version to prevent address corruption when reading values > 32767
+        // Ensures proper address range 0-65535 without negative value conversion issues
+        loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_uint16(SERIAL_BUFF));
 #else
         config.getBytes("tmp", newCmd, config.getBytesLength("tmp"));
 #endif
@@ -1176,7 +1179,8 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #ifdef I2C_EEPROM_ADDRESS
         unsigned int i2cEepromAddress = SERIAL_BUFF + 2;  // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);
                                                           // //save to random position to protect the EEPROM
-        i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
+        // Use uint16 version to properly handle addresses > 32767 without sign extension issues
+        i2c_eeprom_write_uint16(SERIAL_BUFF, (uint16_t)i2cEepromAddress);  // the address takes 2 bytes to store
         copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
 #else
         int bufferLen = dataLen(newCmd[0]);
@@ -1229,10 +1233,10 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);  // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL &&
-          (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC ||
-           lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE ||
-           token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
+      if (lastToken == T_SKILL
+          && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC
+              || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE
+              || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
 #ifdef WEB_SERVER
@@ -1251,13 +1255,13 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
 #endif
     skill->perform();
     if (skill->period > 1) {
-      delay(delayShort +
-            max(0, int(runDelay
+      delay(delayShort
+            + max(0, int(runDelay
 #ifdef GYRO_PIN
-                       - gyroBalanceQ * (max(fabs(ypr[1]) / 2, fabs(ypr[2])) / 20)  // accelerate gait when tilted
-                             / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
+                         - gyroBalanceQ * (max(fabs(ypr[1]) / 2, fabs(ypr[2])) / 20)  // accelerate gait when tilted
+                               / (!fineAdjustQ && !mpuQ ? 4 : 1)  // reduce the adjust if not using mpu6050
 #endif
-                       )));
+                         )));
     }
     if (skill->period < 0) {
       if (!strcmp(skill->skillName, "fd")) {  // need to optimize logic to combine "rest" and "fold"

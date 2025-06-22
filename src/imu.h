@@ -1,4 +1,3 @@
-
 bool calibrateQ = false;
 float ypr[3];
 float previous_ypr[3];
@@ -18,8 +17,7 @@ float previousXYZ[3];
 int8_t yprTilt[3];
 float xyzReal[3];
 int thresX, thresY, thresZ;
-byte imuBad2[] = { 20, 12, 18, 12, 16, 12,
-                   16, 16, 16, 16, 16, 8 };  // fail during calibration
+byte imuBad2[] = {20, 12, 18, 12, 16, 12, 16, 16, 16, 16, 16, 8};  // fail during calibration
 #ifdef IMU_MPU6050
 
 // I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v6.12)
@@ -161,12 +159,12 @@ class mpu6050p : public MPU6050 {
 public:
   VectorInt16 aaReal;   // [x, y, z]            gravity-free accel sensor measurements
   VectorInt16 aaWorld;  // [x, y, z]            world-frame accel sensor measurements
-  int16_t *xyzReal[3] = { &aaReal.x, &aaReal.y, &aaReal.z };
+  int16_t *xyzReal[3] = {&aaReal.x, &aaReal.y, &aaReal.z};
   float ypr[3];     // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector. unit is radian
   float a_real[3];  // [x, y, z]            gravity vector in the real world
 
   // packet structure for InvenSense teapot demo
-  uint8_t teapotPacket[14] = { '$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n' };
+  uint8_t teapotPacket[14] = {'$', 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0x00, 0x00, '\r', '\n'};
 
   // ================================================================
   // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -177,9 +175,15 @@ public:
   //   mpuInterrupt = true;
   // }
 
-  // The REALACCEL numbers are calculated with respect to the orientation of the sensor itself, so that if it is flat and you move it straight up, the "Z" accel will change, but if you flip it up on one side and move it in the new relative "up" direction (along the sensor's Z axis), it will still register acceleration on the Z axis. Essentially, it is sensor-oriented acceleration which removes the effects of gravity and any non-flat/level orientation.
+  // The REALACCEL numbers are calculated with respect to the orientation of the sensor itself, so that if it is flat
+  // and you move it straight up, the "Z" accel will change, but if you flip it up on one side and move it in the new
+  // relative "up" direction (along the sensor's Z axis), it will still register acceleration on the Z axis.
+  // Essentially, it is sensor-oriented acceleration which removes the effects of gravity and any non-flat/level
+  // orientation.
 
-  // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
+  // The WORLDACCEL numbers are calculated to ignore orientation. Moving it straight up while flat will look the same as
+  // the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to
+  // you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
   void calibrateMPU() {
     PTLF("Calibrate MPU6050...");
     CalibrateAccel(20);
@@ -235,7 +239,7 @@ public:
 #elif I2CDEV_IMPLEMENTATION == I2CDEV_BUILTIN_FASTWIRE
     Fastwire::setup(400, true);
 #endif
-      // initialize serial communication
+        // initialize serial communication
     // (115200 chosen because it is required for Teapot Demo output, but it's
     // really up to you depending on your project)
     // Serial.begin(115200);
@@ -255,7 +259,8 @@ public:
       PTL("OK");
       PTL("If the program stucks, reinstall Arduino ESP32 boards version 2.0.12. Newer version may cause bugs!");
 #else
-      PTL("If the program stucks, modify the header file:\n  https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
+      PTL("If the program stucks, modify the header file:\n  "
+          "https://docs.petoi.com/arduino-ide/upload-sketch-for-biboard#sdkconfig.h");
 #endif
       initialize();
       // pinMode(INTERRUPT_PIN, INPUT);
@@ -275,7 +280,10 @@ public:
 #ifdef I2C_EEPROM_ADDRESS
       mpuOffset[m] = i2c_eeprom_read_int16(EEPROM_MPU + m * 2);
 #else
-      mpuOffset[m] = config.getShort(("mpu" + String(m)).c_str());
+      char key[8];
+      sprintf(key, "mpu%d", m);
+      // short takes two bytes on ESP32
+      mpuOffset[m] = (int16_t)config.getShort(key);
 #endif
       PTT(mpuOffset[m], '\t');
     }
@@ -284,9 +292,9 @@ public:
     setXAccelOffset(mpuOffset[0]);
     setYAccelOffset(mpuOffset[1]);
     setZAccelOffset(mpuOffset[2]);  // gravity
-    setXGyroOffset(mpuOffset[3]);   // yaw
-    setYGyroOffset(mpuOffset[4]);   // pitch
-    setZGyroOffset(mpuOffset[5]);   // roll
+    setXGyroOffset(mpuOffset[3]);  // yaw
+    setYGyroOffset(mpuOffset[4]);  // pitch
+    setZGyroOffset(mpuOffset[5]);  // roll
 
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
@@ -536,7 +544,7 @@ void print6Axis() {
 #ifdef IMU_MPU6050
   if (mpuQ) {
 #ifdef PRINT_ACCELERATION
-    sprintf(buffer, "MCU:%6.1f%6.1f%6.1f%7.1f%7.1f%7.1f",                                      // 7x6 = 42
+    sprintf(buffer, "MCU:%6.1f%6.1f%6.1f%7.1f%7.1f%7.1f",  // 7x6 = 42
             mpu.a_real[0], mpu.a_real[1], mpu.a_real[2], mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);  //, aaWorld.z);
 #else
     sprintf(buffer, "MCU%7.1f%7.1f%7.1f", mpu.ypr[0], mpu.ypr[1], mpu.ypr[2]);
@@ -568,7 +576,8 @@ void print6Axis() {
 }
 
 TaskHandle_t TASK_imu = NULL;
-TaskHandle_t taskCalibrateImuUsingCore0_handle = NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
+TaskHandle_t taskCalibrateImuUsingCore0_handle =
+    NULL;  // -ee- Use to access taskCalibrateImuUsingCore0() running on Core 0 FROM Core 1
 
 bool readIMU() {
   bool updated = false;
@@ -640,7 +649,7 @@ void getImuException() {
   // PTT(fabs(xyzReal[2] - previousXYZ[2]), '\t');
 
   if (fabs(ypr[2]) > 85) {  //  imuException = aaReal.z < 0;
-    if (mpuQ) {             // mpu is faster in detecting instant acceleration which may lead to false positive
+    if (mpuQ) {  // mpu is faster in detecting instant acceleration which may lead to false positive
       if (xyzReal[2] < 1)
         imuException = IMU_EXCEPTION_FLIPPED;  // flipped
     } else if (xyzReal[2] < -1)
@@ -649,12 +658,16 @@ void getImuException() {
 #ifndef ROBOT_ARM
   else if (ypr[1] < -50 || ypr[1] > 75)
     imuException = IMU_EXCEPTION_LIFTED;
-  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor && fabs(xyzReal[2]) > thresZ * gFactor)  // z direction shock)
+  else if (!moduleDemoQ && fabs(xyzReal[2] - previousXYZ[2]) > thresZ * gFactor
+           && fabs(xyzReal[2]) > thresZ * gFactor)  // z direction shock)
     imuException = IMU_EXCEPTION_KNOCKED;
-  else if (!moduleDemoQ && (                                                                                 // not in demo mode
-             (fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor && fabs(xyzReal[0]) > thresX * gFactor)     // x direction shock
-             || (fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor && fabs(xyzReal[1]) > thresY * gFactor)  // y direction shock
-             )) {
+  else if (!moduleDemoQ
+           && (  // not in demo mode
+               (fabs(xyzReal[0] - previousXYZ[0]) > 4000 * gFactor
+                && fabs(xyzReal[0]) > thresX * gFactor)  // x direction shock
+               || (fabs(xyzReal[1] - previousXYZ[1]) > 6000 * gFactor
+                   && fabs(xyzReal[1]) > thresY * gFactor)  // y direction shock
+               )) {
     imuException = IMU_EXCEPTION_PUSHED;
   }
 #endif
@@ -716,14 +729,13 @@ void imuSetup() {
   if (calibrateQ)
     beep(18, 50, 50, 6);
   previous_ypr[0] = ypr[0];
-  xTaskCreatePinnedToCore(
-    taskIMU,    // task function
-    "TaskIMU",  // name
-    9000,       // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
-    NULL,       // parameters
-    1,          // priority
-    &TASK_imu,  // handle
-    0);         // core
+  xTaskCreatePinnedToCore(taskIMU,  // task function
+                          "TaskIMU",  // name
+                          9000,  // task stack size​​: 8700 determined by uxTaskGetStackHighWaterMark()
+                          NULL,  // parameters
+                          1,  // priority
+                          &TASK_imu,  // handle
+                          0);  // core
   delay(100);
   TASK_imu = xTaskGetHandle("TaskIMU");
 
@@ -731,8 +743,8 @@ void imuSetup() {
 }
 
 void taskCalibrateImuUsingCore0(void *parameter) {
-  /*  This perpetual task runs will run on Core 0 and will always wait for a notification from Core 1 before calibrating the IMU.
-      Created by este este
+  /*  This perpetual task runs will run on Core 0 and will always wait for a notification from Core 1 before calibrating
+     the IMU. Created by este este
   */
   // while (true) {
   // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for notification from Core 1
@@ -783,5 +795,5 @@ void taskCalibrateImuUsingCore0(void *parameter) {
   // }
   updateGyroQ = true;
   printToAllPorts("\nCalibration done.\n");  // for confirming the desktop app
-  vTaskDelete(NULL);                         // Terminate this task if an error occurs in the loop
+  vTaskDelete(NULL);  // Terminate this task if an error occurs in the loop
 }

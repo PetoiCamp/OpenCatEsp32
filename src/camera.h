@@ -34,7 +34,8 @@ int imgRangeX = 100;               // the frame size 0~100 on X and Y direction
 int imgRangeY = 100;
 
 #ifdef BiBoard_V1_0
-#define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as the gyroscope and EEPROM.
+#define USE_WIRE1  // use the Grove UART as the Wire1, which is independent of Wire used by the main devices, such as
+                   // the gyroscope and EEPROM.
 #endif
 
 #ifdef USE_WIRE1
@@ -45,8 +46,8 @@ int imgRangeY = 100;
 
 #ifdef MU_CAMERA
 // You need to install https://github.com/mu-opensource/MuVisionSensor3 as a zip library in Arduino IDE.
-// Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera module to the I2C grove on NyBoard.
-// The battery should be turned on to drive the servos.
+// Set the four dial switches on the camera as **v ^ v v** (the second switch dialed up to I2C) and connect the camera
+// module to the I2C grove on NyBoard. The battery should be turned on to drive the servos.
 
 // You can use these 3D printed structures to attach the camera module.
 // https://github.com/PetoiCamp/NonCodeFiles/blob/master/stl/MuIntelligentCamera_mount.stl
@@ -85,10 +86,11 @@ SoftwareSerial mySerial(UART_RX2, UART_TX2);
 #define T_TUNER '>'
 bool cameraSetupSuccessful = false;
 int widthCounter;
-int xDiff, yDiff;                // the scaled distance from the center of the frame
+int xDiff, yDiff;  // the scaled distance from the center of the frame
 int currentX = 0, currentY = 0;  // the current x y of the camera's direction in the world coordinate
 
-int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY, frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
+int8_t lensFactor, proportion, tranSpeed, pan, tilt, frontUpX, backUpX, frontDownX, backDownX, frontUpY, backUpY,
+    frontDownY, backDownY, tiltBase, frontUp, backUp, frontDown, backDown;
 int8_t sizePars;
 #ifdef ROBOT_ARM
 float adjustmentFactor = 1.5;
@@ -97,35 +99,36 @@ float adjustmentFactor = 1;
 #endif
 
 #ifdef NYBBLE
-int8_t nybblePars[] = {
-  30, 11, 8, 10, 15,
-  60, -50, 31, -50,
-  45, -40, 40, -36,
-  0, 25, -60, 60, 16
-};
+int8_t nybblePars[] = {30, 11, 8, 10, 15, 60, -50, 31, -50, 45, -40, 40, -36, 0, 25, -60, 60, 16};
 #else  // BITTLE or CUB
 #ifdef MU_CAMERA
-int8_t bittleMuPars[] = {
-  30, 10, 8, 15, 15,
-  60, 80, 30, 80,
-  60, 30, 30, 70,
-  40, 40, 60, 40, -30
-};
+int8_t bittleMuPars[] = {30, 10, 8, 15, 15, 60, 80, 30, 80, 60, 30, 30, 70, 40, 40, 60, 40, -30};
 #endif
 #if defined GROVE_VISION_AI_V2
-int8_t bittleGroveVisionPars[] = {
-  20, 20, 8, 10, 12,
-  int8_t(60 * adjustmentFactor), int8_t(75 * adjustmentFactor), int8_t(30 * adjustmentFactor), int8_t(75 * adjustmentFactor),
-  20, 25, 10, 25,
-  0, 30, 60, 40, -10
-};
+int8_t bittleGroveVisionPars[] = {20,
+                                  20,
+                                  8,
+                                  10,
+                                  12,
+                                  int8_t(60 * adjustmentFactor),
+                                  int8_t(75 * adjustmentFactor),
+                                  int8_t(30 * adjustmentFactor),
+                                  int8_t(75 * adjustmentFactor),
+                                  20,
+                                  25,
+                                  10,
+                                  25,
+                                  0,
+                                  30,
+                                  60,
+                                  40,
+                                  -10};
 #endif
 #endif
 
-int8_t *par[] = { &lensFactor, &proportion, &tranSpeed, &pan, &tilt,
-                  &frontUpX, &backUpX, &frontDownX, &backDownX,
-                  &frontUpY, &backUpY, &frontDownY, &backDownY,
-                  &tiltBase, &frontUp, &backUp, &frontDown, &backDown };
+int8_t *par[] = {&lensFactor, &proportion, &tranSpeed, &pan,      &tilt,      &frontUpX,
+                 &backUpX,    &frontDownX, &backDownX, &frontUpY, &backUpY,   &frontDownY,
+                 &backDownY,  &tiltBase,   &frontUp,   &backUp,   &frontDown, &backDown};
 
 #ifdef MU_CAMERA
 void muCameraSetup();
@@ -239,8 +242,9 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
       widthCounter++;
     else
       widthCounter = 0;
-    if (width < 25 && width != 16) {                                                                      // 16 maybe a noise signal
-      tQueue->addTask('k', currentX < -15 ? "wkR" : (currentX > 15 ? "wkL" : "wkF"), (50 - width) * 50);  // walk towards you
+    if (width < 25 && width != 16) {  // 16 maybe a noise signal
+      tQueue->addTask('k', currentX < -15 ? "wkR" : (currentX > 15 ? "wkL" : "wkF"),
+                      (50 - width) * 50);  // walk towards you
       tQueue->addTask('k', "sit");
       tQueue->addTask('i', "");
       currentX = 0;
@@ -253,7 +257,9 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
     } else
 #endif
     {
-      xDiff = (xCoord - imgRangeX / 2.0);  // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
+      xDiff =
+          (xCoord
+           - imgRangeX / 2.0);  // atan((xCoord - imgRangeX / 2.0) / (imgRangeX / 2.0)) * degPerRad;//almost the same
       yDiff = (yCoord - imgRangeY / 2.0);  // atan((yCoord - imgRangeY / 2.0) / (imgRangeX / 2.0)) * degPerRad;
       if (abs(xDiff) > 1 || abs(yDiff) > 1) {
         xDiff = xDiff / (lensFactor / 10.0);
@@ -267,31 +273,30 @@ void cameraBehavior(int xCoord, int yCoord, int width) {
         // PTL(currentY);
 
         // if (abs(currentX) < 60) {
-        int8_t base[] = { 0, tiltBase, 0, 0,
-                          0, 0, 0, 0,
-                          frontUp, frontUp, backUp, backUp,
-                          frontDown, frontDown, backDown, backDown };
+        int8_t base[] = {0,       tiltBase, 0,      0,      0,         0,         0,        0,
+                         frontUp, frontUp,  backUp, backUp, frontDown, frontDown, backDown, backDown};
         int8_t feedBackArray[][2] = {
-          { pan, 0 },
-          { 0, tilt },
-          { 0, 0 },
-          { 0, 0 },
-          { 0, 0 },
-          { 0, 0 },
-          { 0, 0 },
-          { 0, 0 },
-          { frontUpX, (int8_t)-frontUpY },  // explicitly convert the calculation result to int8_t
-          { (int8_t)-frontUpX, (int8_t)-frontUpY },
-          { (int8_t)-backUpX, backUpY },
-          { backUpX, backUpY },
-          { (int8_t)-frontDownX, frontDownY },
-          { frontDownX, frontDownY },
-          { backDownX, (int8_t)-backDownY },
-          { (int8_t)-backDownX, (int8_t)-backDownY },
+            {pan, 0},
+            {0, tilt},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {0, 0},
+            {frontUpX, (int8_t)-frontUpY},  // explicitly convert the calculation result to int8_t
+            {(int8_t)-frontUpX, (int8_t)-frontUpY},
+            {(int8_t)-backUpX, backUpY},
+            {backUpX, backUpY},
+            {(int8_t)-frontDownX, frontDownY},
+            {frontDownX, frontDownY},
+            {backDownX, (int8_t)-backDownY},
+            {(int8_t)-backDownX, (int8_t)-backDownY},
         };
         transformSpeed = tranSpeed / 4.0;
         for (int i = 0; i < DOF; i++) {
-          float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0) + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
+          float adj = float(base[i]) + (feedBackArray[i][0] ? currentX * 10.0 / feedBackArray[i][0] : 0)
+                      + (feedBackArray[i][1] ? currentY * 10.0 / feedBackArray[i][1] : 0);
           newCmd[i] = min(125, max(-125, int(adj)));
           // if (i == 0)//print adjustment of head pan joint
           // {
@@ -328,10 +333,10 @@ void taskReadCamera(void *par) {
 #ifndef USE_WIRE1
     while (
 #ifdef GYRO_PIN
-      imuLockI2c ||  //wait for the imu to release lock. potentially to cause dead lock with camera
+        imuLockI2c ||  // wait for the imu to release lock. potentially to cause dead lock with camera
 #endif
-      gestureLockI2c)
-      delay(1);  //wait for the gesture to release lock. potentially to cause dead lock with camera
+        gestureLockI2c)
+      delay(1);  // wait for the gesture to release lock. potentially to cause dead lock with camera
     cameraLockI2c = true;
 #endif
 #ifdef MU_CAMERA
@@ -359,14 +364,13 @@ void taskReadCamera(void *par) {
 void read_camera() {
   if (!cameraTaskActiveQ) {
     PTLF("Create Camera Task...");
-    xTaskCreatePinnedToCore(
-      taskReadCamera,      // task function
-      "TaskReadCamera",    // name
-      10000,               // task stack size​​
-      NULL,                // parameters
-      0,                   // priority
-      &TASK_HandleCamera,  // handle
-      0);                  // core
+    xTaskCreatePinnedToCore(taskReadCamera,  // task function
+                            "TaskReadCamera",  // name
+                            10000,  // task stack size​​
+                            NULL,  // parameters
+                            0,  // priority
+                            &TASK_HandleCamera,  // handle
+                            0);  // core
     cameraTaskActiveQ = 1;
     PTLF("Camera task activated.");
   }
@@ -383,8 +387,8 @@ MuVisionSensor *Mu;
 int skip = 1;  //, counter; //an efforts to reduce motion frequency without using delay. set skip >1 to take effect
 int i2cdelay = 3;
 long noResultTime = 0;
-MuVisionType object[] = { VISION_BODY_DETECT, VISION_BALL_DETECT };
-String objectName[] = { "body", "ball" };
+MuVisionType object[] = {VISION_BODY_DETECT, VISION_BALL_DETECT};
+String objectName[] = {"body", "ball"};
 int objectIdx = 0;
 int lastBallType;
 void muCameraSetup() {
@@ -458,7 +462,7 @@ void read_MuCamera() {
       }
       //^^^^^^^^^^^^^ ball ^^^^^^^^^^^^^^
       detectedObjectQ = true;
-      noResultTime = millis();                    // update the timer
+      noResultTime = millis();  // update the timer
     } else if (millis() - noResultTime > 2000) {  // if no object is detected for 2 seconds, switch object
       (*Mu).VisionEnd(object[objectIdx]);
       objectIdx = (objectIdx + 1) % (sizeof(object) / 2);
@@ -503,12 +507,13 @@ void sentry1CameraSetup() {
   PTLF("Setup Sentry1");
   writeRegData(0x20, 0x07);  // set vision id: 7 (body for Sentry1)
   writeRegData(0x21, 0x01);  // enable vision
-  // writeRegData(0x22, 0x10);  // set vision level: 0x10=Sensitive/Speed 0x20=balance(default if not set) 0x30=accurate ..........[UPDATE]
+  // writeRegData(0x22, 0x10);  // set vision level: 0x10=Sensitive/Speed 0x20=balance(default if not set) 0x30=accurate
+  // ..........[UPDATE]
   delay(1000);
   PTLF("Sentry1 ready");
   lensFactor = 10;  // default value is 30 ..........[UPDATE]
   proportion = 30;  // default value is 20 ..........[UPDATE]
-  pan = 20;         // default value is 15 ..........[UPDATE]
+  pan = 20;  // default value is 15 ..........[UPDATE]
   tranSpeed = 1;
   cameraSetupSuccessful = true;
 }
@@ -519,11 +524,11 @@ void read_Sentry1Camera() {
   //  Serial.println("loop...");
   if (cameraSetupSuccessful) {
     char frame_new = readRegData(0x1F);  // update frame count ..........[UPDATE]
-    if (frame_new == frame_cnt) {        // if frame is unchanged, delay some time and return ..........[UPDATE]
-      delay(10);                         // ..........[UPDATE]
-      return;                            //  ..........[UPDATE]
-    }                                    //  ..........[UPDATE]
-    frame_cnt = frame_new;               // update frame_cnt ..........[UPDATE]
+    if (frame_new == frame_cnt) {  // if frame is unchanged, delay some time and return ..........[UPDATE]
+      delay(10);  // ..........[UPDATE]
+      return;  //  ..........[UPDATE]
+    }  //  ..........[UPDATE]
+    frame_cnt = frame_new;  // update frame_cnt ..........[UPDATE]
 
     char label = readRegData(0x89);  // read label/ value Low Byte, 1=detected, 0=undetected
     //  Serial.print("label: ");
@@ -532,7 +537,7 @@ void read_Sentry1Camera() {
       updateCoordinateLock = true;
       xCoord = readRegData(0x81);  // read x value Low Byte, 0~100, (LB is enought for sentry 1)
       yCoord = readRegData(0x83);  // read y value Low Byte, 0~100
-      width = readRegData(0x85);   // read width value Low Byte, 0~100
+      width = readRegData(0x85);  // read width value Low Byte, 0~100
       height = readRegData(0x87);  // read height value Low Byte, 0~100, not necessary if already have read width
                                    // do something ......
       updateCoordinateLock = false;
@@ -556,14 +561,17 @@ void sentry2CameraSetup() {
   PTL("Waiting for sentry initialize...");
 #ifdef I2C_MODE
   // CAMERA_WIRE.begin();  // join i2c bus (address optional for master)
-  /* Use I2C to initialize Sentry. If err returns 0, the initialization is normal, otherwise the corresponding error code is returned. */
+  /* Use I2C to initialize Sentry. If err returns 0, the initialization is normal, otherwise the corresponding error
+   * code is returned. */
   while (SENTRY_OK != sentry.begin(&CAMERA_WIRE)) {
     yield();
   }
 #endif  // I2C_MODE
 #ifdef SERIAL_MODE
   mySerial.begin(9600);
-  while (SENTRY_OK != sentry.begin(&mySerial)) { yield(); }
+  while (SENTRY_OK != sentry.begin(&mySerial)) {
+    yield();
+  }
 #endif  // SERIAL_MODE
   PTL("Sentry begin Success.");
   err = sentry.VisionBegin(VISION_TYPE);
@@ -585,9 +593,9 @@ void read_Sentry2Camera() {
     // Serial.print(obj_num);
     // Serial.println(" objects");
     updateCoordinateLock = true;
-    xCoord = sentry.GetValue(VISION_TYPE, kXValue, 1);       // read x value
-    yCoord = sentry.GetValue(VISION_TYPE, kYValue, 1);       // read y value
-    width = sentry.GetValue(VISION_TYPE, kWidthValue, 1);    // read width value
+    xCoord = sentry.GetValue(VISION_TYPE, kXValue, 1);  // read x value
+    yCoord = sentry.GetValue(VISION_TYPE, kYValue, 1);  // read y value
+    width = sentry.GetValue(VISION_TYPE, kWidthValue, 1);  // read width value
     height = sentry.GetValue(VISION_TYPE, kHeightValue, 1);  // read height value
     updateCoordinateLock = false;
     detectedObjectQ = true;
@@ -629,8 +637,8 @@ enum OptAngle : uint16_t {
 // OPT_DETAIL values
 enum OptResolution : uint8_t {
   OPT_DETAIL_240 = 0,  // 240*240 Auto
-  OPT_DETAIL_480,      // 480*480 Auto
-  OPT_DETAIL_640,      // 640*480 Auto
+  OPT_DETAIL_480,  // 480*480 Auto
+  OPT_DETAIL_640,  // 640*480 Auto
 };
 void groveVisionSetup() {
   PTLF("Setup Grove Vision AI Module");
@@ -639,7 +647,9 @@ void groveVisionSetup() {
 
   uint8_t count = 0;
   bool sensorEnable = true;
-  uint16_t sensorVal = OPT_DETAIL_240 + (strcmp(MODEL, "Bittle R") ? OPT_ANGLE_90 : OPT_ANGLE_0);  // 240*240, rotate 90 degrees if Bittle R
+  uint16_t sensorVal =
+      OPT_DETAIL_240
+      + (strcmp(MODEL, "Bittle R") ? OPT_ANGLE_90 : OPT_ANGLE_0);  // 240*240, rotate 90 degrees if Bittle R
 
   Serial.println("Set sensor angle and resolution...");
   do {
@@ -659,7 +669,7 @@ void read_GroveVision() {
       updateCoordinateLock = true;
       xCoord = AI.boxes()[0].x;  // read x value
       yCoord = AI.boxes()[0].y;  // read y value
-      width = AI.boxes()[0].w;   // read width value
+      width = AI.boxes()[0].w;  // read width value
       height = AI.boxes()[0].h;  // read height value
       updateCoordinateLock = false;
       detectedObjectQ = true;
