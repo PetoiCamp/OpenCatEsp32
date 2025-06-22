@@ -19,36 +19,30 @@ BluetoothSerial SerialBT;
 boolean confirmRequestPending = true;
 boolean BTconnected = false;
 
-void BTConfirmRequestCallback(uint32_t numVal)
-{
+void BTConfirmRequestCallback(uint32_t numVal) {
   confirmRequestPending = true;
   Serial.println(numVal);
 }
 
-void BTAuthCompleteCallback(boolean success)
-{
+void BTAuthCompleteCallback(boolean success) {
   confirmRequestPending = false;
-  if (success)
-  {
+  if (success) {
     BTconnected = true;
     Serial.println("SSP Pairing success!!");
-  }
-  else
-  {
+  } else {
     BTconnected = false;
     Serial.println("SSP Pairing failed, rejected by user!!");
   }
 }
 
-void blueSspSetup()
-{
+void blueSspSetup() {
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);
   char *sspName = getDeviceName("_SSP");
   PTHL("SSP:\t", sspName);
-  SerialBT.begin(sspName); // Bluetooth device name
-  delete[] sspName;        // Free the allocated memory
+  SerialBT.begin(sspName);  // Bluetooth device name
+  delete[] sspName;         // Free the allocated memory
   Serial.println("The SSP device is started, now you can pair it with Bluetooth!");
 }
 
@@ -86,9 +80,8 @@ void blueSspSetup()
 
 #endif
 
-template <typename T>
-void printToAllPorts(T text, bool newLine = true)
-{
+template<typename T>
+void printToAllPorts(T text, bool newLine = true) {
 #ifdef BT_BLE
   if (deviceConnected)
     bleWrite(String(text));
@@ -98,17 +91,15 @@ void printToAllPorts(T text, bool newLine = true)
     SerialBT.println(text);
 #endif
 #ifdef WEB_SERVER
-  if (cmdFromWeb)
-  {
-    if (String(text) != "=")
-    {
+  if (cmdFromWeb) {
+    if (String(text) != "=") {
       webResponse += String(text);
       if (newLine)
         webResponse += '\n';
     }
   }
 #endif
-  if (moduleActivatedQ[0]) // serial2
+  if (moduleActivatedQ[0])  // serial2
     Serial2.println(text);
   PT(text);
   if (newLine)

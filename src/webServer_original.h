@@ -57,8 +57,8 @@ bool configureWiFiViaSerial() {
     String input = Serial.readStringUntil('\n');
     if (input.startsWith("wifi%")) {
       // 解析WiFi配置字符串
-      int firstDelimiter = input.indexOf('%', 5);                    // 找到第二个%的位置
-      int secondDelimiter = input.indexOf('%', firstDelimiter + 1);  // 找到第三个%的位置
+      int firstDelimiter = input.indexOf('%', 5);                   // 找到第二个%的位置
+      int secondDelimiter = input.indexOf('%', firstDelimiter + 1); // 找到第三个%的位置
 
       if (firstDelimiter != -1 && secondDelimiter != -1) {
         ssid = input.substring(5, firstDelimiter);
@@ -110,7 +110,7 @@ void startWifiManager() {
 #endif
   // Connect to WiFi
   WiFiManager wm;
-  wm.setConfigPortalTimeout(60);  // timeout after 60 seconds
+  wm.setConfigPortalTimeout(60); // timeout after 60 seconds
   // if it fails to connect, it won't open wifi manager during next bootup
   String wifiConfigName = (uniqueName.length() > 0) ? (uniqueName + " WifiConfig") : "Robot WifiConfig";
   if (!wm.autoConnect(wifiConfigName.c_str())) {
@@ -136,9 +136,9 @@ void startWifiManager() {
 #endif
 }
 void resetWifiManager() {
-  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();  // load the flash-saved configs
-  esp_wifi_init(&cfg);                                  // initiate and allocate wifi resources (does not matter if connection fails)
-  delay(2000);                                          // wait a bit
+  wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT(); // load the flash-saved configs
+  esp_wifi_init(&cfg); // initiate and allocate wifi resources (does not matter if connection fails)
+  delay(2000);         // wait a bit
   if (esp_wifi_restore() != ESP_OK) {
     PTLF("\nWiFi is not initialized by esp_wifi_init ");
   } else {
@@ -151,7 +151,7 @@ void resetWifiManager() {
 void webServerTask(void *pvParameters) {
   while (true) {
     webServer.handleClient();
-    vTaskDelay(1);  // Small delay to prevent watchdog issues
+    vTaskDelay(1); // Small delay to prevent watchdog issues
   }
 }
 void WebServerLoop() {

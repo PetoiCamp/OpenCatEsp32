@@ -83,7 +83,7 @@ String uniqueName = "";
 
 // I2C EEPROM configuration - global setting for all boards
 // Uncomment the following line to enable I2C EEPROM storage instead of ESP32 Flash
-#define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
+// #define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 #define BIRTHMARK '@'  // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
@@ -155,7 +155,7 @@ String uniqueName = "";
 #define UART_TX2 17
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
-// #define IMU_ICM42670
+#define IMU_ICM42670
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {

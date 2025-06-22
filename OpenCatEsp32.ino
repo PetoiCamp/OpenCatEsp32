@@ -1,7 +1,7 @@
 // modify the model and board definitions
 //***********************
-// #define BITTLE  // Petoi 9 DOF robot dog: 1 on head + 8 on leg
-#define NYBBLE  // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
+#define BITTLE  // Petoi 9 DOF robot dog: 1 on head + 8 on leg
+// #define NYBBLE  // Petoi 11 DOF robot cat: 2 on head + 1 on tail + 8 on leg
 // #define CUB
 
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
