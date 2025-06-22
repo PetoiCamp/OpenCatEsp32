@@ -389,10 +389,13 @@ void genBleID(int suffixDigits = 2) {
   id[prelen + suffixDigits] = '\0';
 #ifdef I2C_EEPROM_ADDRESS
   writeLong(EEPROM_BLE_NAME, id, prelen + suffixDigits);
+  char *temp = readLongByBytes(EEPROM_BLE_NAME);
+  uniqueName = String(temp);
+  delete[] temp;
 #else
   config.putString("ID", id);
+  uniqueName = String(id);
 #endif
-  uniqueName = id;
   Serial.println(id);
 }
 
@@ -407,15 +410,18 @@ void customBleID(char *customName, int8_t len) {
 void resetIfVersionOlderThan(String versionStr) {
 #ifdef I2C_EEPROM_ADDRESS
   char *savedVersionDate = readLongByBytes(EEPROM_VERSION_DATE);
-  long savedDate = atoi(savedVersionDate + strlen(savedVersionDate) - 6);
+
+  String savedVersionStr = (savedVersionDate && strlen(savedVersionDate) > 0) ? String(savedVersionDate) : "unknown";
+  long savedDate = (savedVersionDate && strlen(savedVersionDate) >= 6) ? atoi(savedVersionDate + strlen(savedVersionDate) - 6) : 0;
+  delete[] savedVersionDate;
 #else
-  String savedVersionDate = config.getString("versionDate", "P_000101");  // default YYMMDD: 00 01 01
-  long savedDate = savedVersionDate.substring(savedVersionDate.length() - 6).toInt();
+  String savedVersionStr = config.getString("versionDate", "unknown");
+  long savedDate = (savedVersionStr == "unknown") ? 0 : savedVersionStr.substring(savedVersionStr.length() - 6).toInt();
 #endif
   long currentDate = atol(versionStr.c_str() + versionStr.length() - 6);
   if (savedDate < currentDate) {
     delay(1000);
-    PTTL("\n* The previous version on the board is ", savedVersionDate);
+    PTTL("\n* The previous version on the board is ", savedVersionStr);
     PTTL("* The robot will reboot and upgrade to ", versionStr);
     resetAsNewBoard('X');
   }
@@ -445,7 +451,7 @@ void configSetup() {
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       i2c_eeprom_write_byte(EEPROM_MODULE_ENABLED_LIST + i, moduleActivatedQ[i]);
     i2c_eeprom_write_byte(EEPROM_DEFAULT_LAN, 'a');  // a for English, b for Chinese
-    i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'b');  // a for English, b for
+    i2c_eeprom_write_byte(EEPROM_CURRENT_LAN, 'b');  // a for English, b for Chinese
     // save a preset skill to the temp skill in case its called before assignment
     unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
     i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
@@ -495,14 +501,20 @@ void configSetup() {
 #endif
       playMelody(melodyNormalBoot, sizeof(melodyNormalBoot) / 2);
 #ifdef I2C_EEPROM_ADDRESS
+    soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
+    buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
     for (byte i = 0; i < sizeof(moduleList) / sizeof(char); i++)
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
     defaultLan = (char)i2c_eeprom_read_byte(EEPROM_DEFAULT_LAN);
     currentLan = (char)i2c_eeprom_read_byte(EEPROM_CURRENT_LAN);
-    uniqueName = readLongByBytes(EEPROM_BLE_NAME);
+    char *temp = readLongByBytes(EEPROM_BLE_NAME);
+    uniqueName = String(temp);
+    delete[] temp;
     rebootForWifiManagerQ = i2c_eeprom_read_byte(EEPROM_WIFI_MANAGER);
 
 #else
+    soundState = config.getBool("bootSndState") ? 1 : 0;
+    buzzerVolume = max(byte(0), min(byte(10), (byte)config.getChar("buzzerVolume")));
     config.getBytes("moduleState", moduleActivatedQ, sizeof(moduleList) / sizeof(char));
     defaultLan = config.getChar("defaultLan");
     currentLan = config.getChar("currentLan");

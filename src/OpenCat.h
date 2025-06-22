@@ -77,9 +77,13 @@
 #define BOARD "B"
 #endif
 
-#define DATE "250620" // YYMMDD
+#define DATE "250622" // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
+
+// I2C EEPROM configuration - global setting for all boards
+// Uncomment the following line to enable I2C EEPROM storage instead of ESP32 Flash
+// #define I2C_EEPROM_ADDRESS 0x54 // Address of i2c eeprom chip
 
 #define BIRTHMARK '@' // Send '!' token to reset the birthmark in the EEPROM so that the robot will know to restart and reset
 
@@ -152,7 +156,6 @@ String uniqueName = "";
 #define SERIAL_VOICE Serial2
 #define IMU_MPU6050
 // #define IMU_ICM42670
-// #define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 // L:Left-R:Right-F:Front-B:Back---LF, RF, RB, LB
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -195,7 +198,6 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define SERIAL_VOICE Serial1
 #define IMU_MPU6050
 #define IMU_ICM42670
-// #define I2C_EEPROM_ADDRESS 0x54  // Address of i2c eeprom chip
 
 #define PWM_LED_PIN 27
 
@@ -224,7 +226,6 @@ const uint8_t PWM_pin[PWM_NUM] = {
 #define TOUCH2 32
 #define TOUCH3 33
 #define IMU_MPU6050
-#define I2C_EEPROM_ADDRESS 0x54 // Address of i2c eeprom chip
 // L:Left R:Right F:Front B:Back   LF,        RF,    RB,   LB
 
 const uint8_t PWM_pin[PWM_NUM] = {
@@ -704,15 +705,10 @@ void initRobot()
 #if defined BiBoard_V1_0 && !defined NYBBLE
   i2cDetect(Wire1);
 #endif
-#ifdef I2C_EEPROM_ADDRESS
-  soundState = i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE);
-  buzzerVolume = max(byte(0), min(byte(10), i2c_eeprom_read_byte(EEPROM_BUZZER_VOLUME)));
-#else
+#ifndef I2C_EEPROM_ADDRESS
   config.begin("config", false); // false: read/write mode. true: read-only mode.
-  soundState = config.getBool("bootSndState");
-  buzzerVolume = config.getChar("buzzerVolume");
-  newBoard = newBoardQ();
 #endif
+  newBoard = newBoardQ();
   configSetup();
   PTF("Buzzer volume: ");
   PT(buzzerVolume);
