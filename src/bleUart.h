@@ -35,39 +35,47 @@ bool oldDeviceConnected = false;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID_APP "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"            // UART service UUID
-#define CHARACTERISTIC_UUID_RX_APP "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"  // receive
-#define CHARACTERISTIC_UUID_TX_APP "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"  // transmit
+#define SERVICE_UUID_APP "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"           // UART service UUID
+#define CHARACTERISTIC_UUID_RX_APP "6E400002-B5A3-F393-E0A9-E50E24DCCA9E" // receive
+#define CHARACTERISTIC_UUID_TX_APP "6E400003-B5A3-F393-E0A9-E50E24DCCA9E" // transmit
 
-class MyServerCallbacks : public BLEServerCallbacks {
-  void onConnect(BLEServer *pServer) {
+class MyServerCallbacks : public BLEServerCallbacks
+{
+  void onConnect(BLEServer *pServer)
+  {
     deviceConnected = true;
   };
-  void onDisconnect(BLEServer *pServer) {
+  void onDisconnect(BLEServer *pServer)
+  {
     deviceConnected = false;
   }
 };
 byte bleMessageShift = 1;
 int buffLen = 0;
-class MyCallbacks : public BLECharacteristicCallbacks {
-  void onWrite(BLECharacteristic *pCharacteristic) {
+class MyCallbacks : public BLECharacteristicCallbacks
+{
+  void onWrite(BLECharacteristic *pCharacteristic)
+  {
     // Use C-style string handling to avoid std::string compatibility issues
     const char *rxValueCStr = pCharacteristic->getValue().c_str();
     buffLen = pCharacteristic->getValue().length();
     // String rxValue = String(pCharacteristic->getValue().c_str());//it will cause unkown bug when sending 'K'-token skill data via mobile app and break the main program.
-    if (buffLen > 0) {
+    if (buffLen > 0)
+    {
       // long current = millis();
       // PTH("BLE", current - lastSerialTime);
       // Serial.print("From BLE:");
       // Serial.println(rxValueCStr);
-      if (bleMessageShift) {
+      if (bleMessageShift)
+      {
         cmdLen = 0;
         token = rxValueCStr[0];
         lowerToken = tolower(token);
         terminator = (token >= 'A' && token <= 'Z') ? '~' : '\n';
         serialTimeout = (token == T_SKILL_DATA || lowerToken == T_BEEP || token == T_TASK_QUEUE) ? SERIAL_TIMEOUT_LONG : SERIAL_TIMEOUT;
       }
-      for (int i = bleMessageShift; i < buffLen; i++) {
+      for (int i = bleMessageShift; i < buffLen; i++)
+      {
         newCmd[cmdLen++] = rxValueCStr[i];
       }
       bleMessageShift = 0;
@@ -77,9 +85,12 @@ class MyCallbacks : public BLECharacteristicCallbacks {
   }
 };
 
-void readBle() {
-  if (deviceConnected && !bleMessageShift) {
-    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout) {  // wait until the long message is completed
+void readBle()
+{
+  if (deviceConnected && !bleMessageShift)
+  {
+    while ((char)newCmd[cmdLen - 1] != terminator && long(millis() - lastSerialTime) < serialTimeout)
+    { // wait until the long message is completed
       delay(SERIAL_TIMEOUT);
     }
     // PTH("* BLE", millis() - lastSerialTime);
@@ -88,7 +99,8 @@ void readBle() {
     newCmd[cmdLen + 1] = '\0';
     newCmdIdx = 2;
     bleMessageShift = 1;
-    if (token == 'g' && cmdLen == 0) {  // adapt for the mobile app where 'g' toggles acceleration
+    if (token == 'g' && cmdLen == 0)
+    { // adapt for the mobile app where 'g' toggles acceleration
       cmdLen = 1;
       newCmd[0] = fineAdjustQ ? 'f' : 'F';
       newCmd[1] = '\0';
@@ -96,18 +108,15 @@ void readBle() {
   }
 }
 
-void bleSetup() {
+void bleSetup()
+{
   //  Serial.print("UUID: ");
   //  Serial.println(SERVICE_UUID_APP);
   // Create the BLE Device
-#ifdef I2C_EEPROM_ADDRESS
-  PTHL("BLE:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));
-  BLEDevice::init(strcat(readLongByBytes(EEPROM_BLE_NAME), "_BLE"));  // read BLE device name from EEPROM so it's static
-#else
-  String blueID = "" + config.getString("ID", "P") + "_BLE";
-  PTHL("BLE:\t", blueID);
-  BLEDevice::init(blueID.c_str());  // read BLE device name from EEPROM so it's static
-#endif
+  char *bleName = getDeviceName("_BLE");
+  PTHL("BLE:\t", bleName);
+  BLEDevice::init(bleName); // read BLE device name from global uniqueName
+  delete[] bleName;         // Free the allocated memory
   // Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -117,16 +126,16 @@ void bleSetup() {
 
   // Create a BLE Characteristic
   pTxCharacteristic =
-    pService->createCharacteristic(
-      CHARACTERISTIC_UUID_TX_APP,
-      BLECharacteristic::PROPERTY_NOTIFY);
+      pService->createCharacteristic(
+          CHARACTERISTIC_UUID_TX_APP,
+          BLECharacteristic::PROPERTY_NOTIFY);
 
   pTxCharacteristic->addDescriptor(new BLE2902());
 
   BLECharacteristic *pRxCharacteristic =
-    pService->createCharacteristic(
-      CHARACTERISTIC_UUID_RX_APP,
-      BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+      pService->createCharacteristic(
+          CHARACTERISTIC_UUID_RX_APP,
+          BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
   pRxCharacteristic->setCallbacks(new MyCallbacks());
 
@@ -138,23 +147,28 @@ void bleSetup() {
   Serial.println("Waiting for a BLE client connection to notify...");
 }
 
-void bleWrite(String buff) {
-  if (deviceConnected) {
+void bleWrite(String buff)
+{
+  if (deviceConnected)
+  {
     pTxCharacteristic->setValue(buff.c_str());
     pTxCharacteristic->notify();
   }
 }
 
-void detectBle() {
+void detectBle()
+{
   // disconnecting
-  if (!deviceConnected && oldDeviceConnected) {
-    delay(50);                    // give the bluetooth stack the chance to get things ready
-    pServer->startAdvertising();  // restart advertising
+  if (!deviceConnected && oldDeviceConnected)
+  {
+    delay(50);                   // give the bluetooth stack the chance to get things ready
+    pServer->startAdvertising(); // restart advertising
     Serial.println("Bluetooth BLE disconnected!");
     oldDeviceConnected = deviceConnected;
   }
   // connecting
-  if (deviceConnected && !oldDeviceConnected) {
+  if (deviceConnected && !oldDeviceConnected)
+  {
     // do stuff here on connecting
     Serial.println("Bluetooth BLE connected!");
     oldDeviceConnected = deviceConnected;

@@ -439,12 +439,21 @@ void calibrateICM() {
     while (Serial.available())
       Serial.read();
   }
+#ifdef I2C_EEPROM_ADDRESS
+  i2c_eeprom_write_float(EEPROM_ICM, icm.offset_accel[0]);
+  i2c_eeprom_write_float(EEPROM_ICM + 4, icm.offset_accel[1]);
+  i2c_eeprom_write_float(EEPROM_ICM + 8, icm.offset_accel[2]);
+  i2c_eeprom_write_float(EEPROM_ICM + 12, icm.offset_gyro[0]);
+  i2c_eeprom_write_float(EEPROM_ICM + 16, icm.offset_gyro[1]);
+  i2c_eeprom_write_float(EEPROM_ICM + 20, icm.offset_gyro[2]);
+#else
   config.putFloat("icm_accel0", icm.offset_accel[0]);
   config.putFloat("icm_accel1", icm.offset_accel[1]);
   config.putFloat("icm_accel2", icm.offset_accel[2]);
   config.putFloat("icm_gyro0", icm.offset_gyro[0]);
   config.putFloat("icm_gyro1", icm.offset_gyro[1]);
   config.putFloat("icm_gyro2", icm.offset_gyro[2]);
+#endif
   PT("New ICM offsets: ");
   for (byte i = 0; i < 3; i++)
     PTT(icm.offset_accel[i], '\t');
@@ -458,6 +467,21 @@ void icm42670Setup(bool calibrateQ = true) {
   icm.init(200, 2, 250);
   // Wait icm to start
   delay(10);
+
+  bool hasCalibData = false;
+#ifdef I2C_EEPROM_ADDRESS
+  // Check if EEPROM has valid calibration data (non-zero values)
+  float testValue = i2c_eeprom_read_float(EEPROM_ICM);
+  if (testValue != 0.0 && !isnan(testValue)) {
+    icm.offset_accel[0] = i2c_eeprom_read_float(EEPROM_ICM);
+    icm.offset_accel[1] = i2c_eeprom_read_float(EEPROM_ICM + 4);
+    icm.offset_accel[2] = i2c_eeprom_read_float(EEPROM_ICM + 8);
+    icm.offset_gyro[0] = i2c_eeprom_read_float(EEPROM_ICM + 12);
+    icm.offset_gyro[1] = i2c_eeprom_read_float(EEPROM_ICM + 16);
+    icm.offset_gyro[2] = i2c_eeprom_read_float(EEPROM_ICM + 20);
+    hasCalibData = true;
+  }
+#else
   if (config.isKey("icm_accel0")) {
     icm.offset_accel[0] = config.getFloat("icm_accel0");
     icm.offset_accel[1] = config.getFloat("icm_accel1");
@@ -465,6 +489,11 @@ void icm42670Setup(bool calibrateQ = true) {
     icm.offset_gyro[0] = config.getFloat("icm_gyro0");
     icm.offset_gyro[1] = config.getFloat("icm_gyro1");
     icm.offset_gyro[2] = config.getFloat("icm_gyro2");
+    hasCalibData = true;
+  }
+#endif
+
+  if (hasCalibData) {
     PT("Using ICM offsets: ");
     for (byte i = 0; i < 3; i++)
       PTT(icm.offset_accel[i], '\t');
@@ -473,6 +502,7 @@ void icm42670Setup(bool calibrateQ = true) {
     PTL();
   } else
     PTLF("Calibrate for the first time!");
+
   // Calibration Time: generate offsets and calibrate our MPU6050
   if (calibrateQ) {
     calibrateICM();
