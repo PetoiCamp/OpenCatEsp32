@@ -424,7 +424,7 @@ public:
     int prevAngle[4];
     float leftRatio = _sideRatio > 0 ? 1 : (10 + _sideRatio) / 10.0;
     float rightRatio = _sideRatio > 0 ? (10 - _sideRatio) / 10.0 : 1;
-    PTHL(leftRatio, leftRatio);
+    PTHL(leftRatio, rightRatio);
     for (int m = 0; m < sampleLen; m++) {
       for (int8_t l = 0; l < 4; l++) {
         calibratedPWM(8 + l,
@@ -438,7 +438,7 @@ public:
   void printCPG() {
     printToAllPorts("Amp\tside\tswitch\tShiftF\tShiftB\tdelay\tSupport\tSwing\tPhase");
     char message[50];
-    sprintf(message, "%d\t%0.1f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
+    sprintf(message, "%d\t%0.1f\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d",
             _amplitude, _sideRatio / 10.0, _stateSwitchAngle, _midShift[0], _midShift[1], _loopDelay, _skipStep[0], _skipStep[1], _phase[0], _phase[1], _phase[2], _phase[3]);
     printToAllPorts(message);
   }
@@ -458,17 +458,17 @@ void updateCPG() {
     pch = strtok(NULL, " ,\t");
   }
   if (subToken == 'g') {
-    int8_t gaits[][12] = {
-      { 20, 10, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //small
-      { 36, 10, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1 },     //large
-      { 20, 10, 5, -14, 4, 3, 1, 2, 70, 70, 1, 1 },    //bound
-      { 23, 10, 5, -10, 8, 3, 3, 1, 70, 70, 1, 1 },    //bound2
-      { 17, 10, 5, 0, 0, 3, 1, 3, 1, 75, 50, 25 },     //heng
-      { 15, 10, 5, -4, -4, 3, 1, 3, 36, 52, 52, 36 },  //heng2
-      { 18, 10, 5, 0, 0, 3, 1, 2, 35, 46, 35, 46 }     //turnR
+    int8_t gaits[][13] = {
+      { 20, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //small
+      { 36, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //large
+      { 20, 0, 5, -14, 4, 3, 1, 2, 70, 70, 1, 1, '~' },    //bound
+      { 23, 0, 5, -10, 8, 3, 3, 1, 70, 70, 1, 1, '~' },    //bound2
+      { 17, 0, 5, 0, 0, 3, 1, 3, 1, 75, 50, 25, '~' },     //heng
+      { 15, 0, 5, -4, -4, 3, 1, 3, 36, 52, 52, 36, '~' },  //heng2
+      { 18, 0, 5, 0, 0, 3, 1, 2, 35, 46, 35, 46, '~' }     //turnR
     };
     for (byte i = 0; i < 7; i++)
-      tQueue->addTask('r', gaits[i], 3);
+      tQueue->addTask('r', gaits[i], 3000);
   } else {
     if (parsingShift == 0)  //shift
     {
