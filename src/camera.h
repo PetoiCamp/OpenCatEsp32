@@ -335,8 +335,9 @@ void taskReadCamera(void *par) {
 #ifdef GYRO_PIN
         imuLockI2c ||  // wait for the imu to release lock. potentially to cause dead lock with camera
 #endif
-        gestureLockI2c)
-      delay(1);  // wait for the gesture to release lock. potentially to cause dead lock with camera
+        gestureLockI2c ||  // wait for the gesture to release lock. potentially to cause dead lock with camera
+        eepromLockI2c)     // wait for the EEPROM operations to complete
+      delay(1);
     cameraLockI2c = true;
 #endif
 #ifdef MU_CAMERA

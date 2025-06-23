@@ -38,7 +38,7 @@ void setup() {
 
 void loop() {
 #ifdef VOLTAGE
-  // lowBattery();
+  lowBattery();
 #endif
   //  //—self-initiative
   //  if (autoSwitch) { //the switch can be toggled on/off by the 'z' token

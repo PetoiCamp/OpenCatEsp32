@@ -77,7 +77,7 @@
 #define BOARD "B"
 #endif
 
-#define DATE "250622"  // YYMMDD
+#define DATE "250623"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
@@ -467,6 +467,7 @@ bool workingStiffness = true;
 bool cameraLockI2c = false;
 bool imuLockI2c = false;
 bool gestureLockI2c = false;
+bool eepromLockI2c = false;
 
 #define HEAD_GROUP_LEN 4  // used for controlling head pan, tilt, tail, and other joints independent from walking
 int targetHead[HEAD_GROUP_LEN];

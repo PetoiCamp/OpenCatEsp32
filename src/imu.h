@@ -1,3 +1,7 @@
+#ifdef GYRO_PIN
+#include "mpu6050/src/I2Cdev.h"
+#include "mpu6050/src/MPU6050_6Axis_MotionApps_V6_12.h"
+
 bool calibrateQ = false;
 float ypr[3];
 float previous_ypr[3];
@@ -185,16 +189,29 @@ public:
   // the REALACCEL numbers, but if you then flip it upside-down and do the exact same movement ("up" with respect to
   // you), you'll get exactly the same numbers as before, even though the sensor itself is upside-down.
   void calibrateMPU() {
+    PTL("MPU6050 calibration started");
+    
+    // wait for other I2C devices to be idle
+    while (imuLockI2c || gestureLockI2c) delay(1);
+    
     PTLF("Calibrate MPU6050...");
     CalibrateAccel(20);
     CalibrateGyro(20);
+    
 #ifdef I2C_EEPROM_ADDRESS
+    PTL("Writing MPU6050 calibration data...");
+    
+    // exclusive mode for writing calibration data
+    eepromLockI2c = true;
+    
     i2c_eeprom_write_int16(EEPROM_MPU, getXAccelOffset());
     i2c_eeprom_write_int16(EEPROM_MPU + 2, getYAccelOffset());
     i2c_eeprom_write_int16(EEPROM_MPU + 4, getZAccelOffset());
     i2c_eeprom_write_int16(EEPROM_MPU + 6, getXGyroOffset());
     i2c_eeprom_write_int16(EEPROM_MPU + 8, getYGyroOffset());
     i2c_eeprom_write_int16(EEPROM_MPU + 10, getZGyroOffset());
+    
+    eepromLockI2c = false;
 #else
     config.putShort("mpu0", getXAccelOffset());
     config.putShort("mpu1", getYAccelOffset());
@@ -426,7 +443,14 @@ mpu6050p mpu;
 
 imu42670p icm(Wire, 1);
 
+
+
 void calibrateICM() {
+  PTL("ICM42670 calibration started");
+  
+  // wait for other I2C devices to be idle
+  while (imuLockI2c || gestureLockI2c) delay(1);
+  
   PTLF("Calibrate ICM42670...");
   for (byte i = 0; i < 3; i++) {
     icm.offset_accel[i] = 0;
@@ -447,13 +471,21 @@ void calibrateICM() {
     while (Serial.available())
       Serial.read();
   }
+  
 #ifdef I2C_EEPROM_ADDRESS
+  PTL("Writing ICM42670 calibration data...");
+  
+  // exclusive mode for writing calibration data
+  eepromLockI2c = true;
+  
   i2c_eeprom_write_float(EEPROM_ICM, icm.offset_accel[0]);
   i2c_eeprom_write_float(EEPROM_ICM + 4, icm.offset_accel[1]);
   i2c_eeprom_write_float(EEPROM_ICM + 8, icm.offset_accel[2]);
   i2c_eeprom_write_float(EEPROM_ICM + 12, icm.offset_gyro[0]);
   i2c_eeprom_write_float(EEPROM_ICM + 16, icm.offset_gyro[1]);
   i2c_eeprom_write_float(EEPROM_ICM + 20, icm.offset_gyro[2]);
+  
+  eepromLockI2c = false;
 #else
   config.putFloat("icm_accel0", icm.offset_accel[0]);
   config.putFloat("icm_accel1", icm.offset_accel[1]);
@@ -588,6 +620,8 @@ bool readIMU() {
 #endif
     while (gestureLockI2c)
       delay(1);  // wait for the i2c bus to be released by the gesture. potentially to cause dead lock with imu.
+    while (eepromLockI2c)
+      delay(1);  // wait for the i2c bus to be released by the EEPROM operations.
     imuLockI2c = true;
     // Get the stack high water mark
     // uint32_t stackHighWaterMark = uxTaskGetStackHighWaterMark(TASK_imu);
@@ -749,6 +783,7 @@ void taskCalibrateImuUsingCore0(void *parameter) {
   // while (true) {
   // ulTaskNotifyTake(pdTRUE, portMAX_DELAY);  // Wait for notification from Core 1
   //                                           // Received notification so do task work
+  
 #ifdef IMU_MPU6050
   if (mpuQ) {
     printToAllPorts("\n\t*** Current IMU Offsets ***");  // Show current offsets before doing the calibration
@@ -791,9 +826,12 @@ void taskCalibrateImuUsingCore0(void *parameter) {
     calibrateICM();
   }
 #endif
+  
   // Loop to resume waiting
   // }
   updateGyroQ = true;
   printToAllPorts("\nCalibration done.\n");  // for confirming the desktop app
   vTaskDelete(NULL);  // Terminate this task if an error occurs in the loop
 }
+
+#endif

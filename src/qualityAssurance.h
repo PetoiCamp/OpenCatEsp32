@@ -99,7 +99,6 @@ bool testIR() {
   int count = 0, right = 0;
   int current = 0;
   int previous = 10;
-  bool pass = false;
   PTL("\nInfrared test: catch at least 6 consecutive signals\n");
   while (1) {
     if (count == 10 || millis() - start > 1200 || right > 5) {  // test for 1 second

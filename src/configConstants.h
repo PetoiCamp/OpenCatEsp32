@@ -40,20 +40,20 @@ Preferences config;
 #define EEPROM_SIZE (65535 / 8)
 bool EEPROMOverflow = false;
 
-#define EEPROM_BIRTHMARK_ADDRESS 0
-#define EEPROM_MPU 1                   // 2x9 = 18 bytes
-#define EEPROM_ICM 19                  // 6x4 = 24 bytes (float values for ICM42670)
-#define EEPROM_CALIB 44                // 16 bytes (moved due to ICM addition)
-#define EEPROM_BLE_NAME 60             // 20 bytes (moved due to ICM addition)
-#define EEPROM_BOOTUP_SOUND_STATE 80   // 1 byte (moved due to ICM addition)
-#define EEPROM_BUZZER_VOLUME 81        // 1 byte (moved due to ICM addition)
-#define EEPROM_MODULE_ENABLED_LIST 82  // 9 bytes (moved due to ICM addition)
-#define EEPROM_VERSION_DATE 94         // 11 bytes (moved due to ICM addition)
-#define EEPROM_DEFAULT_LAN 106         // 1 byte. 0: English, 1: Chinese
-#define EEPROM_CURRENT_LAN 107         // 1 byte. 0: English, 1: Chinese
-#define EEPROM_WIFI_MANAGER 108        // 1 byte. 0: don't launch, 1: launch wifi manager
-#define EEPROM_RESERVED 109            // reserved for future use
-#define SERIAL_BUFF 120                // moved due to ICM addition, needs to be after all EEPROM definitions
+#define EEPROM_BIRTHMARK_ADDRESS 1     // avoid address 0, offset by 1. Using 0 will randomly reset the value when recalibrating IMU.
+#define EEPROM_MPU 2                   // 2x9 = 18 bytes
+#define EEPROM_ICM 20                  // 6x4 = 24 bytes (float values for ICM42670)
+#define EEPROM_CALIB 45                // 16 bytes
+#define EEPROM_DEVICE_NAME 61          // 20 bytes (shared by BLE, SSP, and WiFi)
+#define EEPROM_BOOTUP_SOUND_STATE 81   // 1 byte
+#define EEPROM_BUZZER_VOLUME 82        // 1 byte
+#define EEPROM_MODULE_ENABLED_LIST 83  // 9 bytes
+#define EEPROM_VERSION_DATE 95         // 11 bytes
+#define EEPROM_DEFAULT_LAN 107         // 1 byte. 0: English, 1: Chinese
+#define EEPROM_CURRENT_LAN 108         // 1 byte. 0: English, 1: Chinese
+#define EEPROM_WIFI_MANAGER 109        // 1 byte. 0: don't launch, 1: launch wifi manager
+#define EEPROM_RESERVED 110            // reserved for future use
+#define SERIAL_BUFF 120                // needs to be after all EEPROM definitions
 
 int dataLen(int8_t p) {
   byte skillHeader = p > 0 ? 4 : 7;
@@ -150,6 +150,11 @@ void i2cDetect(TwoWire &wirePort) {
 
 #ifdef I2C_EEPROM_ADDRESS
 void i2c_eeprom_write_byte(unsigned int eeaddress, byte data) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   int rdata = data;
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
@@ -157,9 +162,16 @@ void i2c_eeprom_write_byte(unsigned int eeaddress, byte data) {
   Wire.write(rdata);
   Wire.endTransmission();
   delay(5);  // needs 5ms for write
+  
+  eepromLockI2c = false;  // release I2C bus lock
 }
 
 byte i2c_eeprom_read_byte(unsigned int eeaddress) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   byte rdata = 0xFF;
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
@@ -168,11 +180,18 @@ byte i2c_eeprom_read_byte(unsigned int eeaddress) {
   Wire.requestFrom(I2C_EEPROM_ADDRESS, 1);
   if (Wire.available())
     rdata = Wire.read();
+    
+  eepromLockI2c = false;  // release I2C bus lock
   return rdata;
 }
 
 // This function will write a 2-byte integer to the EEPROM at the specified address and address + 1
 void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   byte lowByte = ((p_value >> 0) & 0xFF);
   byte highByte = ((p_value >> 8) & 0xFF);
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
@@ -182,6 +201,8 @@ void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
   Wire.write(highByte);
   Wire.endTransmission();
   delay(5);  // needs 5ms for write
+  
+  eepromLockI2c = false;  // release I2C bus lock
 
   //  EEPROM.update(p_address, lowByte);
   //  EEPROM.update(p_address + 1, highByte);
@@ -189,6 +210,11 @@ void i2c_eeprom_write_int16(unsigned int eeaddress, int16_t p_value) {
 
 // This function will read a 2-byte integer from the EEPROM at the specified address and address + 1
 int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   Wire.beginTransmission(I2C_EEPROM_ADDRESS);
   Wire.write((int)(eeaddress >> 8));    // MSB
   Wire.write((int)(eeaddress & 0xFF));  // LSB
@@ -196,11 +222,18 @@ int16_t i2c_eeprom_read_int16(unsigned int eeaddress) {
   Wire.requestFrom(I2C_EEPROM_ADDRESS, 2);
   byte lowByte = Wire.read();
   byte highByte = Wire.read();
+  
+  eepromLockI2c = false;  // release I2C bus lock
   return (int16_t((lowByte << 0) & 0xFF) + ((highByte << 8) & 0xFF00));
 }
 
 // This function will write a 4-byte float to the EEPROM at the specified address
 void i2c_eeprom_write_float(unsigned int eeaddress, float value) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   union {
     float f;
     byte bytes[4];
@@ -215,10 +248,17 @@ void i2c_eeprom_write_float(unsigned int eeaddress, float value) {
   }
   Wire.endTransmission();
   delay(5);  // needs 5ms for write
+  
+  eepromLockI2c = false;  // release I2C bus lock
 }
 
 // This function will read a 4-byte float from the EEPROM at the specified address
 float i2c_eeprom_read_float(unsigned int eeaddress) {
+  // wait for other I2C devices to release the bus
+  while (imuLockI2c || gestureLockI2c)
+    delay(1);
+  eepromLockI2c = true;  // lock I2C bus for EEPROM operations
+  
   union {
     float f;
     byte bytes[4];
@@ -233,6 +273,8 @@ float i2c_eeprom_read_float(unsigned int eeaddress) {
     if (Wire.available())
       floatUnion.bytes[i] = Wire.read();
   }
+  
+  eepromLockI2c = false;  // release I2C bus lock
   return floatUnion.f;
 }
 
@@ -423,7 +465,12 @@ uint16_t i2c_eeprom_read_uint16(unsigned int eeaddress) {
 bool newBoardQ(unsigned int eeaddress = EEPROM_BIRTHMARK_ADDRESS) {
 // PTHL("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
 #ifdef I2C_EEPROM_ADDRESS
-  return i2c_eeprom_read_byte(eeaddress) != BIRTHMARK;
+  // 使用I2C锁保护BIRTHMARK读取，避免与其他I2C操作冲突
+  while (imuLockI2c || gestureLockI2c) delay(1);
+  eepromLockI2c = true;
+  byte birthmarkValue = i2c_eeprom_read_byte(eeaddress);
+  eepromLockI2c = false;
+  return birthmarkValue != BIRTHMARK;
 #else
   return config.getChar("birthmark") != BIRTHMARK;
 #endif
@@ -467,8 +514,8 @@ void genBleID(int suffixDigits = 2) {
   id[prelen + suffixDigits] = '\0';
 
 #ifdef I2C_EEPROM_ADDRESS
-  writeLong(EEPROM_BLE_NAME, id, prelen + suffixDigits);
-  char *temp = readLongByBytes(EEPROM_BLE_NAME);
+      writeLong(EEPROM_DEVICE_NAME, id, prelen + suffixDigits);
+    char *temp = readLongByBytes(EEPROM_DEVICE_NAME);
   if (temp != NULL) {
     uniqueName = String(temp);
     delete[] temp;
@@ -486,7 +533,7 @@ void genBleID(int suffixDigits = 2) {
 
 void customBleID(char *customName, int8_t len) {
 #ifdef I2C_EEPROM_ADDRESS
-  writeLong(EEPROM_BLE_NAME, customName, len + 1);
+      writeLong(EEPROM_DEVICE_NAME, customName, len + 1);
 #else
   config.putString("ID", customName);
 #endif
@@ -605,7 +652,7 @@ void configSetup() {
       moduleActivatedQ[i] = i2c_eeprom_read_byte(EEPROM_MODULE_ENABLED_LIST + i);
     defaultLan = (char)i2c_eeprom_read_byte(EEPROM_DEFAULT_LAN);
     currentLan = (char)i2c_eeprom_read_byte(EEPROM_CURRENT_LAN);
-    char *temp = readLongByBytes(EEPROM_BLE_NAME);
+    char *temp = readLongByBytes(EEPROM_DEVICE_NAME);
     if (temp != NULL) {
       uniqueName = String(temp);
       delete[] temp;
@@ -633,7 +680,7 @@ void configSetup() {
         newId[prelen + suffixDigits] = '\0';
 
         // Save the new ID to EEPROM
-        writeLong(EEPROM_BLE_NAME, newId, prelen + suffixDigits);
+        writeLong(EEPROM_DEVICE_NAME, newId, prelen + suffixDigits);
         uniqueName = String(newId);
         delete[] newId;
       } else {

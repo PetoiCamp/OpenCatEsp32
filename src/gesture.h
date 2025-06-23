@@ -58,6 +58,8 @@ int read_gesture() {
   while (imuLockI2c)
     delay(1);  //wait for the imu to release lock. potentially to cause dead lock with camera
 #endif
+  while (eepromLockI2c)
+    delay(1);  //wait for the EEPROM operations to complete
   gestureLockI2c = true;
   int gesture = GESTURE_NONE;
   if (APDS.gestureAvailable()) 
