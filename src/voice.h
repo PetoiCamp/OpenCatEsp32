@@ -38,7 +38,7 @@ String customizedCmdList[] = {
   "kclapL",       //鼓掌
   "ktossL",       //抛出去
 #else
-  "T",                                                                     // call the last skill data sent by the Skill Composer
+  "rg",                                                                     // call the last skill data sent by the Skill Composer
 #ifdef BITTLE
   "kpu1",                                                                  // single-handed pushups
 #elif defined NYBBLE

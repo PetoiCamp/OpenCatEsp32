@@ -814,6 +814,34 @@ void reaction() {
           updateCPG();
           break;
         }
+      case T_CPG_BIN:
+        {
+          // Binary CPG parameters: 12 int8_t values + '~' terminator
+          // Apply the parameters directly to CPG
+          amplitude = (int8_t)newCmd[0];
+          sideRatio = (int8_t)newCmd[1];
+          stateSwitchAngle = (int8_t)newCmd[2];
+          shift[0] = (int8_t)newCmd[3];
+          shift[1] = (int8_t)newCmd[4];
+          loopDelay = (int8_t)newCmd[5];
+          skipStep[0] = (int8_t)newCmd[6];
+          skipStep[1] = (int8_t)newCmd[7];
+          phase[0] = (int8_t)newCmd[8];
+          phase[1] = (int8_t)newCmd[9];
+          phase[2] = (int8_t)newCmd[10];
+          phase[3] = (int8_t)newCmd[11];
+          
+          if (cpg == NULL)
+            cpg = new CPG(300, skipStep);
+          else if (skipStep[0] != cpg->_skipStep[0] || skipStep[1] != cpg->_skipStep[1]) {
+            delete cpg;
+            cpg = new CPG(300, skipStep);
+          }
+          cpg->setPar(amplitude, sideRatio, stateSwitchAngle, loopDelay, shift, phase);
+          cpg->printCPG();
+          gyroBalanceQ = false;
+          break;
+        }
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
@@ -943,8 +971,10 @@ void reaction() {
       workingStiffness = false;
       transform((int8_t *)newCmd, 1, 2);
     }
-  } else if (token == T_CPG)
-    cpg->sendSignal();
+  } else if (token == T_CPG || token == T_CPG_BIN) {
+    if (cpg != NULL)
+      cpg->sendSignal();
+  }
   else {
     delay(1);  //avoid triggering WDT on BiBoard V0_2
   }

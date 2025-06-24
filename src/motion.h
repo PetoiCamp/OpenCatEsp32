@@ -443,22 +443,26 @@ public:
     printToAllPorts(message);
   }
 };
-CPG *cpg;
+CPG *cpg = NULL;
 void updateCPG() {
   char *pch;
   char subToken = newCmd[0];
   int8_t parsingShift = 1;
   if (isdigit(subToken) || subToken == '-')  //followed by subtoken
     parsingShift = 0;
-  pch = strtok(newCmd + parsingShift, " ,");
-  int pars[10] = {};
+  
+  int pars[12] = {};
   int p = 0;
+  
+  // Text format: parse with strtok
+  pch = strtok(newCmd + parsingShift, " ,");
   while (pch != NULL) {
     pars[p++] = atoi(pch);  //@@@ cast
     pch = strtok(NULL, " ,\t");
   }
+  
   if (subToken == 'g') {
-    int8_t gaits[][13] = {
+    static int8_t gaits[][13] = {
       { 20, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //small
       { 36, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //large
       { 20, 0, 5, -14, 4, 3, 1, 2, 70, 70, 1, 1, '~' },    //bound
@@ -467,8 +471,9 @@ void updateCPG() {
       { 15, 0, 5, -4, -4, 3, 1, 3, 36, 52, 52, 36, '~' },  //heng2
       { 18, 0, 5, 0, 0, 3, 1, 2, 35, 46, 35, 46, '~' }     //turnR
     };
-    for (byte i = 0; i < 7; i++)
-      tQueue->addTask('r', gaits[i], 3000);
+    for (byte i = 0; i < 3; i++)
+      tQueue->addTask(T_CPG_BIN, gaits[i], 2000);
+    tQueue->addTask(T_REST, "",0);
   } else {
     if (parsingShift == 0)  //shift
     {
@@ -489,7 +494,7 @@ void updateCPG() {
       skipStep[1] = pars[1];
       if (cpg != NULL)
         delete cpg;
-      CPG *cpg = new CPG(600, skipStep);
+      cpg = new CPG(600, skipStep);
     } else if (subToken == 'a')  //amplitude
       amplitude = pars[0];
     else if (subToken == 'd')
@@ -506,7 +511,7 @@ void updateCPG() {
       cpg = new CPG(300, skipStep);
     else if (skipStep[0] != cpg->_skipStep[0] || skipStep[1] != cpg->_skipStep[1]) {
       delete cpg;
-      CPG *cpg = new CPG(300, skipStep);
+      cpg = new CPG(300, skipStep);
     }
     cpg->setPar(amplitude, sideRatio, stateSwitchAngle, loopDelay, shift, phase);
     if (subToken == 'q') {

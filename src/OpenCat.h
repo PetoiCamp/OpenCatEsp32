@@ -295,7 +295,8 @@ bool newBoard = false;
 #define T_NAME 'n'                    // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog" \
                                       // it takes effect the next time the board boosup. it won't interrupt the current connecton.
 #define T_MELODY 'o'
-#define T_CPG 'r'    //Oscillator for Central Pattern Generator
+#define T_CPG 'r'      //Oscillator for Central Pattern Generator (ASCII)
+#define T_CPG_BIN 'Q'  //Oscillator for Central Pattern Generator (Binary)
 #define T_PAUSE 'p'  // pause
 #define T_POWER 'P'  // power, print the voltage
 #define T_TASK_QUEUE 'q'

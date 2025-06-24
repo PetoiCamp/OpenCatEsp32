@@ -117,9 +117,10 @@ template<typename T> void printTable(T *list) {
 
 template<typename T> int strlenUntil(T *s, char terminator) {
   int l = 0;
-  while (s[l++] != terminator && l < BUFF_LEN)
-    ;
-  return l - 1;
+  while (l < BUFF_LEN && s[l] != terminator) {
+    l++;
+  }
+  return l;
 }
 
 template<typename T> void printListWithoutString(T *arr, byte len = DOF) {
@@ -211,7 +212,7 @@ void resetCmd() {
   // printCmd();
   lastToken = token;
   newCmdIdx = 0;
-  if (token != T_SKILL && token != T_SKILL_DATA && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && token != T_CPG)
+  if (token != T_SKILL && token != T_SKILL_DATA && token != T_CALIBRATE && token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && token != T_CPG && token != T_CPG_BIN)
     token = '\0';
   newCmd[0] = '\0';
   cmdLen = 0;
