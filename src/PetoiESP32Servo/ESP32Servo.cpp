@@ -55,19 +55,19 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 //
 Servo::Servo()
-{		// initialize this channel with plausible values, except pin # (we set pin # when attached)
-	this->frequency = DEFAULT_REFRESH_CPS;
-	this->ticks = DEFAULT_PULSE_WIDTH_TICKS;
-	this->timer_width = DEFAULT_TIMER_WIDTH;
-	this->pinNumber = -1;     // make it clear that we haven't attached a pin to this channel
-	this->min = DEFAULT_uS_LOW;
-	this->max = DEFAULT_uS_HIGH;
-	this->timer_width_ticks = pow(2,this->timer_width);
-
+{ // initialize this channel with plausible values, except pin # (we set pin # when attached)
+    this->frequency = DEFAULT_REFRESH_CPS;
+    this->ticks = DEFAULT_PULSE_WIDTH_TICKS;
+    this->timer_width = DEFAULT_TIMER_WIDTH;
+    this->pinNumber = -1; // make it clear that we haven't attached a pin to this channel
+    this->min = DEFAULT_uS_LOW;
+    this->max = DEFAULT_uS_HIGH;
+    this->timer_width_ticks = pow(2, this->timer_width);
 }
-ESP32PWM * Servo::getPwm(){
+ESP32PWM *Servo::getPwm()
+{
 
-	return &pwm;
+    return &pwm;
 }
 
 int Servo::attach(int pin)
@@ -76,10 +76,12 @@ int Servo::attach(int pin)
     return (this->attach(pin, DEFAULT_ANGLE_RANGE, DEFAULT_REFRESH_CPS, DEFAULT_uS_LOW, DEFAULT_uS_HIGH));
 }
 
-int Servo::attach(int pin, ServoModel model){
+int Servo::attach(int pin, ServoModel model)
+{
     return (this->attach(pin, model.getAngleRange(), model.getFrequency(), model.getMinPulse(), model.getMaxPulse()));
 }
-int Servo::attach(int pin, ServoModel *model){
+int Servo::attach(int pin, ServoModel *model)
+{
     return (this->attach(pin, model->getAngleRange(), model->getFrequency(), model->getMinPulse(), model->getMaxPulse()));
 }
 
@@ -87,63 +89,62 @@ int Servo::attach(int pin, int range, int frequency, int minPulse, int maxPulse)
 {
 
 #ifdef ENFORCE_PINS
-        // ESP32 Recommend only the following pins 2,4,12-19,21-23,25-27,32-33
-		// ESP32-S2 only the following pins 1-21,26,33-42
-        if (pwm.hasPwm(pin))
-        {
+    // ESP32 Recommend only the following pins 2,4,12-19,21-23,25-27,32-33
+    // ESP32-S2 only the following pins 1-21,26,33-42
+    if (pwm.hasPwm(pin))
+    {
 #endif
-            // OK to proceed; first check for new/reuse
-            if (this->pinNumber < 0) // we are attaching to a new or previously detached pin; we need to initialize/reinitialize
-            {
-                this->ticks = DEFAULT_PULSE_WIDTH_TICKS;
-                this->timer_width = DEFAULT_TIMER_WIDTH;
-                this->timer_width_ticks = pow(2,this->timer_width);
-            }
-            this->pinNumber = pin;
+        // OK to proceed; first check for new/reuse
+        if (this->pinNumber < 0) // we are attaching to a new or previously detached pin; we need to initialize/reinitialize
+        {
+            this->ticks = DEFAULT_PULSE_WIDTH_TICKS;
+            this->timer_width = DEFAULT_TIMER_WIDTH;
+            this->timer_width_ticks = pow(2, this->timer_width);
+        }
+        this->pinNumber = pin;
 #ifdef ENFORCE_PINS
-        }
-        else
-        {
-        	Serial.println("This pin can not be a servo: "+String(pin)+
+    }
+    else
+    {
+        Serial.println("This pin can not be a servo: " + String(pin) +
 #if defined(ARDUINO_ESP32S2_DEV)
-				"\r\nServo availible on: 1-21,26,33-42"
+                       "\r\nServo availible on: 1-21,26,33-42"
 #else
-				"\r\nServo availible on: 2,4,5,12-19,21-23,25-27,32-33"
+                       "\r\nServo availible on: 2,4,5,12-19,21-23,25-27,32-33"
 #endif
-			);
-            return 0;
-        }
+        );
+        return 0;
+    }
 #endif
 
+    // min/max checks. ensure pulse width is valid
+    if (minPulse < MIN_PULSE_WIDTH)
+        minPulse = MIN_PULSE_WIDTH;
+    this->min = minPulse; // store this value in uS
 
-        // min/max checks. ensure pulse width is valid
-        if (minPulse < MIN_PULSE_WIDTH)
-            minPulse = MIN_PULSE_WIDTH;
-        this->min = minPulse;    //store this value in uS
-    
-        if (maxPulse > MAX_PULSE_WIDTH)
-            maxPulse = MAX_PULSE_WIDTH;
-        this->max = maxPulse;    //store this value in uS
-    
-        this->angleRange = range;
-        this->frequency = frequency;
-        int period = 1000 * 1000 / frequency;
-        // this->ticks = DEFAULT_PULSE_WIDTH / (period / this->timer_width_ticks)
-        this->ticks = (int)(DEFAULT_PULSE_WIDTH * (this->timer_width_ticks) / period);
-        // Set up this channel
-        // if you want anything other than default timer width, you must call setTimerWidth() before attach
-        pwm.attachPin(this->pinNumber, this->frequency, this->timer_width );   // GPIO pin assigned to channel
-//        Serial.print(this->pinNumber);
-//        Serial.println("Attaching servo : "+String(pin)+" on PWM "+String(pwm.getChannel()));
-        
-        return 1;
+    if (maxPulse > MAX_PULSE_WIDTH)
+        maxPulse = MAX_PULSE_WIDTH;
+    this->max = maxPulse; // store this value in uS
+
+    this->angleRange = range;
+    this->frequency = frequency;
+    int period = 1000 * 1000 / frequency;
+    // this->ticks = DEFAULT_PULSE_WIDTH / (period / this->timer_width_ticks)
+    this->ticks = (int)(DEFAULT_PULSE_WIDTH * (this->timer_width_ticks) / period);
+    // Set up this channel
+    // if you want anything other than default timer width, you must call setTimerWidth() before attach
+    pwm.attachPin(this->pinNumber, this->frequency, this->timer_width); // GPIO pin assigned to channel
+                                                                        //        Serial.print(this->pinNumber);
+                                                                        //        Serial.println("Attaching servo : "+String(pin)+" on PWM "+String(pwm.getChannel()));
+
+    return 1;
 }
 
 void Servo::detach()
 {
     if (this->attached())
     {
-        //keep track of detached servos channels so we can reuse them if needed
+        // keep track of detached servos channels so we can reuse them if needed
         pwm.detachPin(this->pinNumber);
 
         this->pinNumber = -1;
@@ -168,31 +169,32 @@ void Servo::write(int value)
 void Servo::writeMicroseconds(int value)
 {
     // calculate and store the values for the given channel
-    if (this->attached())   // ensure channel is valid
+    if (this->attached()) // ensure channel is valid
     {
-	    if(value) {
-            if (value < this->min && value != 0)          // ensure pulse width is valid
+        if (value)
+        {
+            if (value < this->min && value != 0) // ensure pulse width is valid
                 value = this->min;
-            else if (value > this->max && value <2800 || value >3500)
+            else if ((value > this->max && value < 2800) || value > 3600)
                 value = this->max;
         }
-        value = usToTicks(value);  // convert to ticks
+        value = usToTicks(value); // convert to ticks
         this->ticks = value;
         // do the actual write
-        pwm.write( this->ticks);
+        pwm.write(this->ticks);
     }
 }
 
 int Servo::read() // return the value as degrees
 {
-    return (map(readMicroseconds()+1, this->min, this->max, 0, angleRange));
+    return (map(readMicroseconds() + 1, this->min, this->max, 0, angleRange));
 }
 
 int Servo::readMicroseconds()
 {
     int pulsewidthUsec;
     if (this->attached())
-    { 
+    {
         pulsewidthUsec = ticksToUs(this->ticks);
     }
     else
@@ -203,8 +205,9 @@ int Servo::readMicroseconds()
     return (pulsewidthUsec);
 }
 
-float Servo::pulseToAngle(float pulse){
-    return map(pulse,this->min, this->max, 0, angleRange*10)/10.0;
+float Servo::pulseToAngle(float pulse)
+{
+    return map(pulse, this->min, this->max, 0, angleRange * 10) / 10.0;
 }
 
 bool Servo::attached()
@@ -219,7 +222,7 @@ void Servo::setTimerWidth(int value)
         value = 16;
     else if (value > 20)
         value = 20;
-        
+
     // Fix the current ticks value after timer width change
     // The user can reset the tick value with a write() or writeUs()
     int widthDifference = this->timer_width - value;
@@ -230,19 +233,19 @@ void Servo::setTimerWidth(int value)
     }
     else if (widthDifference < 0)
     {
-        this->ticks = this->ticks/-widthDifference;
+        this->ticks = this->ticks / -widthDifference;
     }
-    
+
     this->timer_width = value;
-    this->timer_width_ticks = pow(2,this->timer_width);
-    
+    this->timer_width_ticks = pow(2, this->timer_width);
+
     // If this is an attached servo, clean up
     if (this->attached())
     {
         // detach, setup and attach again to reflect new timer width
-    	pwm.detachPin(this->pinNumber);
-    	pwm.attachPin(this->pinNumber, this->frequency, this->timer_width);
-    }        
+        pwm.detachPin(this->pinNumber);
+        pwm.attachPin(this->pinNumber, this->frequency, this->timer_width);
+    }
 }
 
 int Servo::readTimerWidth()
@@ -252,12 +255,10 @@ int Servo::readTimerWidth()
 
 int Servo::usToTicks(int usec)
 {
-    return (int)((float)usec / ((float)REFRESH_USEC / (float)this->timer_width_ticks)*(((float)this->frequency)/50.0));
+    return (int)((float)usec / ((float)REFRESH_USEC / (float)this->timer_width_ticks) * (((float)this->frequency) / 50.0));
 }
 
 int Servo::ticksToUs(int ticks)
 {
-    return (int)((float)ticks * ((float)REFRESH_USEC / (float)this->timer_width_ticks)/(((float)this->frequency)/50.0));
+    return (int)((float)ticks * ((float)REFRESH_USEC / (float)this->timer_width_ticks) / (((float)this->frequency) / 50.0));
 }
-
- 

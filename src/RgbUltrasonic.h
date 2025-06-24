@@ -16,12 +16,12 @@
 #define RGB_PURPLE 0x220022
 #define RGB_WHITE 0x222222
 
-//#define RGB_RED     0xFF0000
-//#define RGB_GREEN   0x00FF00
-//#define RGB_BLUE    0x0000FF
-//#define RGB_YELLOW  0xFFFF00
-//#define RGB_PURPLE  0xFF00FF
-//#define RGB_WHITE   0xFFFFFF
+// #define RGB_RED     0xFF0000
+// #define RGB_GREEN   0x00FF00
+// #define RGB_BLUE    0x0000FF
+// #define RGB_YELLOW  0xFFFF00
+// #define RGB_PURPLE  0xFF00FF
+// #define RGB_WHITE   0xFFFFFF
 
 typedef enum {
   E_RGB_ALL = 0,
@@ -40,6 +40,7 @@ class RgbUltrasonic {
 private:
   byte SignalPin, RgbPin;
   Adafruit_NeoPixel *mRgb;
+
 public:
   float FrontDistance;
   int measurementInterval;
@@ -55,7 +56,7 @@ public:
     Serial.println("set up ultrasonic sensor");
     delay(100);
   }
-  float GetUltrasonicDistance(void) {  //in cm
+  float GetUltrasonicDistance(void) {  // in cm
     if (millis() - lastMeasurementTime >= measurementInterval) {
       unsigned long Time_Echo_us = 0;
       pinMode(SignalPin, OUTPUT);
@@ -66,7 +67,7 @@ public:
       digitalWrite(SignalPin, LOW);
       pinMode(SignalPin, INPUT);
       Time_Echo_us = pulseIn(SignalPin, HIGH);
-      if ((Time_Echo_us < measurementInterval * 1000) && (Time_Echo_us > 1)) {  //max 172cm
+      if ((Time_Echo_us < measurementInterval * 1000) && (Time_Echo_us > 1)) {  // max 172cm
         FrontDistance = Time_Echo_us / 58.00;
       }
       lastMeasurementTime = millis();
@@ -84,7 +85,7 @@ public:
     if (index == E_RGB_ALL)
       for (byte i = 0; i < 6; i++) {
         mRgb->setPixelColor(i, 0);
-        mRgb->show();  //the light has to be refreshed
+        mRgb->show();  // the light has to be refreshed
         mRgb->setPixelColor(i, Color);
       }
     else if (index == E_RGB_RIGHT) {
@@ -114,7 +115,7 @@ public:
           SetRgbColor(index, color(max(rgb[0] - i, long(5)), max(rgb[1] - i, long(5)), max(rgb[2] - i, long(5))));
           delay((i < 20) ? 10 : (256 / i));
         }
-        for (byte i = 255; i >= 5; i -= 5) {  //avoid the light completely turning off
+        for (byte i = 255; i >= 5; i -= 5) {  // avoid the light completely turning off
           SetRgbColor(index, color(max(rgb[0] - i, long(5)), max(rgb[1] - i, long(5)), max(rgb[2] - i, long(5))));
           delay((i < 20) ? 10 : (256 / i));
         }

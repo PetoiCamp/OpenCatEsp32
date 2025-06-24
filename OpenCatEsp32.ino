@@ -7,7 +7,6 @@
 // #define MINI
 
 
-
 // #define BiBoard_V0_1  //ESP32 Board with 12 channels of built-in PWM for joints
 // #define BiBoard_V0_2
 #define BiBoard_V1_0
@@ -17,8 +16,7 @@
 // Send '!' token to reset the birthmark in the EEPROM so that the robot will restart to reset
 // #define AUTO_INIT  //activate it to automatically reset joint and imu calibration without prompts
 
-// you can also activate the following modes (they will diable the gyro to save programming space)
-// allowed combinations: RANDOM_MIND + ULTRASONIC, RANDOM_MIND, ULTRASONIC, VOICE, CAMERA
+// you can also activate the following modes by the 'X' token defined in src/OpenCat.h
 #define VOICE                     // Petoi Grove voice module
 #define ULTRASONIC                // for Petoi RGB ultrasonic distance sensor
 #define PIR                       // for PIR (Passive Infrared) sensor
@@ -52,7 +50,7 @@ void loop() {
   //
   //  }
   //  //— read environment sensors (low level)
-  readEnvironment();
+  readEnvironment();  // update the gyro data
   //  //— special behaviors based on sensor events
   dealWithExceptions();  // low battery, fall over, lifted, etc.
   if (!tQueue->cleared()) {
@@ -74,6 +72,10 @@ void loop() {
   playLight();
 #endif
   reaction();
+
+#ifdef WEB_SERVER
+  WebServerLoop();  // 处理异步Web请求
+#endif
 }
 
 #ifdef QUICK_DEMO  // enter XQ in the serial monitor to activate the following section

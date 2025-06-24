@@ -42,9 +42,33 @@ public:
     PTH("add front", p);
     this->push_front(new Task(t, p, d));
   }
-  void createTask() {  // this is an example task
-    this->addTask('k', "vtF", 2000);
-    this->addTask('k', "up");
+  void createTask() {  // use 'q' to start the sequence.
+                       // add subToken followed by the subCommand
+                       // use ':' to add the delay time (mandatory)
+                       // add '~' to end the sub command
+                       // example: qk sit:1000~m 8 0 8 -30 8 0:500~
+    // PTL(newCmd);
+    char *sub;
+    sub = strtok(newCmd, ":");
+    while (sub != NULL) {
+      char subToken = *sub++;
+      while (*sub == ' ' || *sub == '\t')  //remove the space between the subToken and the subCommand
+        sub++;
+      if (*sub == '\0')
+        break;
+      int subLen = strlen(sub);
+      PTHL("sublen", subLen);
+      char *subCmd = new char[subLen + 1];
+      strcpy(subCmd, sub);
+      sub = strtok(NULL, ">");
+      int subDuration = atoi(sub);
+      sub = strtok(NULL, ":");
+      PTH(subToken, subCmd);
+      PTHL(": ", subDuration);
+      this->addTask(subToken, subCmd, subDuration);
+      delete[] subCmd;
+    }
+    // this->addTask('k', "up");
   }
   bool cleared() {
     return this->size() == 0 && long(millis() - taskTimer) > taskInterval;

@@ -1,42 +1,12 @@
 #include "soc/gpio_sig_map.h"
 
-void read_sound() {
-}
+// — read master computer’s signals (middle level) —
 
-void read_GPS() {
-}
-#ifdef TOUCH0
-void read_touch() {
-  byte touchPin[] = {
-    TOUCH0,
-    TOUCH1,
-    TOUCH2,
-    TOUCH3,
-  };
-  for (byte t = 0; t < 4; t++) {
-    int touchValue = touchRead(touchPin[t]);  //do something with the touch?
-    //    PT(touchValue);
-    //    PT('\t');
-  }
-  //  PTL();
-}
-#endif
-void readEnvironment() {
-#ifdef GYRO_PIN
-  if (gyroBalanceQ && !(frame % imuSkip))
-    imuUpdated = read_mpu6050();
-#endif
-  read_sound();
-  read_GPS();
-}
-
-//— read master computer’s signals (middle level) —
-
-//This example code is in the Public Domain (or CC0 licensed, at your option.)
-//By Richard Li - 2020
+// This example code is in the Public Domain (or CC0 licensed, at your option.)
+// By Richard Li - 2020
 //
-//This example creates a bridge between Serial and Classical Bluetooth (SSP with authentication)
-//and also demonstrate that SerialBT has the same functionalities as a normal Serial
+// This example creates a bridge between Serial and Classical Bluetooth (SSP with authentication)
+// and also demonstrate that SerialBT has the same functionalities as a normal Serial
 
 #ifdef BT_SSP
 #include "BluetoothSerial.h"
@@ -69,52 +39,49 @@ void blueSspSetup() {
   SerialBT.enableSSP();
   SerialBT.onConfirmRequest(BTConfirmRequestCallback);
   SerialBT.onAuthComplete(BTAuthCompleteCallback);
-#ifdef I2C_EEPROM_ADDRESS
-  PTHL("SSP:\t", strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));
-  SerialBT.begin(strcat(readLongByBytes(EEPROM_BLE_NAME), "_SSP"));  //Bluetooth device name
-#else
-  String blueID = "" + config.getString("ID", "P") + "_SSP";
-  PTHL("SSP:\t", blueID);
-  SerialBT.begin(blueID.c_str());  //Bluetooth device name
-#endif
+  char *sspName = getDeviceName("_SSP");
+  PTHL("SSP:\t", sspName);
+  SerialBT.begin(sspName);  // Bluetooth device name
+  delete[] sspName;         // Free the allocated memory
   Serial.println("The SSP device is started, now you can pair it with Bluetooth!");
 }
 
-//void readBlueSSP() {
-//  if (confirmRequestPending)
-//  {
-//    if (Serial.available())
-//    {
-//      int dat = Serial.read();
-//      if (dat == 'Y' || dat == 'y')
-//      {
-//        SerialBT.confirmReply(true);
-//      }
-//      else
-//      {
-//        SerialBT.confirmReply(false);
-//      }
-//    }
-//  }
-//  else
-//  {
-//    if (Serial.available())
-//    {
-//      SerialBT.write(Serial.read());
-//    }
-//    if (SerialBT.available())
-//    {
-//      Serial.write(SerialBT.read());
-//    }
-//    delay(20);
-//  }
-//}
+// void readBlueSSP() {
+//   if (confirmRequestPending)
+//   {
+//     if (Serial.available())
+//     {
+//       int dat = Serial.read();
+//       if (dat == 'Y' || dat == 'y')
+//       {
+//         SerialBT.confirmReply(true);
+//       }
+//       else
+//       {
+//         SerialBT.confirmReply(false);
+//       }
+//     }
+//   }
+//   else
+//   {
+//     if (Serial.available())
+//     {
+//       SerialBT.write(Serial.read());
+//     }
+//     if (SerialBT.available())
+//     {
+//       Serial.write(SerialBT.read());
+//     }
+//     delay(20);
+//   }
+// }
 
-//end of Richard Li's code
+// end of Richard Li's code
 
 #endif
 
-template<typename T> void printToAllPorts(T text) {
+template<typename T>
+void printToAllPorts(T text, bool newLine = true) {
 #ifdef BT_BLE
   if (deviceConnected)
     bleWrite(String(text));
@@ -123,7 +90,18 @@ template<typename T> void printToAllPorts(T text) {
   if (BTconnected)
     SerialBT.println(text);
 #endif
-  if (moduleActivatedQ[0])  //serial2
+#ifdef WEB_SERVER
+  if (cmdFromWeb) {
+    if (String(text) != "=") {
+      webResponse += String(text);
+      if (newLine)
+        webResponse += '\n';
+    }
+  }
+#endif
+  if (moduleActivatedQ[0])  // serial2
     Serial2.println(text);
-  PTL(text);
+  PT(text);
+  if (newLine)
+    PTL();
 }

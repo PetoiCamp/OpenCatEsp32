@@ -1,146 +1,208 @@
+#include "esp32-hal.h"
+
+// 异步web服务器函数声明
+#ifdef WEB_SERVER
+void completeWebTask();
+void errorWebTask(String errorMessage);
+void finishWebCommand();
+#endif
+
 void dealWithExceptions() {
 #ifdef GYRO_PIN
-  if (gyroBalanceQ && exceptions) {  // the gyro reaction switch can be toggled on/off by the 'g' token
-    switch (exceptions) {
-      case -1:
-        {
-          PTL("EXCEPTION 1");
-          strcpy(newCmd, "lnd");
-          loadBySkillName(newCmd);
-          shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
-          delay(1000);
-          token = 'k';
-          strcpy(newCmd, "up");
-          newCmdIdx = -1;
-          break;
-        }
-      case -2:
-        {
-          PTL("EXCEPTION: Fall over");
-          soundFallOver();
-          //  for (int m = 0; m < 2; m++)
-          //    meow(30 - m * 12, 42 - m * 12, 20);
-          token = 'k';
-          manualHeadQ = false;
-          strcpy(newCmd, "rc");
-          newCmdIdx = -2;
-          // tQueue->addTaskToFront('k', "rc");
-          break;
-        }
-      case -3:
-        {
-          if (tQueue->cleared() && skill->period == 1) {
-            PTL("EXCEPTION: Knocked");
-            tQueue->addTask('k', "knock");
-#if defined NYBBLE && defined ULTRASONIC
-            if (!moduleActivatedQ[0]) {  // serial2)
-              int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
-              int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
-              tQueue->addTask('C', clrRed, 1);
-              tQueue->addTask('C', clrBlue);
+  if (gyroBalanceQ) {
+    // if (imuException == IMU_EXCEPTION_FLIPPED || (skill->period == 1 && fabs(xyzReal[2]) >= 15) || (skill->period > 1
+    // && abs(xyzReal[2]) >= 20)) {
+    //   delay(50);
+    // }
+    if (imuException) {  // the gyro reaction switch can be toggled on/off by the 'g' token
+      switch (imuException) {
+        case IMU_EXCEPTION_LIFTED:
+          {
+            if (skill->period == 1 && prev_imuException != IMU_EXCEPTION_LIFTED) {
+              if (ypr[1] < -50)
+                strcpy(newCmd, "lifted");
+              else
+                strcpy(newCmd, "dropped");
+              loadBySkillName(newCmd);
+              token = 'k';
             }
-#endif
-            tQueue->addTask('k', "up");
+            break;
           }
-          break;
-        }
-      case -4:
-        {
-          PTL("EXCEPTION: Pushed");
-          // Acceleration Real
-          //      ^ head
-          //        ^ x+
-          //        |
-          //  y+ <------ y-
-          //        |
-          //        | x-
-          if (skill->period == 1 && strncmp(lastCmd, "vt", 2)) {
-            char xSymbol[] = { '^', 'v' };
-            char ySymbol[] = { '<', '>' };
-            char xDirection = xSymbol[sign(ARX) > 0];
-            char yDirection = ySymbol[sign(ARY) > 0];
-            float forceAngle = atan(float(abs(ARX)) / ARY) * degPerRad;
-            PT(abs(ARX) > abs(ARY) ? xDirection : yDirection);
-            PTHL(" ForceAngle:", forceAngle);
-            if (tQueue->cleared()) {
-              if (xDirection == '^') {
-                // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
-                if (abs(forceAngle) < 75)
-                  // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
-                  tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
-                // tQueue->addTask('i', "");
-                else {
-                  tQueue->addTask('k', "wkF", 700);
+        case IMU_EXCEPTION_FREEFALL:
+          {
+            PTL("EXCEPTION free fall");
+            strcpy(newCmd, "lnd");
+            loadBySkillName(newCmd);
+            shutServos();  // does not shut the P1S servo.while token p in serial monitor can.? ? ?
+            delay(1000);
+            token = 'k';
+            strcpy(newCmd, "up");
+            newCmdIdx = -1;
+            break;
+          }
+        case IMU_EXCEPTION_FLIPPED:
+          {
+            PTL("EXCEPTION: Fall over");
+            soundFallOver();
+            //  for (int m = 0; m < 2; m++)
+            //    meow(30 - m * 12, 42 - m * 12, 20);
+            token = 'k';
+            manualHeadQ = false;
+            strcpy(newCmd, "rc");
+            newCmdIdx = -2;
+            // tQueue->addTaskToFront('k', "rc");
+            break;
+          }
+        case IMU_EXCEPTION_KNOCKED:
+          {
+            if (tQueue->cleared() && skill->period == 1) {
+              PTL("EXCEPTION: Knocked");
+              tQueue->addTask('k', "knock");
+#if defined NYBBLE && defined ULTRASONIC
+              if (!moduleActivatedQ[0]) {  // serial2 may be used to connect serial2 rather than the RGB ultraconic sensor
+                int8_t clrRed[] = { 125, 0, 0, 0, 0, 126 };
+                int8_t clrBlue[] = { 0, 0, 125, 0, 0, 126 };
+                tQueue->addTask('C', clrRed, 1);
+                tQueue->addTask('C', clrBlue);
+              }
+#endif
+              tQueue->addTask('k', "up");
+            }
+            break;
+          }
+        case IMU_EXCEPTION_PUSHED:
+          {
+            PTL("EXCEPTION: Pushed");
+            // Acceleration Real
+            //      ^ head
+            //        ^ x+
+            //        |
+            //  y+ <------ y-
+            //        |
+            //        | x-
+            if (skill->period == 1 && strncmp(lastCmd, "vtF", 2)) {
+              char xSymbol[] = { '^', 'v' };
+              char ySymbol[] = { '<', '>' };
+              char xDirection = xSymbol[sign(ARX) > 0];
+              char yDirection = ySymbol[sign(ARY) > 0];
+              float forceAngle = atan(float(fabs(ARX)) / ARY) * degPerRad;
+              PT(fabs(ARX) > fabs(ARY) ? xDirection : yDirection);
+              PTHL(" ForceAngle:", forceAngle);
+              if (tQueue->cleared()) {
+                if (xDirection == '^') {
+                  // tQueue->addTask('i', yDirection == '<' ? "0 -75" : "0 75");
+                  if (fabs(forceAngle) < 60)
+                    // tQueue->addTask('i', yDirection == '<' ? "0 45" : "0 -45");
+                    tQueue->addTask('k', yDirection == '<' ? "wkL" : "wkR", 700);
                   // tQueue->addTask('i', "");
-                  tQueue->addTask('k', "bkF", 500);
-                }
-              } else {
-                // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
-                if (abs(forceAngle) < 75)
-                  tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
-                else {
-                  tQueue->addTask('k', "bkF", 500);
-                  tQueue->addTask('k', "wkF", 700);
+                  else {
+                    tQueue->addTask('k', "wkF", 700);
+                    // tQueue->addTask('i', "");
+                    tQueue->addTask('k', "bkF", 500);
+                  }
+                } else {
+                  // tQueue->addTask('k', yDirection == '<' ? "bkR" : "bkL", 1000);
+                  if (fabs(forceAngle) < 60)
+                    tQueue->addTask('k', yDirection == '<' ? "wkR" : "wkL", 700);
+                  else {
+                    tQueue->addTask('k', "bkF", 500);
+                    tQueue->addTask('k', "wkF", 700);
+                  }
                 }
               }
-            }
-            tQueue->addTask('k', "up");
-            delayPrevious = runDelay;
-            runDelay = 3;
-            PTL();
-          }
-          break;
-        }
-      case -5:
-        {
-          PTL("EXCEPTION: Turned");
-          char *currentGait = skill->skillName;  // it may not be gait
-          char gaitDirection = currentGait[strlen(currentGait) - 1];
-          float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
-          if (tQueue->cleared()) {
-            if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  // not gait or stepping
-              tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(abs(yawDiff) * 15));
-              // tQueue->addTask('k', "up", 100);
+              tQueue->addTask('k', "up");
               delayPrevious = runDelay;
-              runDelay = 3;
-            } else {
-              // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
-              previous_ypr[0] = ypr[0];
+              runDelay = delayException;
+              PTL();
             }
-            // else {
-            //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
-            //     previous_ypr[0] = ypr[0];
-            //   } else {
-            //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
-            //     PTL(currentGait);
-            //     tQueue->addTask('k', currentGait, round(abs(yawDiff) * 15));
-            //     currentGait[strlen(currentGait) - 1] = 'F';
-            //     PTL(currentGait);
-            //     tQueue->addTask('k', currentGait);
-            //   }
-            // }
+            break;
           }
-          break;
-        }
-      default:
-        {
-          break;
-        }
+        case IMU_EXCEPTION_OFFDIRECTION:
+          {
+            PTL("EXCEPTION: off direction");
+            // char *currentGait = skill->skillName;  // it may not be gait
+            // char gaitDirection = currentGait[strlen(currentGait) - 1];
+            float yawDiff = int(ypr[0] - previous_ypr[0]) % 180;
+            if (tQueue->cleared()) {
+              if (skill->period <= 1 || !strcmp(skill->skillName, "vtF")) {  // not gait or stepping
+                tQueue->addTask('k', yawDiff > 0 ? "vtR" : "vtL", round(fabs(yawDiff) * 15));
+                // tQueue->addTask('k', "up", 100);
+                delayPrevious = runDelay;
+                runDelay = delayException;
+              } else {
+                // if (gaitDirection == 'L' || gaitDirection == 'R')   //turning gait
+                previous_ypr[0] = ypr[0];
+              }
+              // else {
+              //   if (gaitDirection == 'L' || gaitDirection == 'R') {  //turning gait
+              //     previous_ypr[0] = ypr[0];
+              //   } else {
+              //     currentGait[strlen(currentGait) - 1] = yawDiff > 0 ? 'R' : 'L';
+              //     PTL(currentGait);
+              //     tQueue->addTask('k', currentGait, round(fabs(yawDiff) * 15));
+              //     currentGait[strlen(currentGait) - 1] = 'F';
+              //     PTL(currentGait);
+              //     tQueue->addTask('k', currentGait);
+              //   }
+              // }
+            }
+            break;
+          }
+        default:
+          {
+            break;
+          }
+      }
+      // if (imuException != IMU_EXCEPTION_PUSHED)
+      prev_imuException = imuException;
+      print6Axis();
+      // readIMU();  // flush the IMU to avoid static readings and infinite loop
+
+      // if (tQueue->lastTask == NULL) {
+      //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) !=
+      //   'R') {
+      //     PTH("save last task ", lastCmd);
+      //     tQueue->lastTask = new Task('k', lastCmd);
+      //   }
+      // }
+    } else {
+#ifndef ROBOT_ARM
+      if (tQueue->cleared() && prev_imuException == IMU_EXCEPTION_LIFTED) {
+        // strcpy(newCmd, "dropRec");
+        // loadBySkillName(newCmd);
+        // token = 'k';
+        tQueue->addTask('k', "dropRec", 500);
+      }
+#endif
+      prev_imuException = imuException;
     }
-
-    // if (exceptions != -4)
-    print6Axis();
-    read_mpu6050();  // flush the IMU to avoid static readings and infinite loop
-
-    // if (tQueue->lastTask == NULL) {
-    //   if (strcmp(lastCmd, "") && strcmp(lastCmd, "lnd") && *strGet(newCmd, -1) != 'L' && *strGet(lastCmd, -1) != 'R') {
-    //     PTH("save last task ", lastCmd);
-    //     tQueue->lastTask = new Task('k', lastCmd);
-    //   }
-    // }
   }
-// if (tQueue->cleared() && runDelay <= delayException)
-//   runDelay = delayPrevious;
+  if (tQueue->cleared() && runDelay <= delayException)
+    runDelay = delayMid;
+#endif
+
+#ifdef WEB_SERVER  // check if to reset the wifi manager and reboot
+  if (digitalRead(0) == LOW) {
+#ifdef I2C_EEPROM_ADDRESS
+    i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, true);
+#else
+    config.putBool("WifiManager", true);  // default is false
+#endif
+    PTLF("The robot will reboot and use Wifi manager.");
+    PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.\n**********\n\n");
+    int wifiCountdown = 10;
+    while (digitalRead(0) == LOW && wifiCountdown) {
+      delay(200);
+      PT(wifiCountdown--);
+      PT("..");
+    }
+    PTL();
+    if (wifiCountdown == 0) {
+      resetWifiManager();
+    }
+    delay(200);
+    ESP.restart();
+  }
 #endif
 }
 
@@ -148,6 +210,7 @@ void dealWithExceptions() {
 // V_real = V_read / 4096 * 3.3 * ratio
 // V_real = V_read / vFactor, vFactor = 4096 / 3.3 / ratio
 // a more accurate fitting for V1_0 is V_real = V_read / 515 + 1.95
+
 #ifdef VOLTAGE
 bool lowBattery() {
   long currentTime = millis() / CHECK_BATTERY_PERIOD;
@@ -160,10 +223,10 @@ bool lowBattery() {
     voltage = voltage / 414;
 #endif
     if (voltage < NO_BATTERY_VOLTAGE2
-        || (voltage < LOW_VOLTAGE2                                     // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-            || voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE)  // powered by 7.4V
-             && abs(voltage - lastVoltage) < 0.2                       // not caused by power fluctuation during movements
-    ) {                                                                // if battery voltage is low, it needs to be recharged
+        || ((voltage < LOW_VOLTAGE2                                       // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+             || (voltage > NO_BATTERY_VOLTAGE && voltage < LOW_VOLTAGE))  // powered by 7.4V
+            && fabs(voltage - lastVoltage) < 0.2)                         // not caused by power fluctuation during movements
+    ) {                                                                   // if battery voltage is low, it needs to be recharged
       // give the robot a break when voltage drops after sprint
       // adjust the thresholds according to your batteries' voltage
       // if set too high, the robot will stop working when the battery still has power.
@@ -180,7 +243,7 @@ bool lowBattery() {
       if (!batteryWarningCounter) {
         PTF("Low power: ");
         PT(voltage);
-        PTL("V");
+        PTLF("V. The robot won't move.");
         PTLF("Long-press the battery's button to turn it on!");
 #ifdef I2C_EEPROM_ADDRESS
         if (i2c_eeprom_read_byte(EEPROM_BOOTUP_SOUND_STATE))
@@ -191,19 +254,20 @@ bool lowBattery() {
       }
       batteryWarningCounter = (batteryWarningCounter + 1) % BATTERY_WARNING_FREQ;
       //    strip.show();
-      int8_t bStep = 1;
-      for (byte brightness = 1; brightness > 0; brightness += bStep) {
-#ifdef NEOPIXEL_PIN
-        strip.setPixelColor(0, strip.Color(brightness, 0, 0));
-        strip.show();
-#endif
-#ifdef PWM_LED_PIN
-        analogWrite(PWM_LED_PIN, 255 - brightness);
-#endif
-        if (brightness == 255)
-          bStep = -1;
-        delay(5);
-      }
+      //       int8_t bStep = 1;
+      //       for (byte brightness = 1; brightness > 0; brightness += bStep) {
+      // #ifdef NEOPIXEL_PIN
+      //         strip.setPixelColor(0, strip.Color(brightness, 0, 0));
+      //         strip.show();
+      // #endif
+      // #ifdef PWM_LED_PIN
+      // if (autoLedQ)
+      //         analogWrite(PWM_LED_PIN, 255 - brightness);
+      // #endif
+      //         if (brightness == 255)
+      //           bStep = -1;
+      //         delay(5);
+      //       }
       lastVoltage = voltage;
       return true;
     }
@@ -214,13 +278,21 @@ bool lowBattery() {
       safeRest = false;
     }
     lastVoltage = voltage;
-    if ((voltage > LOW_VOLTAGE                                         // powered by 7.4V
-         || (voltage > LOW_VOLTAGE2 && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
-        && lowBatteryQ) {
-      if (voltage > LOW_VOLTAGE)
-        PTL("Got 7.4 V power");
-      else
-        PTL("Got 6.0 V power");
+    if ((voltage > LOW_VOLTAGE + 0.2  // powered by 7.4V
+         || (voltage > LOW_VOLTAGE2 + 0.2
+             && voltage < NO_BATTERY_VOLTAGE))  // powered by 6V, voltage >= NO_BATTERY && voltage < LOW_VOLTAGE2
+        && lowBatteryQ)                         // +0.2 to avoid fluctuation around the threshold
+    {
+      // if (voltage > LOW_VOLTAGE + 0.2){
+      //   PT("Got ");
+      //   PT(voltage);
+      //   PTL(" V power");
+      // }
+      // else
+      //   PTL("Got 6.0 V power");
+      PT("Got ");
+      PT(voltage);
+      PTL(" V power");
       playMelody(melodyOnBattery, sizeof(melodyOnBattery) / 2);
       lowBatteryQ = false;
       batteryWarningCounter = 0;
@@ -230,31 +302,40 @@ bool lowBattery() {
 }
 #endif
 
-void reaction() {
+void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever" loop() of OpenCatEsp32.ino
   if (newCmdIdx) {
     // PTLF("-----");
     lowerToken = tolower(token);
-    if (initialBoot) {  //-1 for marking the bootup calibration state
-      fineAdjust = true;
+    if (initialBoot) {  //-1 for marking the boot-up calibration state
+      fineAdjustQ = true;
+      // updateGyroQ = true;
       gyroBalanceQ = true;
       autoSwitch = RANDOM_MIND;
       initialBoot = false;
     }
 #ifdef PWM_LED_PIN
-    digitalWrite(PWM_LED_PIN, HIGH);
+    if (autoLedQ)
+      digitalWrite(PWM_LED_PIN, HIGH);
 #endif
     if (token != T_REST && newCmdIdx < 5)
       idleTimer = millis();
-    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE)
+    if (newCmdIdx < 5 && lowerToken != T_BEEP && token != T_MEOW && token != T_LISTED_BIN
+        && token != T_INDEXED_SIMULTANEOUS_BIN && token != T_TILT && token != T_READ && token != T_WRITE
+        && token != T_JOYSTICK)
       beep(15 + newCmdIdx, 5);  // ToDo: check the muted sound when newCmdIdx = -1
-    if (!workingStiffness && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
+    if (!workingStiffness
+        && (lowerToken == T_SKILL || lowerToken == T_INDEXED_SEQUENTIAL_ASC
+            || lowerToken == T_INDEXED_SIMULTANEOUS_ASC)) {
 #ifdef T_SERVO_MICROSECOND
       setServoP(P_WORKING);
       workingStiffness = true;
 #endif
     }
-    if ((lastToken == T_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd")) && token != T_CALIBRATE) {
-      gyroBalanceQ = true;
+    if ((lastToken == T_SERVO_CALIBRATE || lastToken == T_REST || lastToken == T_SERVO_FOLLOW || !strcmp(lastCmd, "fd"))
+        && token != T_SERVO_CALIBRATE) {
+      // updateGyroQ = true;
+      gyroBalanceQ = true;  // This is the default state for this "Q" boolean with all tokens except (T_SERVO_CALIBRATE
+                            // && when lastToken is one of the listed values)
       printToAllPorts('G');
     }
     if (token != T_PAUSE && !tStep) {
@@ -263,18 +344,38 @@ void reaction() {
     }
 #ifdef ESP_PWM
     if (token != T_SERVO_FEEDBACK && token != T_SERVO_FOLLOW && measureServoPin != -1) {
-      reAttachAllServos();
-      measureServoPin = -1;
       for (byte i = 0; i < DOF; i++)
         movedJoint[i] = 0;
+      reAttachAllServos();
+      measureServoPin = -1;
+      readFeedbackQ = false;    // This is the default value for this "Q" boolean condition with all tokens except (those
+                                // in the conditional && measureServoPin != -1)
+      followFeedbackQ = false;  // This is the default state for this "Q" boolean condition with all tokens except
+                                // (those in the conditional && measureServoPin != -1)
     }
 #endif
 
     switch (token) {
+      case T_HELP_INFO:
+        {
+          PTLF("* Please refer to docs.petoi.com.\nEnter any character to continue.");
+          while (!Serial.available())
+            ;
+          break;
+        }
       case T_QUERY:
         {
-          printToAllPorts(MODEL);
-          printToAllPorts(SoftwareVersion);
+          if (cmdLen == 0) {
+            printToAllPorts(MODEL);
+            printToAllPorts(SoftwareVersion);
+          } else {
+            byte i = 0;
+            while (newCmd[i] != '\0') {
+              if (newCmd[i] == C_QUERY_PARTITION)
+                displayNsvPartition();
+              i++;
+            }
+          }
           break;
         }
       case T_NAME:
@@ -282,21 +383,59 @@ void reaction() {
           if (cmdLen > 16)
             printToAllPorts("ERROR! The name should be within 16 characters!");
           else if (cmdLen)
-            customBleID(newCmd, cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
-                                          // it takes effect the next time the board boosup. it won't interrupt the current connecton.
+            customBleID(
+              newCmd,
+              cmdLen);  // customize the Bluetooth device's broadcast name. e.g. nMyDog will name the device as "MyDog"
+                        // it takes effect the next time the board boosup. it won't interrupt the current connecton.
           printToAllPorts(
 #ifdef I2C_EEPROM_ADDRESS
-            readLongByBytes(EEPROM_BLE_NAME)
+            readLongByBytes(EEPROM_DEVICE_NAME)
 #else
             config.getString("ID")
 #endif
           );
           break;
         }
-      case T_GYRO_FINENESS:
-      case T_GYRO_BALANCE:
-      case T_PRINT_GYRO:
-      case T_VERBOSELY_PRINT_GYRO:
+#ifdef WEB_SERVER
+      case T_WIFI_INFO:
+        {
+          if (!webServerConnected) {
+            PTLF(
+              "The wifi info should start with \'w\' and followed by ssid and password, separated by %.\n e.g. "
+              "w%WifiName%password");
+            String wifiInfo = newCmd;
+            PTL(wifiInfo);
+            int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置
+            PTL(delimiter);
+            if (delimiter != -1) {
+              ssid = wifiInfo.substring(1, delimiter);
+              password = wifiInfo.substring(delimiter + 1);
+              PTHL("WifiSSID: ", ssid);
+              PTHL("Password: ", password);
+              webServerConnected = connectWifi(ssid, password);
+              if (webServerConnected) {
+                PTLF("Successfully connected to Wifi:");
+                PTL(WiFi.localIP());
+                PTLF("Web server will be started via startWifiManager");
+#ifdef I2C_EEPROM_ADDRESS
+                i2c_eeprom_write_byte(EEPROM_WIFI_MANAGER, true);
+#else
+                config.putBool("WifiManager", true);
+#endif
+              } else {
+                Serial.println("Timeout: Fail to connect web server!");
+              }
+            }
+          } else {
+            PTHL("Wifi already connected to IP Address: ", WiFi.localIP());
+            PTLF("Web server should already be running");
+            PTLF("Press the BOOT key to reboot and use Wifi manager.");
+            PTLF("Hold the BOOT key if you want to clear the previous Wifi credentials.");
+          }
+          break;
+        }
+#endif
+      case T_GYRO:
       case T_RANDOM_MIND:
         {
           if (token == T_RANDOM_MIND) {
@@ -304,19 +443,65 @@ void reaction() {
             token = autoSwitch ? 'Z' : 'z';  // G for activated gyro
           }
 #ifdef GYRO_PIN
-          else if (token == T_GYRO_FINENESS) {
-            fineAdjust = !fineAdjust;
-            // imuSkip = fineAdjust ? IMU_SKIP : IMU_SKIP_MORE;
-            runDelay = fineAdjust ? delayMid : delayShort;
-            token = fineAdjust ? 'G' : 'g';  // G for activated gyro
-          } else if (token == T_GYRO_BALANCE) {
-            gyroBalanceQ = !gyroBalanceQ;
-            token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
-          } else if (token == T_PRINT_GYRO) {
-            print6Axis();
-          } else if (token == T_VERBOSELY_PRINT_GYRO) {
-            printGyro = !printGyro;
-            token = printGyro ? 'V' : 'v';  // V for verbosely print gyro data
+          else if (token == T_GYRO) {
+            if (cmdLen == 0) {
+              gyroBalanceQ = !gyroBalanceQ;
+              token = gyroBalanceQ ? 'G' : 'g';  // G for activated gyro
+            } else {
+              if (newCmd[0] == C_GYRO_CALIBRATE) {
+                shutServos();
+                updateGyroQ = false;
+                if (newCmd[1] != C1_GYRO_CALIBRATE_IMMEDIATELY) {
+                  PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
+                  beep(8, 500, 500, 5);
+                  beep(15, 500, 500, 1);
+                  // Calibrate IMU using core 0 (reboot is no longer required)
+                  // xTaskNotifyGive(taskCalibrateImuUsingCore0_handle);  // Send notification to this task on Core 0
+                }
+                // Create calibration task to be run on Core 0
+                xTaskCreatePinnedToCore(
+                  taskCalibrateImuUsingCore0,          // Task function
+                  "taskCalibrateImuUsingCore0",        // Task name
+                  1800,                                // Task stack size: 1560 bytes determined by uxTaskGetStackHighWaterMark() in bool readIMU()
+                  NULL,                                // Task parameters
+                  1,                                   // Task priority
+                  &taskCalibrateImuUsingCore0_handle,  // Task handle
+                  0                                    // Task core number to run on
+                );
+                // Calibrate IMU using core 0 (reboot is no longer required)
+                // xTaskNotifyGive(taskCalibrateImuUsingCore0_handle);  // Send notification to this task on Core 0
+                while (!updateGyroQ)
+                  delay(1);
+                delay(3000);  // allow the imu to stablize after calibration
+                beep(18, 50, 50, 6);
+              } else {
+                byte i = 0;
+                while (newCmd[i] != '\0') {
+                  if (toupper(newCmd[i]) == C_GYRO_FINENESS) {  // if newCmd[i] is 'f' or 'F'
+                    fineAdjustQ =
+                      (newCmd[i] == C_GYRO_FINENESS);               // if newCmd[i] == T_GYRO_FINENESS, fineAdjustQ is true. else
+                                                                    // newCmd[i] == C_GYRO_FINENESS_OFF, fineAdjustQ is false.
+                    token = fineAdjustQ ? 'G' : 'g';                // G for activated gyro
+                  } else if (toupper(newCmd[i]) == C_GYRO_BALANCE)  // if newCmd[i] is 'b' or 'B'
+                    gyroBalanceQ =
+                      (newCmd[i]
+                       == C_GYRO_BALANCE);                   // if newCmd[i] == T_GYRO_FINENESS, gyroBalanceQ is true. else is false.
+                  else if (toupper(newCmd[i]) == C_PRINT) {  // if newCmd[i] is 'p' or 'P'
+                    printGyroQ =
+                      (newCmd[i] == C_PRINT);  // if newCmd[i] == T_GYRO_PRINT, always print gyro. else only print once
+                    print6Axis();
+                  } else if (newCmd[i] == '?') {
+                    PTF("Gyro state:");
+                    PTT(" Balance-", gyroBalanceQ);
+                    PTT(" Print-", printGyroQ);
+                    PTTL(" Frequency-", fineAdjustQ);
+                  }
+                  i++;
+                }
+                imuSkip = fineAdjustQ ? IMU_SKIP : IMU_SKIP_MORE;
+                runDelay = fineAdjustQ ? delayMid : delayShort;
+              }
+            }
           }
 #endif
           break;
@@ -348,11 +533,13 @@ void reaction() {
       case T_ACCELERATE:
         {
           runDelay = max(0, runDelay - 1);
+          PTHL("Run delay", runDelay);
           break;
         }
       case T_DECELERATE:
         {
           runDelay = min(delayLong, runDelay + 1);
+          PTHL("Run delay", runDelay);
           break;
         }
       case T_REST:
@@ -366,6 +553,7 @@ void reaction() {
             }
             shutServos();
             manualHeadQ = false;
+            readFeedbackQ = false;
           } else if (cmdLen == 1) {  // allow turning off a single joint
             shutServos(atoi(newCmd));
           }
@@ -384,11 +572,11 @@ void reaction() {
           }
           break;
         }
-      case T_MELODY:
-        {
-          playMelody(melody1, sizeof(melody1) / 2);
-          break;
-        }
+        // case T_MELODY:
+        //   {
+        //     playMelody(melody1, sizeof(melody1) / 2);
+        //     break;
+        //   }
 #ifdef ULTRASONIC
       case T_COLOR:
         {
@@ -398,7 +586,8 @@ void reaction() {
             manualEyeColorQ = false;
           else {  // turn on the manual color mode
             manualEyeColorQ = true;
-            ultrasonic.SetRgbEffect(E_RGB_INDEX(uint8_t(newCmd[3])), ultrasonic.color(newCmd[0], newCmd[1], newCmd[2]), uint8_t(newCmd[4]));
+            ultrasonic.SetRgbEffect(E_RGB_INDEX(uint8_t(newCmd[3])), ultrasonic.color(newCmd[0], newCmd[1], newCmd[2]),
+                                    uint8_t(newCmd[4]));
           }
           break;
         }
@@ -418,8 +607,10 @@ void reaction() {
           PTLF("save offset");
           saveCalib(servoCalib);
 #ifdef VOICE
-          if (newCmdIdx == 2)
-            SERIAL_VOICE.println("XAc");
+          if (newCmdIdx == 2) {
+            char setCmd[] = "Ac~";  // turn on voice
+            set_voice(setCmd);
+          }
 #endif
           break;
         }
@@ -432,8 +623,10 @@ void reaction() {
           config.getBytes("calib", servoCalib, DOF);
 #endif
 #ifdef VOICE
-          if (newCmdIdx == 2)
-            SERIAL_VOICE.println("XAc");
+          if (newCmdIdx == 2) {
+            char setCmd[] = "Ac~";  // turn on voice
+            set_voice(setCmd);
+          }
 #endif
           break;
         }
@@ -442,15 +635,72 @@ void reaction() {
           resetAsNewBoard('R');
           break;
         }
-      case T_CALIBRATE:                 // calibration
-      case T_INDEXED_SEQUENTIAL_ASC:    // move multiple indexed joints to angles once at a time (ASCII format entered in the serial monitor)
-      case T_INDEXED_SIMULTANEOUS_ASC:  // move multiple indexed joints to angles simultaneously (ASCII format entered in the serial monitor)
+      case T_JOYSTICK:
+        {
+          // PTL("raw input newCmd");
+          // for (int i = 0; i < cmdLen; i++)
+          //   PTH(int8_t(newCmd[i]), char(newCmd[i]));
+          int flush126 = 0;
+          PTL();
+          while ((char)newCmd[flush126] == '~')
+            flush126++;
+          if ((int8_t)newCmd[flush126] == -126) {  // case: button
+            strcpy(buttonCmd, newCmd + flush126 + 1);
+            int j = 0;
+            while (buttonCmd[j] != '\0') {
+              if (buttonCmd[j] == '\n' || buttonCmd[j] == '~') {
+                buttonCmd[j] = '\0';
+                break;
+              }
+              j++;
+            }
+            PTHL("string cmd", buttonCmd);
+          } else {  // case: joystick
+            int8_t currX, currY, dirX, dirY;
+            int8_t center = 255 / 2 / 10, center1 = 125 / 2 / 2;
+            currX = newCmd[flush126];
+            currY = newCmd[flush126 + 1];
+            dirX = sign(currX);  //-1,0,1
+            if (abs(currX) <= center1)
+              dirX = 0;
+            else if (currX < -center1)
+              dirX = -1;
+            else if (currX > center1)
+              dirX = 1;
+
+            if (abs(currY) <= center)
+              dirY = 0;
+            else if (currY > center)
+              dirY = 1;
+            else if (currY < -center1)
+              dirY = -2;
+            else
+              dirY = -1;
+            byte dirMap[][3] = { { 11, 9, 10 }, { 8, 1, 2 }, { 7, 0, 3 }, { 6, 5, 4 } };
+            char joystickDirCmd[] = { '\0', 'F', 'R', 'R', 'R', 'D', 'L', 'L', 'L', 'f', 'r', 'l' };
+            PTHL(currX, currY);
+            PTHL(dirX, dirY);
+            char suffix[2] = { joystickDirCmd[dirMap[dirY + 2][dirX + 1]] };
+            PTHL("suffix", suffix[0]);
+            if (buttonCmd[0] != '\0') {
+              strcat(buttonCmd, suffix);
+              PTHL("joystick cmd", buttonCmd + 1);
+              tQueue->addTask(buttonCmd[0], buttonCmd + 1);
+              buttonCmd[0] = '\0';
+              delay(500);
+            }
+          }
+          if (buttonCmd[0] == '\0')
+            break;
+          break;
+        }
+      case T_SERVO_CALIBRATE:           // calibration
+      case T_INDEXED_SEQUENTIAL_ASC:    // move multiple indexed joints to angles once at a time (ASCII format entered in
+                                        // the serial monitor)
+      case T_INDEXED_SIMULTANEOUS_ASC:  // move multiple indexed joints to angles simultaneously (ASCII format entered
+                                        // in the serial monitor)
 #ifdef T_SERVO_MICROSECOND
       case T_SERVO_MICROSECOND:  // send pulse with unit of microsecond to a servo
-#endif
-#ifdef T_SERVO_FEEDBACK
-      case T_SERVO_FEEDBACK:
-      case T_SERVO_FOLLOW:
 #endif
       case T_TILT:  // tilt the robot, format: t axis angle. 0:yaw, 1:pitch, 2:roll
       case T_MEOW:  // meow
@@ -482,7 +732,9 @@ void reaction() {
                 pch = strtok(NULL, " ,\t");
                 inLen++;
               }
-              if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0 && target[0] < DOF) {
+
+              if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && target[0] >= 0
+                  && target[0] < DOF) {
                 targetFrame[target[0]] = target[1];
                 if (target[0] < 4) {
                   targetHead[target[0]] = target[1];
@@ -490,41 +742,53 @@ void reaction() {
                 } else
                   nonHeadJointQ = true;
               }
-              if (token == T_CALIBRATE) {
+              if (token == T_SERVO_CALIBRATE) {
                 gyroBalanceQ = false;
-                if (lastToken != T_CALIBRATE) {
+                if (target[0] == DOF) {  // auto calibrate all body joints using servos' angle feedback
+                  strcpy(newCmd, "rest");
+                  loadBySkillName(newCmd);
+                  shutServos();
+                  printToAllPorts(
+                    T_SERVO_CALIBRATE);  // avoid the confirmation token blocked by the loop in autoCalibrate function.
+                  autoCalibrate();
+                  break;
+                }
+                if (lastToken != T_SERVO_CALIBRATE) {
 #ifdef T_SERVO_MICROSECOND
                   setServoP(P_HARD);
                   workingStiffness = false;
 #endif
 #ifdef VOICE
-                  if (newCmdIdx == 2)  // only deactivate the voice module via serial port
-                    SERIAL_VOICE.println("XAd");
+                  if (newCmdIdx == 2) {  // only deactivate the voice module via serial port
+
+                    char setCmd[] = "Ad~";  // turn off voice
+                    set_voice(setCmd);
+                  }
 #endif
                   strcpy(newCmd, "calib");
                   loadBySkillName(newCmd);
                 }
                 if (inLen == 2) {
-                  if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is adding 2 and 1009 is adding 9 degrees
+                  if (target[1] >= 1001) {  // Using 1001 for incremental calibration. 1001 is adding 1 degree, 1002 is
+                                            // adding 2 and 1009 is adding 9 degrees
                     target[1] = servoCalib[target[0]] + target[1] - 1000;
-                  } else if (target[1] <= -1001) {  // Using -1001 for incremental calibration. -1001 is removing 1 degree, 1002 is removing 2 and 1009 is removing 9 degrees
+                  } else if (target[1] <= -1001) {  // Using -1001 for incremental calibration. -1001 is removing 1
+                                                    // degree, 1002 is removing 2 and 1009 is removing 9 degrees
                     target[1] = servoCalib[target[0]] + target[1] + 1000;
                   }
                   servoCalib[target[0]] = target[1];
                 }
-                int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
-                if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3 && target[0] < 8)  // there's no such joint in this configuration
-                  continue;
-                int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #if defined ROBOT_ARM && defined GYRO_PIN
-                if (actualServoIndex == -2)  //auto calibrate the robot arm's pincer
+                if (target[0] == -2)  // auto calibrate the robot arm's pincer
                 {
                   // loadBySkillName("triStand");
                   // shutServos();
+                  servoCalib[2] = -30;
+                  calibratedPWM(2, 0);
                   calibratedPWM(1, 90);
                   delay(500);
-                  int criticalAngle = calibrateByVibration(-25, 25, 4);
-                  criticalAngle = calibrateByVibration(criticalAngle - 4, criticalAngle + 4, 1);
+                  int criticalAngle = calibratePincerByVibration(-25, 25, 4);
+                  criticalAngle = calibratePincerByVibration(criticalAngle - 4, criticalAngle + 4, 1);
                   servoCalib[2] = servoCalib[2] + criticalAngle + 16;
                   PTHL("Pincer calibrate angle: ", servoCalib[2]);
 #ifdef I2C_EEPROM_ADDRESS
@@ -536,7 +800,12 @@ void reaction() {
                   loadBySkillName("calib");
                 } else
 #endif
-                {
+                  if (target[0] < DOF && target[0] >= 0) {
+                  int duty = zeroPosition[target[0]] + float(servoCalib[target[0]]) * rotationDirection[target[0]];
+                  if (PWM_NUM == 12 && WALKING_DOF == 8 && target[0] > 3
+                      && target[0] < 8)  // there's no such joint in this configuration
+                    continue;
+                  int actualServoIndex = (PWM_NUM == 12 && target[0] > 3) ? target[0] - 4 : target[0];
 #ifdef ESP_PWM
                   servo[actualServoIndex].write(duty);
 #else
@@ -558,27 +827,6 @@ void reaction() {
 #else
                 pwm.writeMicroseconds(PWM_pin[target[0]], target[1]);
 #endif
-              }
-#endif
-#ifdef T_SERVO_FEEDBACK
-              else if (token == T_SERVO_FEEDBACK) {
-                setServoP(P_SOFT);
-                workingStiffness = false;
-                gyroBalanceQ = false;
-                // measureServoPin = (inLen == 1) ? target[0] : 16;
-                if (inLen == 0)
-                  measureServoPin = 16;
-                else if (inLen == 1 && target[0] > 2500 && target[0] < 4000) {
-                  feedbackSignal = target[0];
-                  PTF("Change feedback signal to ");
-                  PTL(feedbackSignal);
-                } else
-                  measureServoPin = target[0];
-              } else if (token == T_SERVO_FOLLOW) {
-                setServoP(P_SOFT);
-                workingStiffness = false;
-                gyroBalanceQ = false;
-                measureServoPin = 16;
               }
 #endif
 #ifdef GYRO_PIN
@@ -648,14 +896,15 @@ void reaction() {
             } while (pch != NULL);
 #ifdef T_TUNER
             if (token == T_TUNER) {
-              for (byte p = 0; p < sizeof(initPars) / sizeof(int8_t); p++) {
+              for (byte p = 0; p < sizePars; p++) {
                 PT(*par[p]);
                 PT('\t');
               }
               PTL();
             }
 #endif
-            if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC) && (nonHeadJointQ || lastToken != T_SKILL)) {
+            if ((token == T_INDEXED_SEQUENTIAL_ASC || token == T_INDEXED_SIMULTANEOUS_ASC)
+                && (nonHeadJointQ || lastToken != T_SKILL)) {
               // printToAllPorts(token);
               transform(targetFrame, 1, transformSpeed);  // if (token == T_INDEXED_SEQUENTIAL_ASC) it will be useless
               skill->convertTargetToPosture(targetFrame);
@@ -690,10 +939,11 @@ void reaction() {
             targetFrame[DOF] = '~';
             byte group = token == T_WRITE ? 3 : 2;
             for (int i = 0; i < cmdLen; i += group) {
-              if (newCmd[i] >= 0 && newCmd[i] < DOF) {
-                targetFrame[newCmd[i]] = (int8_t)newCmd[i + 1];
-                if (newCmd[i] < 4) {
-                  targetHead[newCmd[i]] = (int8_t)newCmd[i + 1];
+              int8_t cmdIndex = (int8_t)newCmd[i];  // Convert to int8_t to avoid char subscript warnings
+              if (cmdIndex >= 0 && cmdIndex < DOF) {
+                targetFrame[cmdIndex] = (int8_t)newCmd[i + 1];
+                if (cmdIndex < 4) {
+                  targetHead[cmdIndex] = (int8_t)newCmd[i + 1];
                   manualHeadQ = true;
                 } else
                   nonHeadJointQ = true;
@@ -702,24 +952,26 @@ void reaction() {
                 transform(targetFrame, 1, transformSpeed);
                 delay(10);
               } else if (token == T_WRITE) {  // Write a/d pin value
-                pinMode(newCmd[i + 1], OUTPUT);
+                pinMode((uint8_t)newCmd[i + 1], OUTPUT);
                 if (newCmd[i] == TYPE_ANALOG) {
-                  analogWrite(newCmd[i + 1], uint8_t(newCmd[i + 2]));  // analog value can go up to 255.
-                                                                       // the value was packed as unsigned byte by ardSerial
-                                                                       // but casted by readSerial() as signed char and saved into newCmd.
+                  analogWrite(
+                    (uint8_t)newCmd[i + 1],
+                    uint8_t(newCmd[i + 2]));  // analog value can go up to 255.
+                                              // the value was packed as unsigned byte by ardSerial
+                                              // but casted by readSerial() as signed char and saved into newCmd.
                 } else if (newCmd[i] == TYPE_DIGITAL)
-                  digitalWrite(newCmd[i + 1], newCmd[i + 2]);
+                  digitalWrite((uint8_t)newCmd[i + 1], (uint8_t)newCmd[i + 2]);
               } else if (token == T_READ) {  // Read a/d pin
                 // 34 35 36 37 38 39 97 100
                 // "  #  $  %  &  '  a  d
                 // e.g. analogRead(35) = Ra# in the Serial Monitor
                 //                     = [R,a,35] in the Python API
                 printToAllPorts('=');
-                pinMode(newCmd[i + 1], INPUT);
+                pinMode((uint8_t)newCmd[i + 1], INPUT);
                 if (newCmd[i] == TYPE_ANALOG)  // Arduino Uno: A2->16, A3->17
-                  printToAllPorts(analogRead(newCmd[i + 1]));
+                  printToAllPorts(analogRead((uint8_t)newCmd[i + 1]));
                 else if (newCmd[i] == TYPE_DIGITAL)
-                  printToAllPorts(digitalRead(newCmd[i + 1]));
+                  printToAllPorts(digitalRead((uint8_t)newCmd[i + 1]));
               }
             }
             if (nonHeadJointQ || lastToken != T_SKILL) {
@@ -755,7 +1007,7 @@ void reaction() {
 #ifdef VOICE
             case EXTENSION_VOICE:
               {
-                set_voice();
+                set_voice(newCmd);
                 break;
               }
 #endif
@@ -765,6 +1017,60 @@ void reaction() {
                 if (cmdLen >= 3) {
                   printToAllPorts('=');
                   printToAllPorts(readUltrasonic((int8_t)newCmd[1], (int8_t)newCmd[2]));
+                }
+                break;
+              }
+#endif
+#ifdef CAMERA
+            case EXTENSION_CAMERA:
+              {
+                char *option = newCmd;
+                while (*(++option) != '~') {
+                  if (*option == 'P')
+                    cameraPrintQ = 2;
+                  else if (*option == 'p')
+                    cameraPrintQ = 1;
+                  else if (*option == 'R')
+                    cameraReactionQ = true;
+                  else if (*option == 'r')
+                    cameraReactionQ = false;
+                }
+
+                if (cameraPrintQ) {
+                  printToAllPorts('=');
+                  showRecognitionResult(xCoord, yCoord, width, height);
+                  PTL();
+                  // printToAllPorts(token);
+                  if (cameraPrintQ == 1)
+                    cameraPrintQ = 0;  // if the command is XCp, the camera will print the result only once
+                  else
+                    FPS();
+                }
+
+                break;
+              }
+#endif
+#ifdef GESTURE
+            case EXTENSION_GESTURE:
+              {
+                char *option = newCmd;
+                while (*(++option) != '~') {
+                  if (*option == 'P')
+                    gesturePrintQ = 2;
+                  else if (*option == 'p')
+                    gesturePrintQ = 1;
+                  else if (*option == 'R')
+                    gestureReactionQ = true;
+                  else if (*option == 'r')
+                    gestureReactionQ = false;
+                }
+
+                if (gesturePrintQ == 1) {
+                  int readGesture = read_gesture();
+                  printToAllPorts('=');
+                  if (readGesture != GESTURE_NONE)
+                    printToAllPorts(readGesture);
+                  gesturePrintQ = 0;  // if the command is XGp, the gesture will print the detected result only once
                 }
                 break;
               }
@@ -842,10 +1148,102 @@ void reaction() {
           gyroBalanceQ = false;
           break;
         }
+      case T_SIGNAL_GEN:  // resolution, speed, jointIdx, midpoint, amp, freq,phase
+        {
+          char *pch = strtok(newCmd, " ,");
+          int inLen = 0;
+          int8_t pars[60];  // allows 12 joints 5*12 = 60
+          while (pch != NULL) {
+            pars[inLen++] = atoi(pch);  //@@@ cast
+            pch = strtok(NULL, " ,\t");
+          }
+          // for (int i = 0; i < inLen; i++)
+          //   PTT(pars[i], ' ');
+          // PTL();
+          int8_t resolution = pars[0];
+          int8_t speed = pars[1];
+          signalGenerator(resolution, speed, pars + 2, inLen, 1);
+          break;
+        }
+#ifdef T_SERVO_FEEDBACK
+      case T_SERVO_FOLLOW:
+        {
+          followFeedbackQ =
+            true;  // Set the condition value to true for access to servoFollow() at the end of reaction().
+          newCmd[0] = C_FOLLOW;
+          // no break here to keep compatible with previous 'F' function
+        }
+        [[fallthrough]];      // Explicitly indicate intentional fall-through
+      case T_SERVO_FEEDBACK:  // f: print all angles
+                              // fIndex: print the servo angle at index
+                              // fp: print all angles once
+                              // fP: print all angles continuously
+                              // fl: learn skill by manually dragging the joints
+                              // fr: replay the learned skill
+        //
+        {
+          if (!readFeedbackQ) {
+            setServoP(P_SOFT);
+            workingStiffness = false;
+            gyroBalanceQ = false;
+            readFeedbackQ =
+              true;  // Set the condition value to true for access to servoFeedback() at the end of reaction()
+            // measureServoPin = (inLen == 1) ? target[0] : 16;
+            if (newCmd[0] == '\0')
+              measureServoPin = 16;
+          }
+          if (isDigit(newCmd[0])) {  // the index of servo to read feedback
+            followFeedbackQ = false;
+            int num = atoi(newCmd);
+            if (num > 2500 && num < 4000) {
+              feedbackSignal = num;
+              PTF("Change feedback signal to ");
+              PTL(feedbackSignal);
+            } else {
+              measureServoPin = num;
+              PTHL("read pin", num);
+            }
+          } else if (cmdLen > 0) {
+            if (toupper(newCmd[0]) == C_PRINT) {
+              readFeedbackQ = (newCmd[0] == C_PRINT);  // If the Character command is to "continuously print", set to
+                                                       // true.  Otherwise set to false for "print only once".
+              servoFeedback(measureServoPin);          // Always print the servo angles at least once
+            } else if (toupper(newCmd[0]) == C_FOLLOW) {
+              followFeedbackQ = (newCmd[0] == C_FOLLOW);
+              if (followFeedbackQ) {
+                setServoP(P_SOFT);
+                shutServos();
+                delay(100);
+                workingStiffness = false;
+                gyroBalanceQ = false;
+                measureServoPin = 16;
+              }
+            } else if (newCmd[0] == C_LEARN) {
+              bool gyroLag = gyroBalanceQ;
+              gyroBalanceQ = false;
+              loadBySkillName("up");
+              delay(500);
+              shutServos();
+              delay(100);
+              learnByDrag();
+              gyroBalanceQ = gyroLag;
+            } else if (newCmd[0] == C_REPLAY) {  // perform
+              loadBySkillName("up");
+              performLearn();
+              loadBySkillName("up");
+              shutServos(0);
+              readFeedbackQ = false;
+            }
+          }
+          break;
+        }
+#endif
       case T_TEMP:
         {  // call the last skill data received from the serial port
 #ifdef I2C_EEPROM_ADDRESS
-          loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_int16(SERIAL_BUFF));
+          // Use uint16 version to prevent address corruption when reading values > 32767
+          // Ensures proper address range 0-65535 without negative value conversion issues
+          loadDataFromI2cEeprom((unsigned int)i2c_eeprom_read_uint16(SERIAL_BUFF));
 #else
           config.getBytes("tmp", newCmd, config.getBytesLength("tmp"));
 #endif
@@ -856,11 +1254,14 @@ void reaction() {
           strcpy(newCmd, "tmp");
           break;
         }
-      case T_SKILL_DATA:  // takes in the skill array from the serial port, load it as a regular skill object and run it locally without continuous communication with the master
+      case T_SKILL_DATA:  // takes in the skill array from the serial port, load it as a regular skill object and run it
+                          // locally without continuous communication with the master
         {
 #ifdef I2C_EEPROM_ADDRESS
-          unsigned int i2cEepromAddress = SERIAL_BUFF + 2;        // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);  //save to random position to protect the EEPROM
-          i2c_eeprom_write_int16(SERIAL_BUFF, i2cEepromAddress);  // the address takes 2 bytes to store
+          unsigned int i2cEepromAddress = SERIAL_BUFF + 2;  // + esp_random() % (EEPROM_SIZE - SERIAL_BUFF - 2 - 2550);
+                                                            // //save to random position to protect the EEPROM
+          // Use uint16 version to properly handle addresses > 32767 without sign extension issues
+          i2c_eeprom_write_uint16(SERIAL_BUFF, (uint16_t)i2cEepromAddress);  // the address takes 2 bytes to store
           copydataFromBufferToI2cEeprom(i2cEepromAddress, (int8_t *)newCmd);
 #else
           int bufferLen = dataLen(newCmd[0]);
@@ -891,7 +1292,13 @@ void reaction() {
         }
       case T_TASK_QUEUE:
         {
-          tQueue->createTask();
+          tQueue->createTask();  // use 'q' to start the sequence.
+                                 // add subToken followed by the subCommand
+                                 // use ':' to add the delay time (mandatory)
+                                 // add '>' to end the sub command
+                                 // example: qk sit:1000>m 8 0 8 -30 8 0:500>
+                                 // Nybble wash face: qksit:100>o 1 0, 0 40 -20 4 0, 1 -30 20 4 30, 8 -70 10 4 60, 12 -10
+                                 // 10 4 0, 15 10 0 4 0:100>
           break;
         }
       default:
@@ -902,34 +1309,44 @@ void reaction() {
     }
 
     if (token == T_SKILL && newCmd[0] != '\0') {
-      if (skill->period > 0)
-        strcpy(lastCmd, newCmd);
-      else
-        strcpy(lastCmd, "up");
+      // if (skill->period > 0)
+      strcpy(lastCmd, newCmd);
+      // else
+      //   strcpy(lastCmd, "up");
     }
 
     if (token != T_SKILL || skill->period > 0) {  // it will change the token and affect strcpy(lastCmd, newCmd)
       printToAllPorts(token);                     // postures, gaits and other tokens can confirm completion by sending the token back
-      if (lastToken == T_SKILL && (lowerToken == T_GYRO_FINENESS || lowerToken == T_PRINT_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
+      if (lastToken == T_SKILL
+          && (lowerToken == T_GYRO || lowerToken == T_INDEXED_SIMULTANEOUS_ASC || lowerToken == T_INDEXED_SEQUENTIAL_ASC
+              || lowerToken == T_PAUSE || token == T_JOINTS || token == T_RANDOM_MIND || token == T_BALANCE_SLOPE
+              || token == T_ACCELERATE || token == T_DECELERATE || token == T_TILT))
         token = T_SKILL;
     }
+#ifdef WEB_SERVER
+    finishWebCommand();
+#endif
     resetCmd();
 #ifdef PWM_LED_PIN
-    digitalWrite(PWM_LED_PIN, LOW);
+    if (autoLedQ)
+      digitalWrite(PWM_LED_PIN, LOW);
 #endif
   }
-
   if (tolower(token) == T_SKILL) {
 #ifdef PWM_LED_PIN
-    analogWrite(PWM_LED_PIN, abs(currentAng[8]));
+    if (autoLedQ)
+      analogWrite(PWM_LED_PIN, abs(currentAng[8]));
 #endif
     skill->perform();
-    if (skill->period > 1)
-      delay(delayShort + max(0, int(runDelay
+    if (skill->period > 1) {
+      delay(delayShort
+            + max(0, int(runDelay
 #ifdef GYRO_PIN
-                                    - (max(abs(ypr[1]), abs(ypr[2])) / 10)  // accelerate gait when tilted
+                         - gyroBalanceQ * (max(fabs(ypr[1]) / 2, fabs(ypr[2])) / 20)  // accelerate gait when tilted
+                             / (!fineAdjustQ && !mpuQ ? 4 : 1)                        // reduce the adjust if not using mpu6050
 #endif
-                                    )));
+                         )));
+    }
     if (skill->period < 0) {
       if (!strcmp(skill->skillName, "fd")) {  // need to optimize logic to combine "rest" and "fold"
         shutServos();
@@ -950,8 +1367,17 @@ void reaction() {
       for (int i = 0; i < DOF; i++)
         currentAdjust[i] = 0;
       printToAllPorts(token);  // behavior can confirm completion by sending the token back
+#ifdef GYRO_PIN
+      if (xyzReal[2] > 0 && (fabs(ypr[1]) > 45 || fabs(ypr[2]) > 45)) {  // wait for imu to update
+        while (fabs(ypr[1]) > 10 || fabs(ypr[2]) > 10) {
+          // print6Axis();
+          delay(IMU_PERIOD);
+        }
+      }
+#endif
     }
-    // if (exceptions && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified here.
+    // if (imuException && lastCmd[strlen(lastCmd) - 1] < 'L' && skillList->lookUp(lastCmd) > 0) {  //can be simplified
+    // here.
     //   if (lastCmd[0] != '\0')
     //     loadBySkillName(lastCmd);
 
@@ -962,10 +1388,12 @@ void reaction() {
     //   tQueue->lastTask = NULL;
     //   PTL(newCmd);
     // }
-  } else if (token == T_SERVO_FEEDBACK)
-    servoFeedback(measureServoPin);
-  else if (token == T_SERVO_FOLLOW) {
-    if (servoFollow()) {  // don't move the joints if no manual movement is detected
+  }
+
+  // The code from here to the end of reaction() will conditionally run every time loop() in OpenCatEsp32.ino runs
+
+  else if (followFeedbackQ) {  // Conditionally follow servo feedback to gather servo angles
+    if (servoFollow()) {       // don't move the joints if no manual movement is detected
       reAttachAllServos();
       setServoP(P_SOFT);
       workingStiffness = false;
@@ -974,8 +1402,34 @@ void reaction() {
   } else if (token == T_CPG || token == T_CPG_BIN) {
     if (cpg != NULL)
       cpg->sendSignal();
+  } else if (readFeedbackQ)  // Conditionally read servo feedback and print servo angles
+    servoFeedback(measureServoPin);
+  // }
+  else
+#ifdef GESTURE
+    if (gesturePrintQ == 2) {
+    if (gestureGetValue != GESTURE_NONE)
+      printToAllPorts(gestureGetValue);
   }
-  else {
-    delay(1);  //avoid triggering WDT on BiBoard V0_2
+#endif
+#ifdef CAMERA
+  if (cameraPrintQ == 2) {
+    showRecognitionResult(xCoord, yCoord, width, height);
+    PTL();
+    FPS();
+  } else if (!cameraTaskActiveQ)
+#endif
+  {
+    delay(1);  // avoid triggering WDT
   }
 }
+
+// 异步Web处理函数
+#ifdef WEB_SERVER
+void finishWebCommand() {
+  if (cmdFromWeb) {
+    completeWebTask();  // 调用异步完成函数
+    // cmdFromWeb 将在 completeWebTask() 中设为 false
+  }
+}
+#endif
