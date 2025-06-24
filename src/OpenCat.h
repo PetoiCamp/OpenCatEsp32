@@ -110,6 +110,11 @@ String uniqueName = "";
 #include "InstinctBittleESP_arm.h"
 #define REGULAR P1S
 #define KNEE P1S
+#elif defined VT
+#define MODEL "Bittle X+VT"
+#include "InstinctBittleESP_vt.h"
+#define REGULAR P1L
+#define KNEE P1L
 #else
 #define MODEL "Bittle X"
 #include "InstinctBittleESP.h"

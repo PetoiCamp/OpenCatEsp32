@@ -1868,31 +1868,18 @@ const int8_t wkL[] PROGMEM = {
   50,  58,  63,  52,  -4,   8,  -6,   0,
 };
 
-#ifndef VT
-  const int8_t balance[] PROGMEM = { 
+const int8_t balance[] PROGMEM = { 
 1, 0, 0, 1,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,};
-   const int8_t up[] PROGMEM = { 
+
+const int8_t up[] PROGMEM = { 
 1, 0, 0, 1,
     0,   0,   0,   0,   0,   0,   0,   0,  30,  30,  30,  30,  30,  30,  30,  30,};
-  const int8_t rest[] PROGMEM = { 
+
+const int8_t rest[] PROGMEM = { 
 1, 0, 0, 1,
     0,  60,   0,   0,  -3,  -3,   3,   3,  75,  75,  75,  75, -55, -55, -55, -55,
-    };
-#else
-   const int8_t balance[] PROGMEM = { 
-1, 0, 0, 1,
-     -75,   0,   0,   0,   0,   0,   0,   0,  0,   0,   0,   0,   0,   0,   0,
-     };
-    const int8_t up[] PROGMEM = { 
-1, 0, 0, 1,
-     -75,   0,   0,   0,   0,   0,   0,   0,  0,   0,   0,   0,   0,   0,   0,   0, 
-    };
-    const int8_t rest[] PROGMEM = { 
-1, 0, 0, 1,
-    95,  60,   0,   0,  -3,  -3,   3,   3,  -60,  -60,  60,  60, -55, -55, -55, -55,
-    };
-#endif
+};
 const int8_t buttUp[] PROGMEM = { 
 1, 0, 15, 1,
    20,  40,   0,   0,   5,   5,   3,   3,  90,  90,  45,  45, -60, -60,   5,   5,};

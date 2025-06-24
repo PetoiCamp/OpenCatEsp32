@@ -478,30 +478,31 @@ void updateCPG() {
   int8_t parsingShift = 1;
   if (isdigit(subToken) || subToken == '-')  //followed by subtoken
     parsingShift = 0;
-  
+
   int pars[12] = {};
   int p = 0;
-  
+
   // Text format: parse with strtok
   pch = strtok(newCmd + parsingShift, " ,");
   while (pch != NULL) {
     pars[p++] = atoi(pch);  //@@@ cast
     pch = strtok(NULL, " ,\t");
   }
-  
+
   if (subToken == 'g') {
     static int8_t gaits[][13] = {
       { 20, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //small
-      { 36, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //large
-      { 20, 0, 5, -14, 4, 3, 1, 2, 70, 70, 1, 1, '~' },    //bound
-      { 23, 0, 5, -10, 8, 3, 3, 1, 70, 70, 1, 1, '~' },    //bound2
+      { 35, 0, 5, -8, 4, 3, 1, 2, 35, 1, 35, 1, '~' },     //large
+      { 15, 0, 5, -6, -4, 3, 1, 3, 21, 51, 31, 1, '~' },   //back
+      { 15, 0, 5, -14, -10, 1, 2, 1, 70, 70, 1, 1, '~' },  //bound
+      { 18, 0, 5, -6, -10, 3, 3, 1, 80, 80, 1, 1, '~' },   //bound2
       { 17, 0, 5, 0, 0, 3, 1, 3, 1, 75, 50, 25, '~' },     //heng
-      { 15, 0, 5, -4, -4, 3, 1, 3, 36, 52, 52, 36, '~' },  //heng2
+      { 18, 0, 5, -4, -4, 3, 2, 3, 36, 49, 49, 36, '~' },  //heng2
       { 18, 0, 5, 0, 0, 3, 1, 2, 35, 46, 35, 46, '~' }     //turnR
     };
-    for (byte i = 0; i < 3; i++)
+    for (byte i = 0; i < 8; i++)
       tQueue->addTask(T_CPG_BIN, gaits[i], 2000);
-    tQueue->addTask(T_REST, "",0);
+    tQueue->addTask(T_REST, "", 0);
   } else {
     if (parsingShift == 0)  //shift
     {
@@ -622,7 +623,7 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
       // PTHL("phase", phase);
       // PTHL("midpoint", midpoint);
       int angle = 0;
-      if (curveMethod == 't') // currently we set sin function as the default and only option
+      if (curveMethod == 't')  // currently we set sin function as the default and only option
         // angle = round(amp * sin(M_PI * 2.0 * freq * (t + phase*3/freq) / 360.0)) + midpoint;//phase: 120 => 1 full period
         // else if(curveMethod == 'c')
         angle = midpoint + round(amp * sin(2.0 * M_PI * ((t + phase * 3 / freq) / (360.0 / freq))));
