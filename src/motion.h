@@ -382,6 +382,7 @@ private:
   float *precalcCos;
   int *pick;
   float *sample;  // shrinked sample after skipping points
+  bool *supportStage;  // mark if each sample point is in support stage
   int sampleLen;
   int shiftIndex[5];
   int edge;
@@ -397,6 +398,8 @@ public:
     _nSample = nSample;
     precalcCos = new float[_nSample + 1];
     pick = new int[_nSample + 1];
+    sample = nullptr;  // will be allocated in setPar
+    supportStage = nullptr;  // will be allocated in setPar
     _phase[4] = 0;  //range 200. the first 100 is the support stage. The last one should always be 0.
     sampleLen = 0;
     _skipStep[0] = skipStep[0];
@@ -419,6 +422,17 @@ public:
     }
     PTHL("sampleLen", sampleLen);
   }
+  
+  ~CPG() {
+    delete[] precalcCos;
+    delete[] pick;
+    if (sample != nullptr) {
+      delete[] sample;
+    }
+    if (supportStage != nullptr) {
+      delete[] supportStage;
+    }
+  }
   void setPar(int8_t amplitude, int8_t sideRatio, int8_t stateSwitchAngle, int8_t loopDelay, int8_t midShift[], int8_t phase[]) {
     _amplitude = amplitude;
     _sideRatio = sideRatio;
@@ -428,7 +442,17 @@ public:
     _midShift[1] = midShift[1];
     for (byte i = 0; i < 4; i++)
       _phase[i] = phase[i];
+    
+    // Release old arrays if they exist
+    if (sample != nullptr) {
+      delete[] sample;
+    }
+    if (supportStage != nullptr) {
+      delete[] supportStage;
+    }
+    
     sample = new float[sampleLen];
+    supportStage = new bool[sampleLen];
     sampleLen = 0;
 
     for (int8_t l = 0; l < 5; l++) {
@@ -436,8 +460,10 @@ public:
       for (int i = 0; i < _nSample; i++) {
         int j = (shiftIndex[l] + i) % _nSample;
         if (pick[j] >= 0) {
-          if (l == 4) {  //calculate the 0 shift sample
-            sample[sampleLen++] = precalcCos[j] + ((i > edge && i < _nSample / 2 - edge) ? stateSwitchAngle / amplitude : 0);
+          if (l == 4) {  //calculate the 0 shift sample, no stateSwitchAngle here
+            sample[sampleLen] = precalcCos[j];
+            supportStage[sampleLen] = (i > edge && i < _nSample / 2 - edge);  // mark support stage
+            sampleLen++;
           } else {
             shiftIndex[l] = pick[j];
             Serial.print(shiftIndex[l]);
@@ -455,10 +481,18 @@ public:
     PTHL(leftRatio, rightRatio);
     for (int m = 0; m < sampleLen; m++) {
       for (int8_t l = 0; l < 4; l++) {
-        calibratedPWM(8 + l,
-                      _amplitude * (l % 3 ? rightRatio : leftRatio)
-                          * sample[(m + shiftIndex[l]) % sampleLen]
-                        + _midShift[l < 2 ? 0 : 1]);
+        int sampleIndex = (m + shiftIndex[l]) % sampleLen;
+        float ratio = (l % 3 ? rightRatio : leftRatio);
+        
+        // Calculate base angle with ratio
+        float angle = _amplitude * ratio * sample[sampleIndex];
+        
+        // Add stateSwitchAngle for support stage (not affected by ratio)
+        if (supportStage[sampleIndex]) {
+          angle += _stateSwitchAngle;
+        }
+        
+        calibratedPWM(8 + l, angle + _midShift[l < 2 ? 0 : 1]);
       }
       delay(_loopDelay);
     }
