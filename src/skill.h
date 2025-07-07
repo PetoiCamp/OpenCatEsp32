@@ -361,7 +361,7 @@ public:
         }
       }
       gyroBalanceQ = gyroBalanceQlag;
-      printToAllPorts(token);
+      // printToAllPorts(token); // avoid printing the token twice. may be introduced to fix some other issues.
     } else {  // postures and gaits
 #ifdef GYRO_PIN
       if (imuUpdated && gyroBalanceQ && !(frame % imuSkip)) {
