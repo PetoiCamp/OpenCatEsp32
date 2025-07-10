@@ -452,7 +452,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
                 shutServos();
                 updateGyroQ = false;
                 if (newCmd[1] != C1_GYRO_CALIBRATE_IMMEDIATELY) {
-                  PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.");
+                  PTLF("\nPut the robot FLAT on the table and don't touch it during calibration.\nThe head should be facing up.");
                   beep(8, 500, 500, 5);
                   beep(15, 500, 500, 1);
                   // Calibrate IMU using core 0 (reboot is no longer required)
@@ -1304,6 +1304,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
       default:
         {
           printToAllPorts("Undefined token!");
+          printToAllPorts(newCmd);
           break;
         }
     }
