@@ -77,7 +77,7 @@
 #define BOARD "B"
 #endif
 
-#define DATE "250710"  // YYMMDD
+#define DATE "250712"  // YYMMDD
 String SoftwareVersion = "";
 String uniqueName = "";
 
@@ -671,7 +671,7 @@ void initRobot() {
     startWifiManager();
     // Create a task to run webServer.handleClient() on core 1
     if (webServerConnected) {
-      // 注释掉webServerTask，因为异步版本不需要独立任务
+      // Comment out webServerTask as async version doesn't need dedicated task
       // xTaskCreatePinnedToCore(
       //     webServerTask,   // Task function
       //     "WebServerTask", // Task name

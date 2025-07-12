@@ -676,6 +676,184 @@ void signalGenerator(int8_t resolution, int8_t speed, int8_t *pars, int8_t len, 
 int totalFrame = 0;
 int8_t learnData[11 * MAX_FRAME];
 int8_t learnDataPrev[11];
+
+// Function to print comparison arrays
+void printComparisonArrays(int8_t* originalData, int originalTotalFrame, int8_t* optimizedData, int newTotalFrame) {
+  // Print original data
+  printToAllPorts("=== Original Data ===");
+  printToAllPorts("{");
+  for (int i = 0; i < originalTotalFrame; i++) {
+    for (int j = 0; j < 11; j++) {
+      printToAllPorts(String(originalData[i * 11 + j]) + ",", false);  // No newline after each value
+    }
+    printToAllPorts("");  // Print newline to end the frame
+  }
+  printToAllPorts("}");
+  
+  // Print optimized data
+  printToAllPorts("=== Optimized Data ===");
+  printToAllPorts("{");
+  for (int i = 0; i < newTotalFrame; i++) {
+    for (int j = 0; j < 11; j++) {
+      printToAllPorts(String(optimizedData[i * 11 + j]) + ",", false);  // No newline after each value
+    }
+    printToAllPorts("");  // Print newline to end the frame
+  }
+  printToAllPorts("}");
+}
+
+// Optimize learned data by removing intermediate frames while preserving local extrema
+void smoothMerge() {
+  if (totalFrame <= 3) return;  // No optimization needed for less than 4 frames
+  
+  bool keepFrame[MAX_FRAME];
+  int totalChange[MAX_FRAME];
+  
+  // Initialize arrays
+  for (int i = 0; i < totalFrame; i++) {
+    keepFrame[i] = false;
+    totalChange[i] = 0;
+  }
+  
+  // Always keep the first and last frames
+  keepFrame[0] = true;
+  keepFrame[totalFrame - 1] = true;
+  
+  // Calculate total change amount for each frame
+  for (int frame = 1; frame < totalFrame - 1; frame++) {
+    int frameChange = 0;
+    for (int joint = 0; joint < 11; joint++) {
+      int8_t prev = learnData[(frame - 1) * 11 + joint];
+      int8_t curr = learnData[frame * 11 + joint];
+      int8_t next = learnData[(frame + 1) * 11 + joint];
+      
+      // Calculate the change amount for this joint in this frame
+      int jointChange = abs(curr - prev) + abs(next - curr);
+      frameChange += jointChange;
+    }
+    totalChange[frame] = frameChange;
+  }
+  
+  // Find statistics of change amounts
+  int maxChange = 0;
+  int minChange = 10000;
+  int avgChange = 0;
+  
+  for (int i = 1; i < totalFrame - 1; i++) {
+    maxChange = max(maxChange, totalChange[i]);
+    minChange = min(minChange, totalChange[i]);
+    avgChange += totalChange[i];
+  }
+  avgChange /= (totalFrame - 2);
+  
+  // Balanced threshold: keep frames with significant changes
+  int threshold = avgChange * 1.2;  // More selective threshold
+  
+  PTHL("Average Change:", avgChange);
+  PTHL("Max Change:", maxChange);
+  PTHL("Threshold:", threshold);
+  
+  // Keep frames based on threshold
+  for (int frame = 1; frame < totalFrame - 1; frame++) {
+    if (totalChange[frame] > threshold) {
+      keepFrame[frame] = true;
+    }
+  }
+  
+  // Check local extrema for all joints with unified threshold
+  for (int joint = 0; joint < 11; joint++) {
+    for (int frame = 1; frame < totalFrame - 1; frame++) {
+      int8_t prev = learnData[(frame - 1) * 11 + joint];
+      int8_t curr = learnData[frame * 11 + joint];
+      int8_t next = learnData[(frame + 1) * 11 + joint];
+      
+      // Check if it's a significant local extrema
+      if (((curr > prev && curr > next) || (curr < prev && curr < next)) 
+          && (abs(curr - prev) > 15 || abs(next - curr) > 15)) {
+        keepFrame[frame] = true;
+      }
+    }
+  }
+  
+  // Check for significant direction changes in important joints (0,1,2,8-15)
+  for (int joint = 0; joint < 11; joint++) {
+    // Skip joints 3-7 as they have small movements
+    if (joint >= 3 && joint <= 7) continue;
+    
+    for (int frame = 2; frame < totalFrame - 2; frame++) {
+      int8_t prev2 = learnData[(frame - 2) * 11 + joint];
+      int8_t prev1 = learnData[(frame - 1) * 11 + joint];
+      int8_t curr = learnData[frame * 11 + joint];
+      int8_t next1 = learnData[(frame + 1) * 11 + joint];
+      int8_t next2 = learnData[(frame + 2) * 11 + joint];
+      
+      // Check for direction change with meaningful amplitude
+      int prevDir = (prev1 > prev2) ? 1 : -1;
+      int currDir = (curr > prev1) ? 1 : -1;
+      int nextDir = (next1 > curr) ? 1 : -1;
+      
+      if (prevDir != currDir || currDir != nextDir) {
+        if (abs(curr - prev1) > 15 || abs(next1 - curr) > 15) {
+          keepFrame[frame] = true;
+        }
+      }
+    }
+  }
+  
+  // Ensure the interval between adjacent kept frames is not too large
+  for (int i = 0; i < totalFrame - 1; i++) {
+    if (keepFrame[i]) {
+      int nextKeep = -1;
+      for (int j = i + 1; j < totalFrame; j++) {
+        if (keepFrame[j]) {
+          nextKeep = j;
+          break;
+        }
+      }
+      
+      // If interval exceeds 12 frames, insert a frame in the middle
+      if (nextKeep > 0 && nextKeep - i > 12) {
+        int midFrame = (i + nextKeep) / 2;
+        keepFrame[midFrame] = true;
+      }
+    }
+  }
+  
+  // Save original data for printing first
+  int8_t originalData[11 * MAX_FRAME];
+  for (int i = 0; i < totalFrame * 11; i++) {
+    originalData[i] = learnData[i];
+  }
+  int originalTotalFrame = totalFrame;
+  
+  // Reorganize data, keeping only the needed frames
+  int8_t optimizedData[11 * MAX_FRAME];
+  int newTotalFrame = 0;
+  
+  for (int i = 0; i < totalFrame; i++) {
+    if (keepFrame[i]) {
+      for (int j = 0; j < 11; j++) {
+        optimizedData[newTotalFrame * 11 + j] = learnData[i * 11 + j];
+      }
+      newTotalFrame++;
+    }
+  }
+  
+  // Copy optimized data back to original array
+  for (int i = 0; i < newTotalFrame * 11; i++) {
+    learnData[i] = optimizedData[i];
+  }
+  
+  PTHL("Original Frames:", originalTotalFrame);
+  PTHL("Optimized Frames:", newTotalFrame);
+  
+  // Call function to print comparison arrays (can be toggled on/off)
+  printComparisonArrays(originalData, originalTotalFrame, optimizedData, newTotalFrame);
+  
+  // Update total frame count
+  totalFrame = newTotalFrame;
+}
+
 void learnByDrag() {
   totalFrame = 0;
   int getReady = 0;
@@ -723,9 +901,14 @@ void learnByDrag() {
   while (Serial.available())
     Serial.read();
   beep(30, 300);
+  
+  // Call smoothMerge function to optimize frame data
+  smoothMerge();
+  
   tQueue->addTask('k', "up");
   measureServoPin = 16;  // reattach the servos in the next reaction loop
 }
+
 void performLearn() {
   int target[DOF];
   for (int i = 0; i < DOF; i++)

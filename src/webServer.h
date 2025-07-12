@@ -12,7 +12,7 @@ WebServer webServer(80);
 long connectWebTime;
 bool webServerConnected = false;
 
-// 异步任务管理
+// Async task management
 struct WebTask {
   String taskId;
   String command;
@@ -27,7 +27,7 @@ std::map<String, WebTask> webTasks;
 String currentWebTaskId = "";
 bool webTaskActive = false;
 
-// 函数声明
+// Function declarations
 String generateTaskId();
 void startWebTask(String taskId);
 void handleTaskStatus(String taskId);
@@ -36,12 +36,12 @@ void errorWebTask(String errorMessage);
 void processNextWebTask();
 void handleTaskList();
 
-// 生成任务ID
+// Generate task ID
 String generateTaskId() {
   return String(millis()) + "_" + String(esp_random() % 1000);
 }
 
-// 开始执行web任务
+// Start executing web task
 void startWebTask(String taskId) {
   if(webTasks.find(taskId) == webTasks.end()) {
     return;
@@ -50,27 +50,27 @@ void startWebTask(String taskId) {
   WebTask &task = webTasks[taskId];
   String webCmd = task.command;
 
-  // 设置全局标志和命令 - 保持与现有代码兼容
+  // Set global flags and commands - maintain compatibility with existing code
   cmdFromWeb = true;
   currentWebTaskId = taskId;
   webTaskActive = true;
-  webResponse = "";  // 清空响应缓冲区
+  webResponse = "";  // Clear response buffer
 
-  // 解析命令 - 与原来的逻辑相同
+  // Parse command - same logic as before
   token = webCmd[0];
   strcpy(newCmd, webCmd.c_str() + 1);
   cmdLen = strlen(newCmd);
   newCmd[cmdLen + 1] = '\0';
   newCmdIdx = 4;
 
-  // 更新任务状态
+  // Update task status
   task.status = "running";
   task.startTime = millis();
 
   PTHL("starting web task: ", taskId);
 }
 
-// 任务状态查询处理器
+// Task status query handler
 void handleTaskStatus(String taskId) {
   if(webTasks.find(taskId) == webTasks.end()) {
     webServer.send(404, "text/plain", "Task not found");
@@ -79,7 +79,7 @@ void handleTaskStatus(String taskId) {
 
   WebTask &task = webTasks[taskId];
 
-  // 构建响应
+  // Build response
   String response = task.status;
   if(task.status == "completed") {
     response += "\n" + task.result;
@@ -92,13 +92,13 @@ void handleTaskStatus(String taskId) {
 
   webServer.send(200, "text/plain", response);
 
-  // 清理已完成的旧任务（30秒后）
+  // Clean up completed old tasks (after 30 seconds)
   if((task.status == "completed" || task.status == "error") && (millis() - task.timestamp > 30000)) {
     webTasks.erase(taskId);
   }
 }
 
-// 处理下一个等待的任务
+// Process next waiting task
 void processNextWebTask() {
   for(auto &pair : webTasks) {
     WebTask &task = pair.second;
@@ -109,7 +109,7 @@ void processNextWebTask() {
   }
 }
 
-// 完成web任务 - 在reaction.h中调用
+// Complete web task - called in reaction.h
 void completeWebTask() {
   if(!webTaskActive || currentWebTaskId == "") {
     return;
@@ -118,23 +118,23 @@ void completeWebTask() {
   if(webTasks.find(currentWebTaskId) != webTasks.end()) {
     WebTask &task = webTasks[currentWebTaskId];
     task.status = "completed";
-    task.result = webResponse;  // 保存收集到的响应
+    task.result = webResponse;  // Save collected response
     task.resultReady = true;
 
     PTHL("web task completed: ", currentWebTaskId);
     PTHL("result length: ", task.result.length());
   }
 
-  // 重置全局状态
+  // Reset global state
   cmdFromWeb = false;
   webTaskActive = false;
   currentWebTaskId = "";
 
-  // 检查是否有等待的任务
+  // Check if there are waiting tasks
   processNextWebTask();
 }
 
-// Web任务错误处理
+// Web task error handling
 void errorWebTask(String errorMessage) {
   if(!webTaskActive || currentWebTaskId == "") {
     return;
@@ -147,36 +147,36 @@ void errorWebTask(String errorMessage) {
     task.resultReady = true;
   }
 
-  // 重置状态
+  // Reset state
   cmdFromWeb = false;
   webTaskActive = false;
   currentWebTaskId = "";
 
-  // 处理下一个任务
+  // Process next task
   processNextWebTask();
 }
 
-// 异步命令处理器 - 替换原来的handleCommand
+// Async command handler - replaces original handleCommand
 void handleCommandAsync() {
-  // 获取命令参数
+  // Get command parameters
   String webCmd = webServer.arg("cmd");
   if(webCmd == "") {
     webServer.send(400, "text/plain", "Missing cmd parameter");
     return;
   }
 
-  // 检查是否有查询任务状态的请求
+  // Check if there's a task status query request
   String taskId = webServer.arg("taskId");
   if(taskId != "") {
-    // 返回任务状态
+    // Return task status
     handleTaskStatus(taskId);
     return;
   }
 
-  // 生成新任务ID
+  // Generate new task ID
   String newTaskId = generateTaskId();
 
-  // 创建任务记录
+  // Create task record
   WebTask task;
   task.taskId = newTaskId;
   task.command = webCmd;
@@ -186,32 +186,32 @@ void handleCommandAsync() {
   task.startTime = 0;
   task.resultReady = false;
 
-  // 存储任务
+  // Store task
   webTasks[newTaskId] = task;
 
-  // 如果当前没有活跃的web任务，立即开始执行
+  // If there's no active web task currently, start immediately
   if(!webTaskActive) {
     startWebTask(newTaskId);
   }
 
-  // 立即返回任务ID - 这是异步的关键
+  // Return task ID immediately - this is the key to async
   webServer.send(200, "text/plain", "TASK_ID:" + newTaskId);
 
   PTHL("web command async: ", webCmd);
   PTHL("task ID: ", newTaskId);
 }
 
-// 兼容性API - 返回当前web任务ID（如果有）
+// Compatibility API - return current web task ID (if any)
 String getCurrentWebTaskId() {
   return currentWebTaskId;
 }
 
-// 检查是否有活跃的web任务
+// Check if there's an active web task
 bool hasActiveWebTask() {
   return webTaskActive;
 }
 
-// 获取任务列表（调试用）
+// Get task list (for debugging)
 void handleTaskList() {
   String response = "Active tasks:\n";
   for(const auto &pair : webTasks) {
@@ -273,7 +273,7 @@ bool configureWiFiViaSerial() {
 }
 
 void setupWiFi() {
-  // 保持原来的逻辑
+  // Keep original logic
 }
 
 void startWifiManager() {
@@ -296,9 +296,9 @@ void startWifiManager() {
   if(webServerConnected) {
     webServer.enableCORS(true);
 
-    // 设置异步路由
+    // Set up async routes
     webServer.on("/", HTTP_GET, handleCommandAsync);
-    webServer.on("/cmd", HTTP_GET, handleCommandAsync);  // 兼容性路由
+    webServer.on("/cmd", HTTP_GET, handleCommandAsync);  // Compatibility route
     webServer.on("/status", HTTP_GET, []() {
       String taskId = webServer.arg("taskId");
       if(taskId != "") {
@@ -307,7 +307,7 @@ void startWifiManager() {
         webServer.send(400, "text/plain", "Missing taskId parameter");
       }
     });
-    webServer.on("/tasks", HTTP_GET, handleTaskList);  // 调试接口
+    webServer.on("/tasks", HTTP_GET, handleTaskList);  // Debug interface
 
     webServer.begin();
     PTLF("HTTP server started (async mode)");

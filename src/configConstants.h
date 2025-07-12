@@ -465,7 +465,7 @@ uint16_t i2c_eeprom_read_uint16(unsigned int eeaddress) {
 bool newBoardQ(unsigned int eeaddress = EEPROM_BIRTHMARK_ADDRESS) {
 // PTHL("birthmark:", char(i2c_eeprom_read_byte(eeaddress)));
 #ifdef I2C_EEPROM_ADDRESS
-  // 使用I2C锁保护BIRTHMARK读取，避免与其他I2C操作冲突
+  // Use I2C lock to protect BIRTHMARK reading, avoid conflicts with other I2C operations
   while (imuLockI2c || gestureLockI2c) delay(1);
   eepromLockI2c = true;
   byte birthmarkValue = i2c_eeprom_read_byte(eeaddress);

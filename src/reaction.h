@@ -1,6 +1,6 @@
 #include "esp32-hal.h"
 
-// 异步web服务器函数声明
+// Async web server function declarations
 #ifdef WEB_SERVER
 void completeWebTask();
 void errorWebTask(String errorMessage);
@@ -405,7 +405,7 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
               "w%WifiName%password");
             String wifiInfo = newCmd;
             PTL(wifiInfo);
-            int delimiter = wifiInfo.indexOf('%', 2);  // 找到第二个%的位置
+            int delimiter = wifiInfo.indexOf('%', 2);  // find the position of the second %
             PTL(delimiter);
             if (delimiter != -1) {
               ssid = wifiInfo.substring(1, delimiter);
@@ -1425,12 +1425,12 @@ void reaction() {  // Reminder:  reaction() is repeatedly called in the "forever
   }
 }
 
-// 异步Web处理函数
+// Async web processing functions
 #ifdef WEB_SERVER
 void finishWebCommand() {
   if (cmdFromWeb) {
-    completeWebTask();  // 调用异步完成函数
-    // cmdFromWeb 将在 completeWebTask() 中设为 false
+    completeWebTask();  // call async completion function
+    // cmdFromWeb will be set to false in completeWebTask()
   }
 }
 #endif

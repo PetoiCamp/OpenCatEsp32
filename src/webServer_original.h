@@ -34,10 +34,10 @@ void handleCommand() {
   webResponse = "";
 }
 
-// 通过串口配置WiFi的函数
+// Function to configure WiFi via serial port
 bool connectWifi(String ssid, String password) {
   WiFi.begin(ssid.c_str(), password.c_str());
-  // 等待WiFi连接，最多等待10秒
+  // Wait for WiFi connection, up to 10 seconds
   int timeout = 0;
   while (WiFi.status() != WL_CONNECTED && timeout < 100) {
     delay(100);
@@ -56,18 +56,18 @@ bool configureWiFiViaSerial() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
     if (input.startsWith("wifi%")) {
-      // 解析WiFi配置字符串
-      int firstDelimiter = input.indexOf('%', 5);                   // 找到第二个%的位置
-      int secondDelimiter = input.indexOf('%', firstDelimiter + 1); // 找到第三个%的位置
+      // Parse WiFi configuration string
+      int firstDelimiter = input.indexOf('%', 5);                   // Find the position of the second %
+      int secondDelimiter = input.indexOf('%', firstDelimiter + 1); // Find the position of the third %
 
       if (firstDelimiter != -1 && secondDelimiter != -1) {
         ssid = input.substring(5, firstDelimiter);
         password = input.substring(firstDelimiter + 1, secondDelimiter);
 
-        // 尝试连接WiFi
+        // Try to connect to WiFi
         WiFi.begin(ssid.c_str(), password.c_str());
 
-        // 等待WiFi连接，最多等待10秒
+        // Wait for WiFi connection, up to 10 seconds
         int timeout = 0;
         while (WiFi.status() != WL_CONNECTED && timeout < 100) {
           delay(100);
@@ -88,17 +88,17 @@ bool configureWiFiViaSerial() {
   return false;
 }
 
-// 修改WiFi设置函数
+// Modified WiFi setup function
 void setupWiFi() {
-  // 等待串口配置
+  // Wait for serial configuration
   // unsigned long startTime = millis();
-  // while (millis() - startTime < 200) {  // 等待5秒钟接收串口配置
+  // while (millis() - startTime < 200) {  // Wait 5 seconds to receive serial configuration
   //     if (configureWiFiViaSerial()) {
-  //         return;  // 如果通过串口配置成功，直接返回
+  //         return;  // If serial configuration succeeds, return directly
   //     }
   // }
 
-  // 如果没有收到串口配置，则使用WiFiManager
+  // If no serial configuration is received, use WiFiManager
 }
 
 void startWifiManager() {

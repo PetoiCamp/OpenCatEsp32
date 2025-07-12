@@ -176,7 +176,7 @@ void setServoP(unsigned int p) {
 
 int measurePulseWidth(uint8_t pwmReadPin) {
   long start = micros();
-  while (!digitalRead(pwmReadPin)) {  // 等待高电平
+  while (!digitalRead(pwmReadPin)) {  // wait for high level
     if (micros() - start > waitTimeForResponse)
       return -1;
   }
